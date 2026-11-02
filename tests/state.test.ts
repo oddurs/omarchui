@@ -49,6 +49,41 @@ describe("desktop state", () => {
     expect(s.view).toBe("stock");
   });
 
+  it("opens a terminal with nothing before the prompt (rc.silent)", () => {
+    const s = play(desktop(), { type: "open", app: "terminal", now });
+    const term = windowsOn(s, 1)[0]!.data;
+    expect(term.kind === "terminal" && term.lines).toEqual([]);
+  });
+
+  it("puts a blank line above every prompt but the first, and ✗ after a failure (starship.add_newline, starship.error)", () => {
+    const type = (s: State, id: string, input: string) => play(s, { type: "term-input", id, input }, { type: "term-submit", id, now });
+    let s = play(desktop(), { type: "open", app: "terminal", now });
+    const id = windowsOn(s, 1)[0]!.id;
+    s = type(type(s, id, "nope"), id, "pwd");
+    const term = s.windows[0]!.data;
+    if (term.kind !== "terminal") throw new Error("not a terminal");
+    const rows = term.lines.map((l) => l.map((x) => x.t).join(""));
+    expect(rows).toEqual(["~ ❯ nope", "bash: nope: command not found", "", "~ ✗ pwd", "/home/you"]);
+    expect(term.code).toBe(0);
+  });
+
+  it("carries omarchy commands to the desktop: background, toggles, menu and pickers", () => {
+    const type = (s: State, input: string) => {
+      const id = s.windows[0]!.id;
+      return play(s, { type: "term-input", id, input }, { type: "term-submit", id, now });
+    };
+    let s = play(desktop(), { type: "open", app: "terminal", now });
+    s = type(s, "omarchy theme bg next");
+    expect(s.bg["tokyo-night"]).toBe(1);
+    s = type(s, "omarchy toggle nightlight");
+    expect(s.night).toBe(true);
+    s = type(s, "omarchy theme switcher");
+    expect(s.picker?.mode).toBe("theme");
+    s = play(s, { type: "picker", picker: null });
+    s = type(s, "omarchy menu");
+    expect(s.overlay?.root).toBe("omarchy");
+  });
+
   it("exit closes the terminal it ran in", () => {
     let s = play(desktop(), { type: "open", app: "terminal", now });
     const id = windowsOn(s, 1)[0]!.id;

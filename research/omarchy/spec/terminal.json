@@ -1,0 +1,1961 @@
+{
+  "commit": "175e63b62dc3201866722e45ee9a60714cde16fa",
+  "part": "terminal",
+  "assumptions": {
+    "terminal": "Foot is the default terminal: xdg-terminal-exec's preference list names foot.desktop only (default/xdg-terminal-exec/hyprland-xdg-terminals.list:3), foot is in the base package set (install/omarchy-base.packages:47), and the manual says so (manual/15-terminal.md:3). Alacritty, Ghostty and Kitty are optional (bin/omarchy-install-terminal header).",
+    "theme": "A fresh install applies Tokyo Night (install/user/theme.sh:4-11). Colour expressions below are over colors.toml keys as resolved by bin/omarchy-theme-color; Tokyo Night literals are from themes/tokyo-night/colors.toml.",
+    "shell": "bash. /etc/skel/.bashrc is default/bashrc (docs/file-layout.md:124-125), which sources default/bash/rc for interactive shells (default/bashrc:2-9).",
+    "font": "monospace resolves to JetBrainsMono Nerd Font via default/fontconfig/conf.avail/50-omarchy.conf:332-335, package ttf-jetbrains-mono-nerd-basic (install/omarchy-base.packages:149). Nerd Font codepoints below assume that font.",
+    "language": "English. User-facing strings that go through omarchy-i18n are quoted from default/i18n/en/cli.json.",
+    "dispatcher output": "Tables for `omarchy <group>` were rendered by replaying the dispatcher's own metadata parsing (bin/omarchy:173-317) and table printer (bin/omarchy:633-652, 868-891) over bin/ headers at this commit. The dispatcher itself was not executed. Row order follows `sort -u`; for the groups shown, C and en_US collation give the same order.",
+    "not in repo": "The Neovim/LazyVim configuration ships in the separate omarchy-nvim package (docs/file-layout.md:25-27; install/omarchy-base.packages:102). Lazygit's config is an empty file (config/lazygit/config.yml, 0 bytes). Cliamp has no config here. Their screens are upstream defaults and are not specified here."
+  },
+  "terminal": {
+    "layout": "One foot window per terminal, tiled by default. SUPER+RETURN runs omarchy-launch-terminal with the focused window's pid, so the new terminal opens in that terminal's working directory (default/hypr/bindings/applications.lua:2; default/hypr/helpers.lua:173-185; bin/omarchy-launch-terminal:12). Foot draws a 14x14 px pad of background colour around the cell grid. Text is JetBrainsMono Nerd Font at size 9 (foot sizes are points). The cursor is a steady block: the cell under it is drawn in the background colour on a bright_foreground block. 10000 lines of scrollback. The palette comes from the theme's generated foot.ini, which foot.ini includes. The window is opaque unless the Glassy option rewrites alpha to 0.65. A theme switch recolours running foot windows live by writing OSC colour sequences to each shell's pty; nothing is restarted.",
+    "items": [
+      {
+        "id": "foot.include",
+        "what": "Theme colours file included first",
+        "value": "~/.local/state/omarchy/current/theme/foot.ini",
+        "unit": "path",
+        "expr": "rendered from default/themed/foot.ini.tpl unless the theme ships foot.ini",
+        "source": "config/foot/foot.ini:2"
+      },
+      {
+        "id": "foot.term",
+        "what": "TERM inside the terminal",
+        "value": "xterm-256color",
+        "unit": "string",
+        "expr": "",
+        "source": "config/foot/foot.ini:3"
+      },
+      {
+        "id": "foot.font",
+        "what": "Font family and size",
+        "value": "JetBrainsMono Nerd Font:size=9",
+        "unit": "pt",
+        "expr": "omarchy font set rewrites this line, keeping the size (9 if none)",
+        "source": "config/foot/foot.ini:4; bin/omarchy-font-set:49-56"
+      },
+      {
+        "id": "foot.pad",
+        "what": "Padding around the grid",
+        "value": "14x14",
+        "unit": "px",
+        "expr": "horizontal x vertical, filled with background",
+        "source": "config/foot/foot.ini:5"
+      },
+      {
+        "id": "foot.window-mode",
+        "what": "Initial window mode",
+        "value": "windowed",
+        "unit": "enum",
+        "expr": "",
+        "source": "config/foot/foot.ini:6"
+      },
+      {
+        "id": "foot.scrollback",
+        "what": "Scrollback lines",
+        "value": "10000",
+        "unit": "lines",
+        "expr": "",
+        "source": "config/foot/foot.ini:10"
+      },
+      {
+        "id": "foot.scroll-multiplier",
+        "what": "Scroll wheel multiplier",
+        "value": "7.0",
+        "unit": "x",
+        "expr": "",
+        "source": "config/foot/foot.ini:11"
+      },
+      {
+        "id": "foot.cursor.style",
+        "what": "Cursor shape",
+        "value": "block",
+        "unit": "enum",
+        "expr": "",
+        "source": "config/foot/foot.ini:14"
+      },
+      {
+        "id": "foot.cursor.blink",
+        "what": "Cursor blink",
+        "value": "no",
+        "unit": "bool",
+        "expr": "",
+        "source": "config/foot/foot.ini:15"
+      },
+      {
+        "id": "foot.cursor.color",
+        "what": "Cursor colours (text under cursor, cursor block)",
+        "value": "#1a1b26 #c0caf5",
+        "unit": "hex",
+        "expr": "cursor={{ background }} {{ bright_foreground }}",
+        "source": "default/themed/foot.ini.tpl:10"
+      },
+      {
+        "id": "foot.copy",
+        "what": "Copy keys",
+        "value": "Control+Insert, Control+Shift+c, XF86Copy",
+        "unit": "keys",
+        "expr": "",
+        "source": "config/foot/foot.ini:18"
+      },
+      {
+        "id": "foot.paste",
+        "what": "Paste keys (primary paste disabled)",
+        "value": "Shift+Insert, Control+Shift+v, XF86Paste",
+        "unit": "keys",
+        "expr": "primary-paste=none",
+        "source": "config/foot/foot.ini:19-20"
+      },
+      {
+        "id": "foot.shift-return",
+        "what": "Shift+Return sends CSI-u",
+        "value": "\\x1b[13;2u",
+        "unit": "bytes",
+        "expr": "Mod1+Shift+Return sends \\x1b[13;4u",
+        "source": "config/foot/foot.ini:24-26"
+      },
+      {
+        "id": "foot.fg",
+        "what": "Foreground",
+        "value": "#a9b1d6",
+        "unit": "hex",
+        "expr": "foreground",
+        "source": "default/themed/foot.ini.tpl:2; themes/tokyo-night/colors.toml:12"
+      },
+      {
+        "id": "foot.bg",
+        "what": "Background",
+        "value": "#1a1b26",
+        "unit": "hex",
+        "expr": "background",
+        "source": "default/themed/foot.ini.tpl:3; themes/tokyo-night/colors.toml:7"
+      },
+      {
+        "id": "foot.blur",
+        "what": "Compositor blur requested",
+        "value": "yes",
+        "unit": "bool",
+        "expr": "only visible when alpha < 1",
+        "source": "default/themed/foot.ini.tpl:4-6"
+      },
+      {
+        "id": "foot.selection",
+        "what": "Selection fg / bg",
+        "value": "#c0caf5 / #292e42",
+        "unit": "hex",
+        "expr": "selection_foreground (defaults to bright_foreground) / selection_background (defaults to selection)",
+        "source": "default/themed/foot.ini.tpl:7-8; bin/omarchy-theme-color:230-231"
+      },
+      {
+        "id": "foot.regular",
+        "what": "ANSI 0-7",
+        "value": "#1a1b26 #f7768e #9ece6a #e0af68 #7aa2f7 #ad8ee6 #449dab #a9b1d6",
+        "unit": "hex",
+        "expr": "background red green yellow blue purple(=magenta) cyan foreground",
+        "source": "default/themed/foot.ini.tpl:12-19; bin/omarchy-theme-color:244"
+      },
+      {
+        "id": "foot.bright",
+        "what": "ANSI 8-15",
+        "value": "#414868 #ff7a93 #b9f27c #ff9e64 #7da6ff #bb9af7 #0db9d7 #c0caf5",
+        "unit": "hex",
+        "expr": "muted bright_red bright_green bright_yellow bright_blue bright_magenta bright_cyan bright_foreground",
+        "source": "default/themed/foot.ini.tpl:21-28; themes/tokyo-night/colors.toml:5,26-31,15"
+      },
+      {
+        "id": "foot.glass-alpha",
+        "what": "Background alpha with Glassy windows",
+        "value": "0.65",
+        "unit": "alpha",
+        "expr": "appended to [colors-dark] by omarchy-theme-set-glass; default is opaque",
+        "source": "bin/omarchy-theme-set-glass:95-96"
+      },
+      {
+        "id": "foot.live-retint",
+        "what": "Theme switch recolours open terminals",
+        "value": "OSC colour set + OSC 11 with [percent] alpha written to every child pty",
+        "unit": "behaviour",
+        "expr": "omarchy-theme-set-foot runs in the visible batch of omarchy-theme-set",
+        "source": "bin/omarchy-theme-set-foot:13-41; bin/omarchy-theme-set:526-534"
+      },
+      {
+        "id": "window.tag",
+        "what": "Hyprland tags foot windows as terminal",
+        "value": "+terminal",
+        "unit": "tag",
+        "expr": "class matches foot|org.codeberg.dnkl.foot|org.omarchy.*|TUI.*",
+        "source": "default/hypr/apps/terminals.lua:5-8"
+      },
+      {
+        "id": "window.float-terminals",
+        "what": "App-ids that open floating, centred, 875x600",
+        "value": "org.omarchy.btop, org.omarchy.terminal, org.omarchy.bash, org.codeberg.dnkl.foot, TUI.float, Omarchy, About",
+        "unit": "px",
+        "expr": "size = { 875, 600 }",
+        "source": "default/hypr/apps/system.lua:2-11"
+      },
+      {
+        "id": "window.presentation",
+        "what": "Menu-launched installers/setup run in a floating 'Omarchy' terminal",
+        "value": "logo in green, then the command, then a Done/Failed prompt",
+        "unit": "behaviour",
+        "expr": "xdg-terminal-exec --app-id=org.omarchy.terminal --title=Omarchy -e bash -c 'omarchy-show-logo; <cmd>; omarchy-show-done $code'",
+        "source": "bin/omarchy-launch-floating-terminal-with-presentation:12-14"
+      }
+    ]
+  },
+  "shell": {
+    "layout": "A fresh terminal prints nothing before the prompt: no motd, no fastfetch, no banner. The rc chain (default/bash/rc) only sets env, history, aliases, functions and integrations; none of it echoes. The first-run welcome is a desktop notification, not terminal output. The prompt is Starship (see the prompt section). History is appended on exit (histappend), 32768 entries. Up and Down search history by the typed prefix. Tab cycles through candidates (menu-complete) after first completing the common prefix, case-insensitively. `ls` is eza in long form with a header row (eza's -h is --header), icons and directories first. `cd` goes through zoxide: a path that exists is a plain cd, anything else is a zoxide jump that then prints a folder glyph and the new pwd.",
+    "items": [
+      {
+        "id": "rc.chain",
+        "what": "Interactive startup order",
+        "value": "envs, shell, aliases, functions, init, then bind -f inputrc",
+        "unit": "order",
+        "expr": "",
+        "source": "default/bash/rc:1-7"
+      },
+      {
+        "id": "rc.silent",
+        "what": "Startup output",
+        "value": "",
+        "unit": "text",
+        "expr": "no echo/printf in default/bashrc or default/bash/{rc,envs,shell,init,aliases}; the only printf in aliases is inside zd()",
+        "source": "default/bashrc:1-16; default/bash/init:1-29"
+      },
+      {
+        "id": "env.EDITOR",
+        "what": "EDITOR",
+        "value": "omarchy-launch-editor --inline",
+        "unit": "string",
+        "expr": "nvim unless ~/.local/state/omarchy/defaults/editor names another",
+        "source": "default/bash/envs:2; bin/omarchy-launch-editor:15-19"
+      },
+      {
+        "id": "env.BROWSER",
+        "what": "BROWSER",
+        "value": "omarchy-launch-browser",
+        "unit": "string",
+        "expr": "",
+        "source": "default/bash/envs:8"
+      },
+      {
+        "id": "env.BAT_THEME",
+        "what": "BAT_THEME",
+        "value": "ansi",
+        "unit": "string",
+        "expr": "",
+        "source": "default/bash/envs:9"
+      },
+      {
+        "id": "env.MANPAGER",
+        "what": "MANPAGER",
+        "value": "sh -c 'col -bx | bat -l man -p'",
+        "unit": "string",
+        "expr": "MANROFFOPT=-c",
+        "source": "default/bash/envs:12-13"
+      },
+      {
+        "id": "env.PATH",
+        "what": "PATH additions",
+        "value": "mise command-wrappers first; ~/.local/share/mise/shims and ~/.local/bin appended",
+        "unit": "path",
+        "expr": "",
+        "source": "default/bash/env-bootstrap:31-62"
+      },
+      {
+        "id": "hist",
+        "what": "History settings",
+        "value": "histappend; HISTCONTROL=ignoreboth; HISTSIZE=HISTFILESIZE=32768",
+        "unit": "setting",
+        "expr": "",
+        "source": "default/bash/shell:2-5"
+      },
+      {
+        "id": "completion.bash",
+        "what": "bash-completion loaded",
+        "value": "/usr/share/bash-completion/bash_completion",
+        "unit": "path",
+        "expr": "",
+        "source": "default/bash/shell:8-10"
+      },
+      {
+        "id": "completion.omarchy",
+        "what": "Tab completion for `omarchy`",
+        "value": "next word of omarchy-<a>-<b>-* binaries, plus 'commands' at position 1, then values from '# omarchy:args=' alternatives",
+        "unit": "behaviour",
+        "expr": "complete -F _omarchy_complete omarchy",
+        "source": "default/bash/completions:1-125"
+      },
+      {
+        "id": "completion.hide",
+        "what": "omarchy-* binaries hidden from first-word completion",
+        "value": "complete -I -A command -X 'omarchy-*'",
+        "unit": "behaviour",
+        "expr": "",
+        "source": "default/bash/completions:127-129"
+      },
+      {
+        "id": "inputrc.arrows",
+        "what": "Up/Down",
+        "value": "history-search-backward / history-search-forward",
+        "unit": "binding",
+        "expr": "",
+        "source": "default/bash/inputrc:11-12"
+      },
+      {
+        "id": "inputrc.tab",
+        "what": "Tab / Shift+Tab",
+        "value": "menu-complete / menu-complete-backward",
+        "unit": "binding",
+        "expr": "menu-complete-display-prefix on",
+        "source": "default/bash/inputrc:43-47"
+      },
+      {
+        "id": "inputrc.options",
+        "what": "Completion display",
+        "value": "completion-ignore-case on; show-all-if-ambiguous on; colored-stats on; visible-stats on; page-completions off; completion-query-items 200; match-hidden-files off",
+        "unit": "setting",
+        "expr": "",
+        "source": "default/bash/inputrc:5-39"
+      },
+      {
+        "id": "init.mise",
+        "what": "mise activated",
+        "value": "eval \"$(mise activate bash)\"",
+        "unit": "cmd",
+        "expr": "",
+        "source": "default/bash/init:1-3"
+      },
+      {
+        "id": "init.starship",
+        "what": "Starship prompt",
+        "value": "eval \"$(starship init bash --print-full-init)\"",
+        "unit": "cmd",
+        "expr": "only when interactive and TERM != dumb",
+        "source": "default/bash/init:5-7"
+      },
+      {
+        "id": "init.zoxide",
+        "what": "zoxide",
+        "value": "eval \"$(zoxide init bash)\"",
+        "unit": "cmd",
+        "expr": "",
+        "source": "default/bash/init:9-11"
+      },
+      {
+        "id": "init.try",
+        "what": "try (lazy)",
+        "value": "try init ~/Work/tries on first call",
+        "unit": "cmd",
+        "expr": "",
+        "source": "default/bash/init:13-19"
+      },
+      {
+        "id": "init.fzf",
+        "what": "fzf key bindings only",
+        "value": "Ctrl-R history, Ctrl-T files, Alt-C cd",
+        "unit": "keys",
+        "expr": "sources /usr/share/fzf/key-bindings.bash; not completion.bash",
+        "source": "default/bash/init:21-27"
+      },
+      {
+        "id": "alias.ls",
+        "what": "ls",
+        "value": "eza -lh --group-directories-first --icons=auto",
+        "unit": "alias",
+        "expr": "lsa='ls -a'; lt='eza --tree --level=2 --long --icons --git'; lta='lt -a'",
+        "source": "default/bash/aliases:2-7"
+      },
+      {
+        "id": "alias.ff",
+        "what": "ff (non-kitty)",
+        "value": "fzf --preview 'bat --style=numbers --color=always {}'",
+        "unit": "alias",
+        "expr": "eff opens the pick in $EDITOR; sff <dest> scps the pick",
+        "source": "default/bash/aliases:9-15"
+      },
+      {
+        "id": "alias.cd",
+        "what": "cd -> zd",
+        "value": "no arg: cd ~; existing dir: builtin cd; else z \"$@\" then prints U+F17A9 + space + pwd, or 'Error: Directory not found'",
+        "unit": "function",
+        "expr": "",
+        "source": "default/bash/aliases:17-34"
+      },
+      {
+        "id": "alias.open",
+        "what": "open",
+        "value": "xdg-open \"$@\" detached, output discarded",
+        "unit": "function",
+        "expr": "",
+        "source": "default/bash/aliases:36-38"
+      },
+      {
+        "id": "alias.dots",
+        "what": "Directory hops",
+        "value": "..='cd ..'  ...='cd ../..'  ....='cd ../../..'",
+        "unit": "alias",
+        "expr": "",
+        "source": "default/bash/aliases:41-43"
+      },
+      {
+        "id": "alias.tools",
+        "what": "Tool aliases",
+        "value": "a='omarchy-agent --inline' c='opencode --auto' cx='claude --permission-mode auto' (clears screen first) cy='codex --approve-for-me' d='docker' r='rails' t='tmux attach || tmux new -s Work' h='herdr' ic/ix/icx=tdl c|cx|c cx  mup='MISE_MINIMUM_RELEASE_AGE=0 mise up'",
+        "unit": "alias",
+        "expr": "",
+        "source": "default/bash/aliases:46-57"
+      },
+      {
+        "id": "alias.n",
+        "what": "n",
+        "value": "nvim . with no args, else nvim \"$@\"",
+        "unit": "function",
+        "expr": "",
+        "source": "default/bash/aliases:58"
+      },
+      {
+        "id": "alias.git",
+        "what": "Git aliases",
+        "value": "g='git' gcm='git commit -m' gcam='git commit -a -m' gcad='git commit -a --amend'",
+        "unit": "alias",
+        "expr": "",
+        "source": "default/bash/aliases:61-64"
+      },
+      {
+        "id": "fn.compress",
+        "what": "compress / decompress",
+        "value": "compress X -> X.tar.gz; decompress='tar -xzf'",
+        "unit": "function",
+        "expr": "",
+        "source": "default/bash/fns/compression:2-3"
+      },
+      {
+        "id": "fn.rsync",
+        "what": "rsw / lsw / dsw",
+        "value": "Usage: rsw <source> <destination> | 'Watching $src -> $dest' | 'No active watches' | 'Stopped watch (pid N)'",
+        "unit": "function",
+        "expr": "",
+        "source": "default/bash/fns/rsyncing:2-28"
+      },
+      {
+        "id": "fn.ports",
+        "what": "fip / dip / lip",
+        "value": "Usage: fip <host> <port1> [port2] ... | 'Forwarding localhost:P -> host:P' | 'No active forwards'",
+        "unit": "function",
+        "expr": "",
+        "source": "default/bash/fns/ssh-port-forwarding:2-19"
+      },
+      {
+        "id": "fn.tmux",
+        "what": "tdl / tds / tdlm / tsl",
+        "value": "Usage: tdl <c|cx|codex|other_ai> [<second_ai>]; outside tmux: 'You must start tmux to use tdl.'",
+        "unit": "function",
+        "expr": "tsl: 'Usage: tsl <pane_count> <command>'",
+        "source": "default/bash/fns/tmux:3-5,42-44,69-71,98-100"
+      },
+      {
+        "id": "fn.herdr",
+        "what": "hdl / hds / hdlm / hsl",
+        "value": "herdr equivalents of the tmux layouts",
+        "unit": "function",
+        "expr": "",
+        "source": "default/bash/fns/herdr:16,52,74,110"
+      },
+      {
+        "id": "fn.worktrees",
+        "what": "ga / gd",
+        "value": "Usage: ga [branch name]",
+        "unit": "function",
+        "expr": "",
+        "source": "default/bash/fns/worktrees:2-4,18"
+      },
+      {
+        "id": "fn.drives",
+        "what": "iso2sd / format-drive",
+        "value": "Usage: iso2sd <input_file> [output_device] | Usage: format-drive <device> <name>",
+        "unit": "function",
+        "expr": "",
+        "source": "default/bash/fns/drives:2-5,33-36"
+      },
+      {
+        "id": "fn.ssh",
+        "what": "ssh wrapper",
+        "value": "cleans up the terminal after a dropped remote session and reconnects interactive sessions",
+        "unit": "function",
+        "expr": "",
+        "source": "default/bash/fns/ssh-reconnect:7"
+      },
+      {
+        "id": "welcome",
+        "what": "First-run welcome",
+        "value": "notification 'Learn Keybindings' / 'Super + K for cheatsheet.\\nSuper + Space for Omarchy Menu.'",
+        "unit": "notification",
+        "expr": "not terminal output",
+        "source": "install/user/first-run/welcome.sh:3-5; default/i18n/en/cli.json:139-140"
+      }
+    ]
+  },
+  "prompt": {
+    "layout": "Starship, one line, no user, host or clock. In the home directory the prompt reads `~ ❯ ` with both the tilde and the chevron in bold cyan (manual/14-omarchy-cli.md:10 shows `~ ❯ omarchy`). Outside a repo, the path is cut to its last 2 components, prefixed `…/` when truncated, in starship's default directory style, then a space. Inside a git repo, the repo root name is bold cyan, followed by the path within it, a space, the branch in italic cyan with a trailing space, any status symbols in cyan, and the chevron. After a failed command the chevron becomes ✗, still bold cyan. add_newline=true puts a blank line between prompts. Command timeout is 200 ms.",
+    "items": [
+      {
+        "id": "starship.format",
+        "what": "Top-level format",
+        "value": "[$directory$git_branch$git_status]($style)$character",
+        "unit": "format",
+        "expr": "",
+        "source": "config/starship.toml:3"
+      },
+      {
+        "id": "starship.add_newline",
+        "what": "Blank line between prompts",
+        "value": "true",
+        "unit": "bool",
+        "expr": "",
+        "source": "config/starship.toml:1"
+      },
+      {
+        "id": "starship.timeout",
+        "what": "command_timeout",
+        "value": "200",
+        "unit": "ms",
+        "expr": "",
+        "source": "config/starship.toml:2"
+      },
+      {
+        "id": "starship.success",
+        "what": "Success symbol",
+        "value": "❯ (U+276F)",
+        "unit": "glyph",
+        "expr": "[❯](bold cyan)",
+        "source": "config/starship.toml:7"
+      },
+      {
+        "id": "starship.error",
+        "what": "Error symbol",
+        "value": "✗ (U+2717)",
+        "unit": "glyph",
+        "expr": "[✗](bold cyan)",
+        "source": "config/starship.toml:6"
+      },
+      {
+        "id": "starship.dir.truncation",
+        "what": "Directory truncation",
+        "value": "2 components, symbol '…/'",
+        "unit": "count",
+        "expr": "truncation_length = 2; truncation_symbol = \"…/\"",
+        "source": "config/starship.toml:10-11"
+      },
+      {
+        "id": "starship.dir.repo_root",
+        "what": "Repo-root directory format",
+        "value": "[$repo_root](bold cyan)[$path]($style)[$read_only]($read_only_style) ",
+        "unit": "format",
+        "expr": "repo_root_style = \"bold cyan\"",
+        "source": "config/starship.toml:12-13"
+      },
+      {
+        "id": "starship.dir.style",
+        "what": "Directory style outside repo root",
+        "value": "starship default (not set here)",
+        "unit": "style",
+        "expr": "upstream default; the manual screenshot shows it as cyan",
+        "source": "config/starship.toml:9-13"
+      },
+      {
+        "id": "starship.branch",
+        "what": "Branch",
+        "value": "[$branch](italic cyan) ",
+        "unit": "format",
+        "expr": "",
+        "source": "config/starship.toml:15-17"
+      },
+      {
+        "id": "starship.status.style",
+        "what": "Git status style",
+        "value": "cyan",
+        "unit": "style",
+        "expr": "format = '[$all_status]($style)'",
+        "source": "config/starship.toml:19-21"
+      },
+      {
+        "id": "starship.status.symbols",
+        "what": "Git status symbols",
+        "value": "ahead '⇡N ' (U+21E1); behind '⇣N ' (U+21E3); diverged '⇕⇡A⇣B '; conflicted U+EBAB+space; up_to_date U+F00C+space; untracked '? '; modified U+EA71+space; stashed/staged/renamed/deleted ''",
+        "unit": "glyph",
+        "expr": "",
+        "source": "config/starship.toml:22-32"
+      }
+    ]
+  },
+  "omarchy_cli": {
+    "layout": "`omarchy` is a dispatcher over the 574 omarchy-* scripts in bin/. Each script's header comments (`# omarchy:summary=`, `args=`, `group=`, `name=`, `alias=`, `hidden=`) give its route and help. `omarchy` or `omarchy --help` prints the main help. `omarchy <group>` prints a group table: a header `<Group> commands — <description>:`, then rows of `  <usage padded to the widest>  <summary>`. `omarchy <route> --help` prints Usage/summary/Arguments/Examples/Aliases/Binary. Words map to binaries (`omarchy theme set X` runs omarchy-theme-set X). A command that requires arguments and gets none prints its help instead of running. An unknown route prints three lines on stderr and exits 127. Most mutating commands print nothing on success: their effect is visual (theme, background, bar) or a desktop notification. Commands that print are listed with their exact strings.",
+    "items": [
+      {
+        "id": "cli.main-help",
+        "what": "`omarchy`, `omarchy --help`, `omarchy -h`",
+        "value": "Omarchy command center\n\nUsage:\n  omarchy <command> [args...]\n  omarchy commands [--all] [--json] [--check]\n  omarchy <group> --help\n  omarchy <group> <command> --help\n\nCommon commands:\n  omarchy update              Update Omarchy and system packages\n  omarchy theme list          List available themes\n  omarchy theme set <name>    Apply a theme\n  omarchy font list           List available fonts\n  omarchy screenshot          Take a screenshot\n  omarchy debug               Print debugging information\n\nGroups:\n  agent          AI coding agents, their usage, and subscription accounts\n  ascii          Text drawn as ASCII art\n  audio          Audio input and output controls\n  bar            Omarchy shell bar layout and settings\n  battery        Battery status helpers\n  bluetooth      Bluetooth device controls\n  branch         Omarchy git branch management\n  branding       About and screensaver branding\n  brightness     Display and keyboard brightness\n  capture        Screenshots and screen recording\n  channel        Omarchy release channel management\n  clipboard      Clipboard helpers\n  cmd            Command and shortcut helpers\n  config         System configuration helpers\n  crash          Crash notification controls\n  debug          Diagnostics and support logs\n  default        Default application selection\n  dev            Omarchy development tools\n  dictation      Dictation recording\n  disk           Disk performance helpers\n  display        Display and text scaling\n  dns            DNS resolver configuration\n  dock           Dock shown on floating workspaces\n  drive          Drive selection and encryption\n  file           File selection helpers\n  finalize       Finalize user setup\n  font           Font management\n  games          Game launchers and helpers\n  hibernation    Hibernation setup and removal\n  hook           User hook runner\n  hw             Hardware detection and controls\n  hyprland       Hyprland window, monitor, and toggle controls\n  install        Optional software installers\n  installed      Installed optional service checks\n  kernel         Default boot kernel selection\n  keyboard       Keyboard top row and Fn-lock\n  language       Display language and system locale\n  launch         Application launchers\n  menu           Omarchy menu commands\n  migrate        Migration runner\n  mise           Mise tool wrappers\n  monitor        Monitor status helpers\n  network        Network status helpers\n  notification   Notification helpers\n  openclaw       OpenClaw agent platform setup\n  osd            On-screen display status helpers\n  pkg            Package management helpers\n  plugin         Omarchy shell plugin and bar widget management\n  plymouth       Plymouth boot theme management\n  power          Power supply detection\n  powerprofiles  Power profile management\n  refresh        Reset config to defaults\n  reinstall      Reinstall and reset workflows\n  reminder       Desktop notification reminders\n  remove         Removal workflows\n  restart        Restart Omarchy components\n  setup          Interactive setup wizards\n  shell          Omarchy shell IPC helpers\n  snapshot       System snapshots\n  sudo           Sudo configuration helpers\n  system         System status, reboot, shutdown, logout, and lock\n  tailscale      Tailscale helpers\n  theme          Theme management\n  toggle         Toggle Omarchy features\n  transcode      Image and video transcoding\n  tui            Terminal UI launchers\n  update         Omarchy and system updates\n  version        Version and channel information\n  voxtype        Voxtype dictation\n  weather        Weather status\n  webapp         Web app launchers\n  wifi           Wi-Fi helpers\n  windows        Windows VM management\n\nDiscovery:\n  omarchy commands            List all commands\n  omarchy commands --all      Include commands explicitly marked hidden\n  omarchy commands --json     Machine-readable command list\n  omarchy commands --check    Validate command metadata and routes\n",
+        "unit": "stdout",
+        "expr": "heredoc + sorted group list printed with '  %-14s %s'",
+        "source": "bin/omarchy:587-616; bin/omarchy:29-101; bin/omarchy:578-585; bin/omarchy:1162-1171"
+      },
+      {
+        "id": "cli.help-word",
+        "what": "`omarchy help`",
+        "value": "Unknown Omarchy command: omarchy help\nRun 'omarchy commands --all' to discover available commands.\n",
+        "unit": "stderr",
+        "expr": "no 'help' route or group exists; no route starts with 'help', so there is no 'Did you mean' line; exit 127",
+        "source": "bin/omarchy:1101-1159"
+      },
+      {
+        "id": "cli.unknown",
+        "what": "Unknown route, e.g. `omarchy them`",
+        "value": "Unknown Omarchy command: omarchy them\nDid you mean: omarchy theme ?\nRun 'omarchy commands --all' to discover available commands.\n",
+        "unit": "stderr",
+        "expr": "suggestion = first registered route whose first word starts with the typed word (associative-array order); exit 127",
+        "source": "bin/omarchy:1003-1016; bin/omarchy:1153-1159"
+      },
+      {
+        "id": "cli.commands",
+        "what": "`omarchy commands`",
+        "value": "'Omarchy commands:' then one row per non-hidden command ('  <usage>  <summary>'), then a blank line, 'Aliases:' and alias rows",
+        "unit": "stdout",
+        "expr": "434 non-hidden commands at this commit; aliases: omarchy screenshot, omarchy up, omarchy logout|reboot|shutdown, omarchy background, omarchy plugin install, omarchy plugin rm, omarchy dev benchmark theme-switcher",
+        "source": "bin/omarchy:654-689"
+      },
+      {
+        "id": "cli.group-help",
+        "what": "Group table format",
+        "value": "<Group> commands — <description>:\n  <usage>  <summary>",
+        "unit": "stdout",
+        "expr": "'${group^} commands — $title:'; rows via printf '  %-*s  %s'",
+        "source": "bin/omarchy:868-891; bin/omarchy:633-652"
+      },
+      {
+        "id": "cli.command-help",
+        "what": "`omarchy <route> --help` format",
+        "value": "Usage:\n  <usage>\n\n<summary>\n\nArguments:\n  <args>\n\nExamples:\n  <example>\n\nAliases:\n  <alias>\n\nBinary:\n  <binary>",
+        "unit": "stdout",
+        "expr": "sections omitted when empty; group-root commands add 'Related commands:'",
+        "source": "bin/omarchy:932-978"
+      },
+      {
+        "id": "cli.system-shortcuts",
+        "what": "`omarchy logout|reboot|shutdown`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "routed to omarchy system <action>",
+        "source": "bin/omarchy:1172-1173"
+      },
+      {
+        "id": "cmd.theme",
+        "what": "`omarchy theme`",
+        "value": "Theme commands — Theme management:\n  omarchy theme bg cache                                 Cache background switcher thumbnails for the current theme\n  omarchy theme bg current                               Show current background\n  omarchy theme bg install                               Open the current theme's user background folder\n  omarchy theme bg intro <enable|disable|toggle|status>  Enable or disable background intros\n  omarchy theme bg next                                  Cycle to the next background for the current theme\n  omarchy theme bg set <path-to-media>                   Set the current background image or video\n  omarchy theme bg-switcher                              Open the Omarchy background switcher\n  omarchy theme current                                  Show current theme\n  omarchy theme dir <theme-name>                         Print the directory holding a theme, preferring a user-installed copy\n  omarchy theme extras                                   List the user-installed themes that came from a git clone\n  omarchy theme install [git-repo-url]                   Install a theme from a git repository\n  omarchy theme list                                     List available themes\n  omarchy theme refresh                                  Refresh the current theme from its templates.\n  omarchy theme remove [theme-name]                      Remove a user-installed theme\n  omarchy theme set <theme-name>                         Apply an Omarchy theme\n  omarchy theme switcher                                 Open the Omarchy theme switcher\n  omarchy theme update                                   Update user-installed git themes\n",
+        "unit": "stdout",
+        "expr": "group help (no omarchy-theme binary)",
+        "source": "bin/omarchy:1076-1080; bin/omarchy-theme-*:3"
+      },
+      {
+        "id": "cmd.theme-list",
+        "what": "`omarchy theme list`",
+        "value": "Catppuccin\nCatppuccin Latte\nEthereal\nEverforest\nFlexoki Light\nGruvbox\nHackerman\nJade Horse\nKanagawa\nLast Horizon\nLumon\nLupine\nMatte Black\nMiasma\nNord\nRetro 82\nRistretto\nRose Pine\nSolitude\nStarship\nTokyo Night\nVantablack\nWhite\n",
+        "unit": "stdout",
+        "expr": "names from ~/.config/omarchy/themes and $OMARCHY_PATH/themes, sort -u, kebab-case to Title Case; 23 stock themes",
+        "source": "bin/omarchy-theme-list:6-9; themes/"
+      },
+      {
+        "id": "cmd.theme-current",
+        "what": "`omarchy theme current`",
+        "value": "Tokyo Night",
+        "unit": "stdout",
+        "expr": "Title-cased ~/.local/state/omarchy/current/theme.name, or 'Unknown'",
+        "source": "bin/omarchy-theme-current:6-12; install/user/theme.sh:10"
+      },
+      {
+        "id": "cmd.theme-set",
+        "what": "`omarchy theme set <theme-name>`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Silent on success. No arg: 'Usage: omarchy-theme-set <theme-name>' (but the dispatcher shows the command help first since args are required). Bad name: \"Theme 'x' does not exist\". Effect: stage theme, render templates, swap ~/.local/state/omarchy/current/theme, write theme.name, switch background, recolour terminals/btop/hyprland; from a TTY it waits for the slower app retints too",
+        "source": "bin/omarchy-theme-set:7-10; bin/omarchy-theme-set:379-393; bin/omarchy-theme-set:480-534; bin/omarchy-theme-set:621-626"
+      },
+      {
+        "id": "cmd.theme-set-name",
+        "what": "Theme name normalisation",
+        "value": "\"Tokyo Night\" -> tokyo-night",
+        "unit": "rule",
+        "expr": "strip <...>, lowercase, spaces to hyphens",
+        "source": "bin/omarchy-theme-set:379"
+      },
+      {
+        "id": "cmd.theme-bg-next",
+        "what": "`omarchy theme bg next`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Cycles to the next file (sorted) in ~/.config/omarchy/backgrounds/<theme>/ + the theme's backgrounds/; none: notification 'No background was found for theme'",
+        "source": "bin/omarchy-theme-bg-next:6-49; default/i18n/en/cli.json:333"
+      },
+      {
+        "id": "cmd.theme-bg-current",
+        "what": "`omarchy theme bg current`",
+        "value": "Liftoff",
+        "unit": "stdout",
+        "expr": "basename of the background link, extension and leading 'N-' stripped, hyphens to spaces, Title Case; Tokyo Night's first background is 0-liftoff.webp",
+        "source": "bin/omarchy-theme-bg-current:6-12; themes/tokyo-night/backgrounds/0-liftoff.webp; bin/omarchy-theme-set:181,196"
+      },
+      {
+        "id": "cmd.theme-bg-set",
+        "what": "`omarchy theme bg set <path>`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Silent; 'File does not exist: <path>' on stderr if missing",
+        "source": "bin/omarchy-theme-bg-set:7-31"
+      },
+      {
+        "id": "cmd.theme-switcher",
+        "what": "`omarchy theme switcher` / `omarchy background`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Opens the shell's image picker of theme previews / backgrounds",
+        "source": "bin/omarchy-theme-switcher:118-130; bin/omarchy-theme-bg-switcher:3"
+      },
+      {
+        "id": "cmd.theme-remove",
+        "what": "`omarchy theme remove [name]`",
+        "value": "Removed <name>",
+        "unit": "stdout",
+        "expr": "No extra themes: 'No extra themes installed.'; notification 'Theme removed'",
+        "source": "bin/omarchy-theme-remove:14,32,38-39"
+      },
+      {
+        "id": "cmd.theme-install",
+        "what": "`omarchy theme install [url]`",
+        "value": "See https://omarchy.org/themes/ (green), then a gum input 'Git repo URL (https or git@host:org/repo.git)'",
+        "unit": "stdout",
+        "expr": "clones into ~/.config/omarchy/themes and sets it",
+        "source": "bin/omarchy-theme-install:9-10; default/i18n/en/cli.json"
+      },
+      {
+        "id": "cmd.font",
+        "what": "`omarchy font`",
+        "value": "Font commands — Font management:\n  omarchy font cjk [jp|kr|sc|tc|hk|default]  Show or set the glyph forms for Chinese, Japanese, and Korean text\n  omarchy font current                       Show current monospace font\n  omarchy font list                          List available monospace fonts\n  omarchy font set <font-name>               Set the system monospace font\n",
+        "unit": "stdout",
+        "expr": "group help",
+        "source": "bin/omarchy-font-*:3"
+      },
+      {
+        "id": "cmd.font-list",
+        "what": "`omarchy font list`",
+        "value": "JetBrainsMono Nerd Font (plus whatever other spacing=100 families fontconfig lists)",
+        "unit": "stdout",
+        "expr": "fc-list :spacing=100 -f '%{family[0]}\\n' minus emoji/signwriting/omarchy, sort -u",
+        "source": "bin/omarchy-font-list:6"
+      },
+      {
+        "id": "cmd.font-current",
+        "what": "`omarchy font current`",
+        "value": "JetBrainsMono Nerd Font",
+        "unit": "stdout",
+        "expr": "first family of fc-match monospace",
+        "source": "bin/omarchy-font-current:9; default/fontconfig/conf.avail/50-omarchy.conf:332-335"
+      },
+      {
+        "id": "cmd.font-set",
+        "what": "`omarchy font set <font-name>`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Unknown font: \"Font 'x' not found.\" Effect: rewrites foot/alacritty/kitty/ghostty font lines, writes ~/.config/fontconfig/fonts.conf, restarts the shell; if foot is running, notification 'You must restart Foot to see font change'",
+        "source": "bin/omarchy-font-set:24-27; bin/omarchy-font-set:49-87; default/i18n/en/cli.json:147"
+      },
+      {
+        "id": "cmd.version",
+        "what": "`omarchy version`",
+        "value": "pacman version of omarchy (or omarchy-dev); 'dev (<hash>)' for a linked checkout",
+        "unit": "stdout",
+        "expr": "repo version file at this commit reads 4.0.0.alpha; the packaged string is pacman's and runtime-dependent",
+        "source": "bin/omarchy-version:5-28; version:1"
+      },
+      {
+        "id": "cmd.version-channel",
+        "what": "`omarchy version channel`",
+        "value": "stable | rc | edge | unknown, or '<mirror> / <pkgs>' when they differ",
+        "unit": "stdout",
+        "expr": "",
+        "source": "bin/omarchy-version-channel:6-30"
+      },
+      {
+        "id": "cmd.version-pkgs",
+        "what": "`omarchy version pkgs`",
+        "value": "<Weekday DD Month YYYY> at <HH:MM>",
+        "unit": "stdout",
+        "expr": "about.updatedAt '%1 at %2' over the last 'upgraded' line in pacman.log",
+        "source": "bin/omarchy-version-pkgs:5-10; default/i18n/en/cli.json:11"
+      },
+      {
+        "id": "cmd.channel-current",
+        "what": "`omarchy channel current`",
+        "value": "stable | rc | edge | dev | unknown",
+        "unit": "stdout",
+        "expr": "",
+        "source": "bin/omarchy-channel-current:10-30"
+      },
+      {
+        "id": "cmd.update",
+        "what": "`omarchy update` (alias `omarchy up`)",
+        "value": "A gum box with a normal border, padding 1 2: 'Ready to update?', '', '• You cannot stop the update once you start!', '• Make sure you're connected to power or have a full battery', '', 'What's new: https://github.com/omacom/omarchy/releases/latest'; then gum confirm 'Continue with update?' [Yes/No]",
+        "unit": "stdout",
+        "expr": "No: 'Update cancelled', exit 1. Yes: sudo prompt, then snapshot ('Create system snapshot' green ... 'Snapshots can be selected during boot.'), pacman, migrations, mise, AUR, boot check, reboot prompt. Output is teed to /tmp/omarchy-update.log. On error, red text: 'Something went wrong during the update!' ...",
+        "source": "bin/omarchy-update:3-7; bin/omarchy-update:56-59; bin/omarchy-update:65; bin/omarchy-update:79-150; bin/omarchy-update-confirm:5-18; default/i18n/en/cli.json:363-368,374; bin/omarchy-snapshot:37-44"
+      },
+      {
+        "id": "cmd.menu",
+        "what": "`omarchy menu [verb] [route]`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Default verb toggle, route root: toggles the Omarchy menu overlay (same as SUPER+SPACE). `omarchy menu --help` prints its own Usage/Verbs block. Bad verb: \"omarchy-menu: unknown verb 'x'. Try 'omarchy menu --help'.\"",
+        "source": "bin/omarchy-menu:12-52; default/hypr/bindings/utilities.lua:1"
+      },
+      {
+        "id": "cmd.menu-help",
+        "what": "`omarchy menu help` (verb form)",
+        "value": "Usage: omarchy menu [verb] [route]\n\nVerbs:\n  toggle [route]   Open the menu at <route>, or close it if already open. Default verb.\n  summon [route]   Always open the menu (no close-if-visible toggle).\n  close            Close the menu if it is visible.\n  refresh          Re-parse the menu JSONC files.\n  ping             Health check.\n\nRoute is an item id (e.g. setup.power) or alias (e.g. power). Defaults to\n\"root\", which opens the top-level menu.\n",
+        "unit": "stdout",
+        "expr": "`omarchy menu --help` is caught by the dispatcher and prints the generic command help instead",
+        "source": "bin/omarchy-menu:32-46; bin/omarchy:1039-1055"
+      },
+      {
+        "id": "cmd.launch-about",
+        "what": "`omarchy launch about`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Opens a floating org.omarchy.about foot window running fastfetch (see fastfetch section); any key closes it",
+        "source": "bin/omarchy-launch-about:384-424"
+      },
+      {
+        "id": "cmd.launch-editor",
+        "what": "`omarchy launch editor [path]`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "nvim in a new terminal (app-id org.omarchy.nvim) unless another default editor is set",
+        "source": "bin/omarchy-launch-editor:15-36; bin/omarchy-launch-tui:6-13"
+      },
+      {
+        "id": "cmd.launch-browser",
+        "what": "`omarchy launch browser [url]`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Opens the default browser (Chromium on a fresh install)",
+        "source": "bin/omarchy-launch-browser:6-20; bin/omarchy-provision-user:128"
+      },
+      {
+        "id": "cmd.launch-terminal",
+        "what": "`omarchy launch terminal`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "New foot window in the current terminal's cwd",
+        "source": "bin/omarchy-launch-terminal:12"
+      },
+      {
+        "id": "cmd.launch-tui",
+        "what": "`omarchy launch tui <cmd>`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Runs <cmd> in a new terminal with app-id org.omarchy.<cmd>",
+        "source": "bin/omarchy-launch-tui:6-13"
+      },
+      {
+        "id": "cmd.show-logo",
+        "what": "`omarchy show logo`",
+        "value": "clear, then logo.txt in ANSI green, then a blank line",
+        "unit": "stdout",
+        "expr": "logo text is the 'Omarchy' wordmark in the fastfetch section",
+        "source": "bin/omarchy-show-logo:5-9; logo.txt:1-10"
+      },
+      {
+        "id": "cmd.ascii",
+        "what": "`omarchy ascii <text>`",
+        "value": "text rendered in the FIGlet font Delta Corps Priest 1 (letters and spaces only); no args at a TTY prints its usage block",
+        "unit": "stdout",
+        "expr": "",
+        "source": "bin/omarchy-ascii:9-21; bin/omarchy-ascii:49-60"
+      },
+      {
+        "id": "cmd.toggle",
+        "what": "`omarchy toggle`",
+        "value": "Toggle commands — Toggle Omarchy features:\n  omarchy toggle <flag-name> [toggle|on|off]                 Toggle Omarchy features between enabled and disabled\n  omarchy toggle animations [toggle|on|off]                  Toggle animations, blur and shadows, which are slow without a GPU\n  omarchy toggle bar [toggle|on|off]                         Toggle bar visibility without killing the Omarchy shell (on hides the bar, off shows it)\n  omarchy toggle crash capture                               Toggle crash capture notifications\n  omarchy toggle enabled <flag-name>                         Check if a toggle is enabled (flag file exists)\n  omarchy toggle fullscreen desktop [toggle|on|off]          Toggle a full screen desktop: hide the top bar and remove the window gaps together\n  omarchy toggle hybrid gpu                                  Toggle dedicated vs integrated GPU mode via supergfxd (for hybrid gpu laptops, like Asus G14).\n  omarchy toggle idle [toggle|stay-awake|allow-idle|status]  Toggle idle behavior so the system either idles normally or stays awake\n  omarchy toggle nightlight [--status]                       Toggle nightlight screen temperature\n  omarchy toggle notification silencing                      Toggle notification do-not-disturb mode\n  omarchy toggle screensaver                                 Toggle screensaver availability\n  omarchy toggle suspend                                     Toggle suspend availability in the system menu\n  omarchy toggle theme sync                                  Toggle mirroring theme changes to and from your herdr machines\n  omarchy toggle touchpad [on|off|toggle]                    Enable, disable, or toggle the touchpad\n  omarchy toggle touchscreen [on|off|toggle]                 Enable, disable, or toggle the touch functionality of the screen\n",
+        "unit": "stdout",
+        "expr": "omarchy-toggle requires <flag-name>, so the bare group prints help",
+        "source": "bin/omarchy:1058-1070"
+      },
+      {
+        "id": "cmd.toggle-nightlight",
+        "what": "`omarchy toggle nightlight`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Toggles hyprsunset between 4000 K and identity (6500 K); silent",
+        "source": "bin/omarchy-toggle-nightlight:7-9; bin/omarchy-toggle-nightlight:37-74"
+      },
+      {
+        "id": "cmd.toggle-idle",
+        "what": "`omarchy toggle idle`",
+        "value": "disabled | enabled",
+        "unit": "stdout",
+        "expr": "Prints the new idle state ('disabled' when Stay Awake is on); status prints JSON",
+        "source": "bin/omarchy-toggle-idle:15-28; bin/omarchy-toggle-idle:43-62"
+      },
+      {
+        "id": "cmd.toggle-bar",
+        "what": "`omarchy toggle bar [toggle|on|off]`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Hides/shows the top bar (on = hidden)",
+        "source": "bin/omarchy-toggle-bar:7-13"
+      },
+      {
+        "id": "cmd.toggle-animations",
+        "what": "`omarchy toggle animations`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Notification 'Animations disabled' / 'Animations enabled'",
+        "source": "bin/omarchy-toggle-animations:8-22; default/i18n/en/cli.json:44-45"
+      },
+      {
+        "id": "cmd.toggle-fullscreen-desktop",
+        "what": "`omarchy toggle fullscreen desktop`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Hides the bar and removes gaps together, or restores both",
+        "source": "bin/omarchy-toggle-fullscreen-desktop:9-27"
+      },
+      {
+        "id": "cmd.toggle-screensaver",
+        "what": "`omarchy toggle screensaver`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Notification 'Screensaver disabled' / 'Screensaver enabled'",
+        "source": "bin/omarchy-toggle-screensaver:8-10; default/i18n/en/cli.json:273-274"
+      },
+      {
+        "id": "cmd.toggle-dnd",
+        "what": "`omarchy toggle notification silencing`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Toggles do-not-disturb in the shell",
+        "source": "bin/omarchy-toggle-notification-silencing:5-6"
+      },
+      {
+        "id": "cmd.restart",
+        "what": "`omarchy restart`",
+        "value": "Restart commands — Restart Omarchy components:\n  omarchy restart app <application-name> [application-args...]  Restart an application by killing it and relaunching via uwsm.\n  omarchy restart audio                                         Restart audio services and recover stuck USB audio devices.\n  omarchy restart bluetooth                                     Unblock and restart the bluetooth service.\n  omarchy restart btop                                          Reload btop configuration (used by the Omarchy theme switching).\n  omarchy restart helix                                         Reload Helix configuration\n  omarchy restart herdr                                         Reload herdr if running with the latest configuration\n  omarchy restart hyprctl                                       Reload hyprland configuration (used by the Omarchy theme switching).\n  omarchy restart hyprsunset                                    Restart the hyprsunset service (used for blue light filtering/night light).\n  omarchy restart opencode                                      Reload opencode configuration (used by the Omarchy theme switching).\n  omarchy restart shell                                         Restart the Omarchy shell\n  omarchy restart terminal                                      Reload supported terminal emulators after config changes\n  omarchy restart tmux                                          Restart tmux if running with the latest configuration\n  omarchy restart trackpad                                      Reset the trackpad by unbinding and rebinding its driver.\n  omarchy restart wifi                                          Unblock and restart the Wi-Fi service.\n  omarchy restart xcompose                                      Restart the XCompose input method service (fcitx5) to apply new compose key settings.\n",
+        "unit": "stdout",
+        "expr": "group help",
+        "source": "bin/omarchy-restart-*:3"
+      },
+      {
+        "id": "cmd.restart-wifi",
+        "what": "`omarchy restart wifi`",
+        "value": "Unblocking wifi...\n\n<rfkill list wifi output>",
+        "unit": "stdout",
+        "expr": "rfkill unblock; nmcli on; rescan",
+        "source": "bin/omarchy-restart-wifi:5-11"
+      },
+      {
+        "id": "cmd.restart-bluetooth",
+        "what": "`omarchy restart bluetooth`",
+        "value": "Unblocking bluetooth...\n\n<rfkill list bluetooth output>",
+        "unit": "stdout",
+        "expr": "",
+        "source": "bin/omarchy-restart-bluetooth:5-7"
+      },
+      {
+        "id": "cmd.restart-terminal",
+        "what": "`omarchy restart terminal`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Touches alacritty.toml, SIGUSR1 kitty, SIGUSR2 ghostty; foot is untouched",
+        "source": "bin/omarchy-restart-terminal:5-15"
+      },
+      {
+        "id": "cmd.restart-btop",
+        "what": "`omarchy restart btop`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "SIGUSR2 to btop (reload config/theme)",
+        "source": "bin/omarchy-restart-btop:6-7"
+      },
+      {
+        "id": "cmd.restart-shell",
+        "what": "`omarchy restart shell`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Restarts the Quickshell desktop shell; refuses while locked: 'Refusing to restart Omarchy shell while the session is locked.'",
+        "source": "bin/omarchy-restart-shell:33-34"
+      },
+      {
+        "id": "cmd.refresh-config",
+        "what": "`omarchy refresh config <path>`",
+        "value": "Replaced <file> with new Omarchy default.\\nSaved backup as <file>.bak.<epoch>.\\n\\nChanges: (red/green) + diff",
+        "unit": "stdout",
+        "expr": "silent when the file was unchanged; unknown: 'Not a shipped user config: <path>'",
+        "source": "bin/omarchy-refresh-config:24-43"
+      },
+      {
+        "id": "cmd.refresh-hyprland",
+        "what": "`omarchy refresh hyprland`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "refresh config for each hypr/*.lua (diff output per changed file)",
+        "source": "bin/omarchy-refresh-hyprland:5-14"
+      },
+      {
+        "id": "cmd.system",
+        "what": "`omarchy system`",
+        "value": "System commands — System status, reboot, shutdown, logout, and lock:\n  omarchy system <logout|reboot|shutdown>  Log out, reboot, or shut down after closing applications\n  omarchy system factory reset             Factory-reset this machine back to its freshly-installed state\n  omarchy system lock                      Lock the computer and turn off the display\n  omarchy system stats [--bar-widget]      Print CPU and memory stats for the shell\n  omarchy system wake                      Wake displays and restore brightness after idle\n",
+        "unit": "stdout",
+        "expr": "omarchy-system requires an action, so the bare group prints help",
+        "source": "bin/omarchy-system:8-16"
+      },
+      {
+        "id": "cmd.system-action",
+        "what": "`omarchy reboot|shutdown|logout`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "OSD 'Rebooting' / 'Shutting down' / 'Logging out', closes windows, then acts",
+        "source": "bin/omarchy-system:44-55; default/i18n/en/cli.json:304,309,312"
+      },
+      {
+        "id": "cmd.system-lock",
+        "what": "`omarchy system lock`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Locks the session",
+        "source": "bin/omarchy-system-lock:8"
+      },
+      {
+        "id": "cmd.system-stats",
+        "what": "`omarchy system stats`",
+        "value": "cpu\t<N>%\nmemory\t<used>GB / <total>GB",
+        "unit": "stdout",
+        "expr": "used to 1 decimal, total to 0",
+        "source": "bin/omarchy-system-stats:43-61"
+      },
+      {
+        "id": "cmd.battery-status",
+        "what": "`omarchy battery status`",
+        "value": "Battery <N>%  ·  <time> left  ·  <W>W / <Wh>Wh",
+        "unit": "stdout",
+        "expr": "parts joined with '  ·  '; 'Fully charged' / '<t> to full' variants",
+        "source": "bin/omarchy-battery-status:189-231; default/i18n/en/cli.json"
+      },
+      {
+        "id": "cmd.network-status",
+        "what": "`omarchy network status`",
+        "value": "wifi\t<ssid>\t<signal>\t<freq> | ethernet\t<dev>\t\t | disconnected\t\t\t",
+        "unit": "stdout",
+        "expr": "tab-separated",
+        "source": "bin/omarchy-network-status:28-48"
+      },
+      {
+        "id": "cmd.weather-status",
+        "what": "`omarchy weather status`",
+        "value": "<Place>  ·  Temp <t>  ·  Wind <w>",
+        "unit": "stdout",
+        "expr": "wttr.in %t|%w; 'Weather unavailable' when offline",
+        "source": "bin/omarchy-weather-status:5-24; default/i18n/en/cli.json:375-376"
+      },
+      {
+        "id": "cmd.screenshot",
+        "what": "`omarchy screenshot` / `omarchy capture screenshot [mode] [copy|save]`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Runs omasnap --notify (region picker overlay, then a notification)",
+        "source": "bin/omarchy-capture-screenshot:4-27"
+      },
+      {
+        "id": "cmd.debug",
+        "what": "`omarchy debug [--no-sudo] [--print]`",
+        "value": "gum choose: 'Upload log' (when online) / 'View log' / 'Save in current directory'",
+        "unit": "stdout",
+        "expr": "builds /tmp/omarchy-debug.log (inxi, dmesg, journal, packages); save prints '✓ Log saved to <cwd>/omarchy-debug.log'",
+        "source": "bin/omarchy-debug:29-94"
+      },
+      {
+        "id": "cmd.snapshot",
+        "what": "`omarchy snapshot create`",
+        "value": "Create system snapshot (green)\nSnapshots can be selected during boot.",
+        "unit": "stdout",
+        "expr": "sudo snapper create per config",
+        "source": "bin/omarchy-snapshot:20-45"
+      },
+      {
+        "id": "cmd.reminder",
+        "what": "`omarchy reminder <minutes> [message]`",
+        "value": "",
+        "unit": "stdout",
+        "expr": "Notification 'Reminder set for N minutes' / \"You'll be reminded at HH:MM\"; bad usage prints the 4-line Usage block",
+        "source": "bin/omarchy-reminder:133-136; bin/omarchy-reminder:184-191"
+      },
+      {
+        "id": "cmd.pkg-install",
+        "what": "`omarchy pkg install`",
+        "value": "fzf over `pacman -Slq`, preview below at 65% with label 'alt-p: toggle description, alt-j/k: scroll, tab: multi-select'",
+        "unit": "tui",
+        "expr": "installs picks with sudo pacman, then 'Done! Press any key to close...'",
+        "source": "bin/omarchy-pkg-install:6-26"
+      },
+      {
+        "id": "cmd.show-done",
+        "what": "Done/Failed prompt after menu-run commands",
+        "value": "\\n● Done! Press any key to close...  (● green)  |  \\n● Failed (exit code N)! Press any key to close...  (● red)",
+        "unit": "tty",
+        "expr": "",
+        "source": "bin/omarchy-show-done:19-25; default/i18n/en/cli.json:120-121"
+      },
+      {
+        "id": "cmd.default-editor",
+        "what": "`omarchy default editor`",
+        "value": "nvim",
+        "unit": "stdout",
+        "expr": "prints the stored default or nvim",
+        "source": "bin/omarchy-default-editor:15-24"
+      }
+    ]
+  },
+  "fastfetch": {
+    "layout": "About (Omarchy menu > About, or `omarchy launch about`) is a floating, centred foot window with app-id org.omarchy.about. On first launch it is 920x480. After that it is resized to hug the content and the fitted size is remembered. The cursor is hidden and the screen cleared, then fastfetch runs with /etc/fastfetch/config.jsonc, and any keypress closes the window. The logo is the file ~/.config/omarchy/branding/about.txt, seeded from icon.txt: a 54-column by 26-row block-glyph Omarchy mark in ANSI green. Fastfetch pads the logo 2 rows from the top, 2 columns from the left and 6 columns before the module column. The module column starts with two blank rows, then three boxed sections, each a dim (\\e[90m) 54-column frame. The Hardware section has green keys, the Software section blue keys, and the Age/Uptime/Update section magenta keys. Each section's first key is an icon plus a label (' PC', ' OS', '󱦟 OS Age'). Later keys are tree glyphs '│ ├' plus an icon, and the last key in a section uses '└ └'. Values follow the key after fastfetch's default separator. A blank row separates sections, and one blank row ends the layout. A periodic 'sheen' animation glints across the logo. Key glyphs are Nerd Font codepoints listed per item.",
+    "items": [
+      {
+        "id": "ff.logo.source",
+        "what": "Logo file",
+        "value": "~/.config/omarchy/branding/about.txt",
+        "unit": "path",
+        "expr": "seeded from icon.txt via /etc/skel; reset with `omarchy branding about reset`",
+        "source": "etc/fastfetch/config.jsonc:4-5; docs/file-layout.md:146-149; bin/omarchy-branding-about:21-22"
+      },
+      {
+        "id": "ff.logo.text",
+        "what": "Default About logo (icon.txt), 54x26",
+        "value": "██████████████████████████████████████████████████████\n██████████████████████████████████████████████████████\n████                     ████                     ████\n████                     ████                     ████\n████    █████████████████████         ████████    ████\n████    █████████████████████         ████████    ████\n████    ████                              ████    ████\n████    ████                              ████    ████\n████    ████                              ████    ████\n████    ████                              ████    ████\n████    ████                              ████    ████\n████    ████                              ████    ████\n████████████                              ████    ████\n████████████                              ████    ████\n████    ████                              ████    ████\n████    ████                              ████    ████\n████    ████                              ████    ████\n████    ████                              ████    ████\n████    ████                              ████    ████\n████    ████                              ████    ████\n████    ██████████████████████████████████████    ████\n████    ██████████████████████████████████████    ████\n████                     ████                     ████\n████                     ████                     ████\n█████████████████████████████     ████████████████████\n█████████████████████████████     ████████████████████\n",
+        "unit": "text",
+        "expr": "rows 1-2 and 25-26 solid; outline mark of the Omarchy icon",
+        "source": "icon.txt:1-26"
+      },
+      {
+        "id": "ff.logo.color",
+        "what": "Logo colour",
+        "value": "green ($1)",
+        "unit": "ansi",
+        "expr": "",
+        "source": "etc/fastfetch/config.jsonc:6"
+      },
+      {
+        "id": "ff.logo.padding",
+        "what": "Logo padding top/left/right",
+        "value": "2 / 2 / 6",
+        "unit": "cells",
+        "expr": "",
+        "source": "etc/fastfetch/config.jsonc:7-11; bin/omarchy-launch-about:21-23"
+      },
+      {
+        "id": "ff.linewrap",
+        "what": "Line wrapping disabled",
+        "value": "true",
+        "unit": "bool",
+        "expr": "",
+        "source": "etc/fastfetch/config.jsonc:14"
+      },
+      {
+        "id": "ff.lead",
+        "what": "Two blank rows before the first box",
+        "value": "break, break",
+        "unit": "rows",
+        "expr": "",
+        "source": "etc/fastfetch/config.jsonc:17-18"
+      },
+      {
+        "id": "ff.hw.head",
+        "what": "Hardware box top",
+        "value": "┌──────────────────────Hardware──────────────────────┐",
+        "unit": "text",
+        "expr": "\\e[90m; 22 + title + 22 dashes = 52 between corners",
+        "source": "etc/fastfetch/config.jsonc:19-22; bin/omarchy-launch-about:72-80"
+      },
+      {
+        "id": "ff.hw.host",
+        "what": "Host",
+        "value": " PC",
+        "unit": "key",
+        "expr": "U+F109, keyColor green, value = machine model",
+        "source": "etc/fastfetch/config.jsonc:23-27"
+      },
+      {
+        "id": "ff.hw.cpu",
+        "what": "CPU",
+        "value": "│ ├",
+        "unit": "key",
+        "expr": "U+F4BC, showPeCoreCount true",
+        "source": "etc/fastfetch/config.jsonc:28-33"
+      },
+      {
+        "id": "ff.hw.gpu",
+        "what": "GPU",
+        "value": "│ ├",
+        "unit": "key",
+        "expr": "U+E266, detectionMethod pci, format {name}",
+        "source": "etc/fastfetch/config.jsonc:34-40"
+      },
+      {
+        "id": "ff.hw.display",
+        "what": "Display",
+        "value": "│ ├󱄄",
+        "unit": "key",
+        "expr": "U+F1104",
+        "source": "etc/fastfetch/config.jsonc:41-45"
+      },
+      {
+        "id": "ff.hw.disk",
+        "what": "Disk",
+        "value": "│ ├󰋊",
+        "unit": "key",
+        "expr": "U+F02CA",
+        "source": "etc/fastfetch/config.jsonc:46-50"
+      },
+      {
+        "id": "ff.hw.memory",
+        "what": "Memory",
+        "value": "│ ├",
+        "unit": "key",
+        "expr": "U+EFC5",
+        "source": "etc/fastfetch/config.jsonc:51-55"
+      },
+      {
+        "id": "ff.hw.swap",
+        "what": "Swap",
+        "value": "└ └󰓡",
+        "unit": "key",
+        "expr": "U+F04E1",
+        "source": "etc/fastfetch/config.jsonc:56-60"
+      },
+      {
+        "id": "ff.box.bottom",
+        "what": "Box bottom (all three sections)",
+        "value": "└────────────────────────────────────────────────────┘",
+        "unit": "text",
+        "expr": "\\e[90m",
+        "source": "etc/fastfetch/config.jsonc:61-64,129-132,156-159"
+      },
+      {
+        "id": "ff.sw.head",
+        "what": "Software box top",
+        "value": "┌──────────────────────Software──────────────────────┐",
+        "unit": "text",
+        "expr": "\\e[90m",
+        "source": "etc/fastfetch/config.jsonc:65-69"
+      },
+      {
+        "id": "ff.sw.os",
+        "what": "OS",
+        "value": " OS",
+        "unit": "key",
+        "expr": "U+E900 (Omarchy brand glyph from the private 'omarchy' font); value 'Omarchy <omarchy-version>'; keyColor blue",
+        "source": "etc/fastfetch/config.jsonc:70-75; default/omarchy/omarchy-menu.jsonc:102"
+      },
+      {
+        "id": "ff.sw.branch",
+        "what": "Dev branch",
+        "value": "│ ├󰘬",
+        "unit": "key",
+        "expr": "U+F062C; omarchy-version-branch exits 1 on a packaged install, so the row is empty or absent",
+        "source": "etc/fastfetch/config.jsonc:76-81; bin/omarchy-version-branch:9"
+      },
+      {
+        "id": "ff.sw.channel",
+        "what": "Channel",
+        "value": "│ ├󰔫",
+        "unit": "key",
+        "expr": "U+F052B; value from omarchy-version-channel (e.g. stable)",
+        "source": "etc/fastfetch/config.jsonc:82-87"
+      },
+      {
+        "id": "ff.sw.kernel",
+        "what": "Kernel",
+        "value": "│ ├",
+        "unit": "key",
+        "expr": "U+F013",
+        "source": "etc/fastfetch/config.jsonc:88-92"
+      },
+      {
+        "id": "ff.sw.wm",
+        "what": "WM",
+        "value": "│ ├",
+        "unit": "key",
+        "expr": "U+F488",
+        "source": "etc/fastfetch/config.jsonc:93-97"
+      },
+      {
+        "id": "ff.sw.de",
+        "what": "DE",
+        "value": " DE",
+        "unit": "key",
+        "expr": "U+F488; key has no tree prefix",
+        "source": "etc/fastfetch/config.jsonc:98-102"
+      },
+      {
+        "id": "ff.sw.terminal",
+        "what": "Terminal",
+        "value": "│ ├",
+        "unit": "key",
+        "expr": "U+F489",
+        "source": "etc/fastfetch/config.jsonc:103-107"
+      },
+      {
+        "id": "ff.sw.packages",
+        "what": "Packages",
+        "value": "│ ├󰏖",
+        "unit": "key",
+        "expr": "U+F03D6",
+        "source": "etc/fastfetch/config.jsonc:108-112"
+      },
+      {
+        "id": "ff.sw.wmtheme",
+        "what": "WM theme",
+        "value": "│ ├󰉼",
+        "unit": "key",
+        "expr": "U+F027C",
+        "source": "etc/fastfetch/config.jsonc:113-117"
+      },
+      {
+        "id": "ff.sw.theme",
+        "what": "Omarchy theme + swatch",
+        "value": "│ ├󰸌  value: 'Tokyo Night ●●●●●●●●'",
+        "unit": "key",
+        "expr": "U+F0E0C; dots coloured by SGR 38(incomplete),37,36,35,34,33,32,31",
+        "source": "etc/fastfetch/config.jsonc:118-123"
+      },
+      {
+        "id": "ff.sw.font",
+        "what": "Terminal font",
+        "value": "└ └",
+        "unit": "key",
+        "expr": "U+F031",
+        "source": "etc/fastfetch/config.jsonc:124-128"
+      },
+      {
+        "id": "ff.age.head",
+        "what": "Age box top",
+        "value": "┌────────────────Age / Uptime / Update───────────────┐",
+        "unit": "text",
+        "expr": "16 + 21 + 15 dashes",
+        "source": "etc/fastfetch/config.jsonc:134-137"
+      },
+      {
+        "id": "ff.age.os",
+        "what": "OS age",
+        "value": "󱦟 OS Age  value: '<N> days'",
+        "unit": "key",
+        "expr": "U+F199F; magenta; days since /var/log birth; '%1 day'/'%1 days'",
+        "source": "etc/fastfetch/config.jsonc:138-143; default/i18n/en/cli.json:3-6"
+      },
+      {
+        "id": "ff.age.uptime",
+        "what": "Uptime",
+        "value": "󱫐 Uptime  value: '<d>d <h>h' | '<h>h <m>m' | '<m>m'",
+        "unit": "key",
+        "expr": "U+F1AD0",
+        "source": "etc/fastfetch/config.jsonc:144-149; default/i18n/en/cli.json:17,50-51"
+      },
+      {
+        "id": "ff.age.update",
+        "what": "Last update",
+        "value": " Update  value: '<Weekday DD Month YYYY> at <HH:MM>'",
+        "unit": "key",
+        "expr": "U+EB29; omarchy-version-pkgs",
+        "source": "etc/fastfetch/config.jsonc:150-155; bin/omarchy-version-pkgs:8-10"
+      },
+      {
+        "id": "ff.trail",
+        "what": "Trailing blank row",
+        "value": "break",
+        "unit": "rows",
+        "expr": "",
+        "source": "etc/fastfetch/config.jsonc:160"
+      },
+      {
+        "id": "ff.window",
+        "what": "About window",
+        "value": "float, centre, 920x480 on first launch",
+        "unit": "px",
+        "expr": "later launches use the remembered fitted size",
+        "source": "default/hypr/apps/system.lua:26-28; bin/omarchy-launch-about:137-174"
+      },
+      {
+        "id": "ff.close",
+        "what": "Closing",
+        "value": "any single keypress",
+        "unit": "behaviour",
+        "expr": "read -t -n 1 -s && exit",
+        "source": "bin/omarchy-launch-about:348-351"
+      },
+      {
+        "id": "ff.wordmark",
+        "what": "The 'Omarchy' wordmark (logo.txt), used by omarchy show logo, not by About",
+        "value": "                 ▄▄▄\n ▄█████▄    ▄███████████▄    ▄███████   ▄███████   ▄███████   ▄█   █▄    ▄█   █▄\n███   ███  ███   ███   ███  ███   ███  ███   ███  ███   ███  ███   ███  ███   ███\n███   ███  ███   ███   ███  ███   ███  ███   ███  ███   █▀   ███   ███  ███   ███\n███   ███  ███   ███   ███ ▄███▄▄▄███ ▄███▄▄▄██▀  ███       ▄███▄▄▄███▄ ███▄▄▄███\n███   ███  ███   ███   ███ ▀███▀▀▀███ ▀███▀▀▀▀    ███      ▀▀███▀▀▀███  ▀▀▀▀▀▀███\n███   ███  ███   ███   ███  ███   ███ ██████████  ███   █▄   ███   ███  ▄██   ███\n███   ███  ███   ███   ███  ███   ███  ███   ███  ███   ███  ███   ███  ███   ███\n ▀█████▀    ▀█   ███   █▀   ███   █▀   ███   ███  ███████▀   ███   █▀    ▀█████▀\n                                       ███   █▀\n",
+        "unit": "text",
+        "expr": "",
+        "source": "logo.txt:1-10"
+      }
+    ]
+  },
+  "btop": {
+    "layout": "Activity is btop. SUPER+SHIFT+T opens it with `omarchy-launch-tui btop`, so the window has app-id org.omarchy.btop and floats centred at 875x600. Four boxes are shown: cpu, mem, net and proc. With btop's default arrangement, cpu runs across the top, mem and net stack on the left below it, and proc fills the right; that arrangement is upstream, not set here. Corners are rounded. Graphs use braille symbols and refresh every 2000 ms. Processes are sorted by 'cpu lazy' and coloured with a gradient, with per-process mini CPU graphs. Battery, CPU watts, temperatures, frequency and uptime are shown. vim keys are on. Colours come from the theme's btop.theme via ~/.config/btop/themes/current.theme, and theme_background=true paints the main background.",
+    "items": [
+      {
+        "id": "btop.bind",
+        "what": "Open",
+        "value": "SUPER + SHIFT + T ('Activity')",
+        "unit": "keys",
+        "expr": "{ tui = \"btop\" } -> omarchy-launch-tui btop",
+        "source": "default/hypr/bindings/utilities.lua:120; default/hypr/helpers.lua:119-124"
+      },
+      {
+        "id": "btop.window",
+        "what": "Window",
+        "value": "floating, centred, 875x600",
+        "unit": "px",
+        "expr": "org.omarchy.btop in the floating list",
+        "source": "default/hypr/apps/system.lua:2-11"
+      },
+      {
+        "id": "btop.theme",
+        "what": "Theme file",
+        "value": "current -> ~/.config/btop/themes/current.theme -> current theme's btop.theme",
+        "unit": "path",
+        "expr": "",
+        "source": "config/btop/btop.conf:5; install/user/theme.sh:16-17"
+      },
+      {
+        "id": "btop.theme_background",
+        "what": "Theme background",
+        "value": "true",
+        "unit": "bool",
+        "expr": "",
+        "source": "config/btop/btop.conf:8"
+      },
+      {
+        "id": "btop.truecolor",
+        "what": "Truecolor",
+        "value": "true",
+        "unit": "bool",
+        "expr": "",
+        "source": "config/btop/btop.conf:11"
+      },
+      {
+        "id": "btop.presets",
+        "what": "Presets",
+        "value": "cpu:1:default,proc:0:default cpu:0:default,mem:0:default,net:0:default cpu:0:block,net:0:tty",
+        "unit": "string",
+        "expr": "",
+        "source": "config/btop/btop.conf:21"
+      },
+      {
+        "id": "btop.vim_keys",
+        "what": "vim keys",
+        "value": "true",
+        "unit": "bool",
+        "expr": "",
+        "source": "config/btop/btop.conf:25"
+      },
+      {
+        "id": "btop.rounded",
+        "what": "Rounded corners",
+        "value": "true",
+        "unit": "bool",
+        "expr": "",
+        "source": "config/btop/btop.conf:28"
+      },
+      {
+        "id": "btop.graph_symbol",
+        "what": "Graph symbol",
+        "value": "braille",
+        "unit": "enum",
+        "expr": "per-box symbols 'default' = inherit",
+        "source": "config/btop/btop.conf:38-53"
+      },
+      {
+        "id": "btop.shown_boxes",
+        "what": "Shown boxes",
+        "value": "cpu mem net proc",
+        "unit": "list",
+        "expr": "",
+        "source": "config/btop/btop.conf:56"
+      },
+      {
+        "id": "btop.update_ms",
+        "what": "Update interval",
+        "value": "2000",
+        "unit": "ms",
+        "expr": "",
+        "source": "config/btop/btop.conf:59"
+      },
+      {
+        "id": "btop.proc",
+        "what": "Process list",
+        "value": "sorting 'cpu lazy', not reversed, no tree, colours + gradient, mem in bytes, per-process cpu graphs, list on the right",
+        "unit": "setting",
+        "expr": "",
+        "source": "config/btop/btop.conf:63-90"
+      },
+      {
+        "id": "btop.cpu",
+        "what": "CPU box",
+        "value": "graph upper/lower Auto, lower inverted, not single graph, cpu box on top, uptime, watts, coretemp, freq shown",
+        "unit": "setting",
+        "expr": "",
+        "source": "config/btop/btop.conf:103-152"
+      },
+      {
+        "id": "btop.clock",
+        "what": "Clock format",
+        "value": "%X",
+        "unit": "strftime",
+        "expr": "",
+        "source": "config/btop/btop.conf:156"
+      },
+      {
+        "id": "btop.mem",
+        "what": "Memory box",
+        "value": "mem graphs, swap shown as disk, disks shown, physical only, io stats",
+        "unit": "setting",
+        "expr": "",
+        "source": "config/btop/btop.conf:169-205"
+      },
+      {
+        "id": "btop.net",
+        "what": "Net box",
+        "value": "auto scale, synced up/down, base 100",
+        "unit": "setting",
+        "expr": "",
+        "source": "config/btop/btop.conf:212-226"
+      },
+      {
+        "id": "btop.battery",
+        "what": "Battery",
+        "value": "shown with watts",
+        "unit": "setting",
+        "expr": "",
+        "source": "config/btop/btop.conf:229-235"
+      },
+      {
+        "id": "btop.color.main",
+        "what": "main_bg / main_fg / title",
+        "value": "#1a1b26 / #a9b1d6 / #a9b1d6",
+        "unit": "hex",
+        "expr": "background / foreground / foreground",
+        "source": "default/themed/btop.theme.tpl:2-8"
+      },
+      {
+        "id": "btop.color.hi",
+        "what": "hi_fg / selected_bg / selected_fg",
+        "value": "#7aa2f7 / #292e42 / #7aa2f7",
+        "unit": "hex",
+        "expr": "accent / selection / accent",
+        "source": "default/themed/btop.theme.tpl:11-17"
+      },
+      {
+        "id": "btop.color.misc",
+        "what": "inactive_fg / graph_text / meter_bg / proc_misc / div_line",
+        "value": "#414868 / #b4bee6 / #292e42 / #b4bee6 / #414868",
+        "unit": "hex",
+        "expr": "muted / light_foreground / selection / light_foreground / muted",
+        "source": "default/themed/btop.theme.tpl:20-38"
+      },
+      {
+        "id": "btop.color.boxes",
+        "what": "cpu_box / mem_box / net_box / proc_box",
+        "value": "#ad8ee6 / #9ece6a / #f7768e / #7aa2f7",
+        "unit": "hex",
+        "expr": "magenta / green / red / accent",
+        "source": "default/themed/btop.theme.tpl:32-35"
+      },
+      {
+        "id": "btop.color.temp",
+        "what": "temp start/mid/end",
+        "value": "green / yellow / red",
+        "unit": "key",
+        "expr": "",
+        "source": "default/themed/btop.theme.tpl:41-43"
+      },
+      {
+        "id": "btop.color.cpu",
+        "what": "cpu start/mid/end",
+        "value": "cyan / blue / magenta",
+        "unit": "key",
+        "expr": "",
+        "source": "default/themed/btop.theme.tpl:46-48"
+      },
+      {
+        "id": "btop.color.mem",
+        "what": "free / cached / available / used gradients",
+        "value": "magenta-blue-cyan / blue-cyan-magenta / yellow-red-red / green-cyan-blue",
+        "unit": "key",
+        "expr": "",
+        "source": "default/themed/btop.theme.tpl:51-68"
+      },
+      {
+        "id": "btop.color.net",
+        "what": "download / upload",
+        "value": "yellow-red-red / green-cyan-blue",
+        "unit": "key",
+        "expr": "",
+        "source": "default/themed/btop.theme.tpl:71-78"
+      },
+      {
+        "id": "btop.color.process",
+        "what": "process start/mid/end",
+        "value": "cyan / blue / magenta",
+        "unit": "key",
+        "expr": "",
+        "source": "default/themed/btop.theme.tpl:81-83"
+      },
+      {
+        "id": "btop.color.gradient",
+        "what": "gradient_color_0..7",
+        "value": "background, lighter_background, selection, muted, dark_foreground, foreground, light_foreground, bright_foreground",
+        "unit": "key",
+        "expr": "",
+        "source": "default/themed/btop.theme.tpl:86-93"
+      },
+      {
+        "id": "btop.reload",
+        "what": "Theme switch",
+        "value": "SIGUSR2 to running btop",
+        "unit": "behaviour",
+        "expr": "",
+        "source": "bin/omarchy-restart-btop:6"
+      }
+    ]
+  },
+  "neovim": {
+    "layout": "Typing `n` (or `nvim`) runs Neovim with the omarchy-nvim LazyVim setup. That package is outside this repo, so its start screen (dashboard header, menu entries and keys) and statusline are not specified here. LazyVim's upstream defaults apply, plus whatever omarchy-nvim changes. This repo supplies only the colorscheme: each theme's neovim.lua is a lazy.nvim spec that sets LazyVim's colorscheme. Themes without one get the template, which uses omacom/aether.nvim (branch v3) fed the theme palette. The leader key is Space, as the manual describes. SUPER+SHIFT+N opens the default editor in a new terminal.",
+    "items": [
+      {
+        "id": "nvim.alias",
+        "what": "`n`",
+        "value": "nvim . with no args; nvim \"$@\" otherwise",
+        "unit": "function",
+        "expr": "",
+        "source": "default/bash/aliases:58"
+      },
+      {
+        "id": "nvim.bind",
+        "what": "Open editor",
+        "value": "SUPER + SHIFT + N",
+        "unit": "keys",
+        "expr": "omarchy-launch-editor -> omarchy-launch-tui nvim (app-id org.omarchy.nvim)",
+        "source": "default/hypr/bindings/applications.lua:8; bin/omarchy-launch-editor:26-32"
+      },
+      {
+        "id": "nvim.package",
+        "what": "Config source",
+        "value": "omarchy-nvim package (LazyVim)",
+        "unit": "package",
+        "expr": "not in this repo",
+        "source": "install/omarchy-base.packages:102; docs/file-layout.md:25-27; manual/16-neovim.md:9"
+      },
+      {
+        "id": "nvim.keys.manual",
+        "what": "Keys the manual documents",
+        "value": "Space Space find file; Space s g grep; Space e tree; Shift+H/L buffers; Space b d close; Space g g LazyGit; Space u w wrap",
+        "unit": "keys",
+        "expr": "LazyVim defaults as described in the manual",
+        "source": "manual/16-neovim.md:15-28"
+      },
+      {
+        "id": "nvim.cs.template",
+        "what": "Template colorscheme (ethereal, jade-horse, last-horizon, lupine, miasma, ristretto, starship, vantablack, white)",
+        "value": "aether",
+        "unit": "colorscheme",
+        "expr": "omacom/aether.nvim v3 with bg/fg/accent/... from colors.toml; only rendered when the theme ships no neovim.lua",
+        "source": "default/themed/neovim.lua.tpl:3-4,49; bin/omarchy-theme-set-templates:328"
+      },
+      {
+        "id": "nvim.cs.tokyo-night",
+        "what": "Tokyo Night",
+        "value": "tokyonight-night",
+        "unit": "colorscheme",
+        "expr": "folke/tokyonight.nvim",
+        "source": "themes/tokyo-night/neovim.lua:9"
+      },
+      {
+        "id": "nvim.cs.catppuccin",
+        "what": "Catppuccin",
+        "value": "catppuccin-mocha",
+        "unit": "colorscheme",
+        "expr": "catppuccin/nvim",
+        "source": "themes/catppuccin/neovim.lua:16"
+      },
+      {
+        "id": "nvim.cs.catppuccin-latte",
+        "what": "Catppuccin Latte",
+        "value": "catppuccin-latte",
+        "unit": "colorscheme",
+        "expr": "catppuccin/nvim",
+        "source": "themes/catppuccin-latte/neovim.lua:17"
+      },
+      {
+        "id": "nvim.cs.everforest",
+        "what": "Everforest",
+        "value": "everforest",
+        "unit": "colorscheme",
+        "expr": "neanias/everforest-nvim",
+        "source": "themes/everforest/neovim.lua:13"
+      },
+      {
+        "id": "nvim.cs.flexoki-light",
+        "what": "Flexoki Light",
+        "value": "flexoki-light",
+        "unit": "colorscheme",
+        "expr": "kepano/flexoki-neovim",
+        "source": "themes/flexoki-light/neovim.lua:9"
+      },
+      {
+        "id": "nvim.cs.gruvbox",
+        "what": "Gruvbox",
+        "value": "gruvbox",
+        "unit": "colorscheme",
+        "expr": "ellisonleao/gruvbox.nvim",
+        "source": "themes/gruvbox/neovim.lua:6"
+      },
+      {
+        "id": "nvim.cs.hackerman",
+        "what": "Hackerman",
+        "value": "hackerman",
+        "unit": "colorscheme",
+        "expr": "bjarneo/hackerman.nvim",
+        "source": "themes/hackerman/neovim.lua:10"
+      },
+      {
+        "id": "nvim.cs.kanagawa",
+        "what": "Kanagawa",
+        "value": "kanagawa",
+        "unit": "colorscheme",
+        "expr": "rebelot/kanagawa.nvim",
+        "source": "themes/kanagawa/neovim.lua:6"
+      },
+      {
+        "id": "nvim.cs.lumon",
+        "what": "Lumon",
+        "value": "lumon",
+        "unit": "colorscheme",
+        "expr": "omacom-io/lumon.nvim",
+        "source": "themes/lumon/neovim.lua:9"
+      },
+      {
+        "id": "nvim.cs.matte-black",
+        "what": "Matte Black",
+        "value": "matteblack",
+        "unit": "colorscheme",
+        "expr": "tahayvr/matteblack.nvim",
+        "source": "themes/matte-black/neovim.lua:6"
+      },
+      {
+        "id": "nvim.cs.nord",
+        "what": "Nord",
+        "value": "nordfox",
+        "unit": "colorscheme",
+        "expr": "EdenEast/nightfox.nvim",
+        "source": "themes/nord/neovim.lua:6"
+      },
+      {
+        "id": "nvim.cs.retro-82",
+        "what": "Retro 82",
+        "value": "retro-82",
+        "unit": "colorscheme",
+        "expr": "OldJobobo/retro-82.nvim",
+        "source": "themes/retro-82/neovim.lua:9"
+      },
+      {
+        "id": "nvim.cs.rose-pine",
+        "what": "Rose Pine",
+        "value": "rose-pine-dawn",
+        "unit": "colorscheme",
+        "expr": "rose-pine/neovim",
+        "source": "themes/rose-pine/neovim.lua:15"
+      },
+      {
+        "id": "nvim.cs.solitude",
+        "what": "Solitude",
+        "value": "ashen",
+        "unit": "colorscheme",
+        "expr": "ficcdaf/ashen.nvim",
+        "source": "themes/solitude/neovim.lua:6"
+      }
+    ]
+  },
+  "tuis": {
+    "layout": "Omarchy 4 ships few TUIs. Wi-Fi, Bluetooth and audio moved into shell panels: there is no impala, bluetui or wiremix anywhere in the repo, and the manual says so. Bound TUIs: btop (SUPER+SHIFT+T, floating), cliamp (SUPER+SHIFT+ALT+M, launch-or-focus, tiled), lazydocker (SUPER+SHIFT+D, only if installed; not in the base packages), tmux in the Work session (SUPER+ALT+RETURN) and herdr (SUPER+CTRL+RETURN). Lazygit is installed but has no key binding; you run `lazygit` or press Space g g in Neovim. Its config file is empty, so it shows upstream defaults. Every TUI runs inside foot, so it uses the terminal palette above.",
+    "items": [
+      {
+        "id": "tui.btop",
+        "what": "btop (Activity)",
+        "value": "SUPER + SHIFT + T",
+        "unit": "keys",
+        "expr": "see btop section",
+        "source": "default/hypr/bindings/utilities.lua:120"
+      },
+      {
+        "id": "tui.cliamp",
+        "what": "cliamp (Music TUI)",
+        "value": "SUPER + SHIFT + ALT + M",
+        "unit": "keys",
+        "expr": "omarchy-launch-or-focus-tui cliamp, app-id org.omarchy.cliamp; no config in repo: upstream default (manual: retro Winamp-2-style player with radio stations, '?' for keys)",
+        "source": "default/hypr/bindings/applications.lua:17; bin/omarchy-launch-or-focus-tui:6-14; install/omarchy-base.packages:18; manual/21-tuis.md:29-31"
+      },
+      {
+        "id": "tui.lazydocker",
+        "what": "lazydocker (Docker)",
+        "value": "SUPER + SHIFT + D",
+        "unit": "keys",
+        "expr": "bound only when lazydocker is on PATH; launched via pkexec unless the user is in the docker group; upstream default UI",
+        "source": "default/hypr/bindings/applications.lua:18-20; bin/omarchy-launch-docker-tui:16-20"
+      },
+      {
+        "id": "tui.lazygit",
+        "what": "lazygit",
+        "value": "no binding; `lazygit` or Neovim Space g g",
+        "unit": "keys",
+        "expr": "config/lazygit/config.yml is empty: upstream default UI",
+        "source": "install/omarchy-base.packages:74; config/lazygit/config.yml; manual/21-tuis.md:3-9"
+      },
+      {
+        "id": "tui.tmux",
+        "what": "tmux Work session",
+        "value": "SUPER + ALT + RETURN",
+        "unit": "keys",
+        "expr": "tmux attach || tmux new -s Work; prefix C-Space (C-b also); status bar on top: session name black-on-blue bold at left, windows ' #I:#W ' (current blue bold, others brightblack), right side 'PREFIX'/'COPY'/'ZOOM' flags in blue then hostname in brightblack",
+        "source": "default/hypr/bindings/applications.lua:12; bin/omarchy-launch-terminal-tmux:5; config/tmux/tmux.conf:2-4,85-100"
+      },
+      {
+        "id": "tui.herdr",
+        "what": "herdr",
+        "value": "SUPER + CTRL + RETURN",
+        "unit": "keys",
+        "expr": "terminal workspace manager, prefix Ctrl+Space; config in config/herdr/config.toml",
+        "source": "default/hypr/bindings/applications.lua:13; manual/21-tuis.md:17-21"
+      },
+      {
+        "id": "tui.about",
+        "what": "About (fastfetch)",
+        "value": "Omarchy menu > About",
+        "unit": "menu",
+        "expr": "no key binding",
+        "source": "default/omarchy/omarchy-menu.jsonc:32"
+      },
+      {
+        "id": "panel.network",
+        "what": "Wi-Fi (shell panel, not a TUI)",
+        "value": "SUPER + CTRL + N",
+        "unit": "keys",
+        "expr": "panel omarchy.network",
+        "source": "default/hypr/bindings/utilities.lua:118; manual/21-tuis.md:33-35"
+      },
+      {
+        "id": "panel.bluetooth",
+        "what": "Bluetooth (shell panel)",
+        "value": "SUPER + CTRL + B",
+        "unit": "keys",
+        "expr": "panel omarchy.bluetooth",
+        "source": "default/hypr/bindings/utilities.lua:114"
+      },
+      {
+        "id": "panel.audio",
+        "what": "Audio (shell panel)",
+        "value": "SUPER + CTRL + A",
+        "unit": "keys",
+        "expr": "panel omarchy.audio",
+        "source": "default/hypr/bindings/utilities.lua:113"
+      },
+      {
+        "id": "tui.absent",
+        "what": "impala / bluetui / wiremix",
+        "value": "not shipped",
+        "unit": "fact",
+        "expr": "no reference anywhere in the repo at this commit",
+        "source": "install/omarchy-base.packages:1-172"
+      }
+    ]
+  },
+  "home": {
+    "layout": "A fresh user's home holds Documents, Downloads, Music, Pictures, Videos and Work (Work/tries inside it). Desktop, Templates and Public are pointed at $HOME and removed. Projects is only a GTK bookmark and is not created. The dotfiles (.bashrc, .config/..., .local/...) come from /etc/skel and are hidden from plain `ls`. Because `ls` is eza -lh, `ls ~` prints a header row (Permissions Size User Date Modified Name, from eza's -h = --header) and then a long listing of the six directories, each with a folder icon, directories first. The exact columns are eza's upstream defaults.",
+    "items": [
+      {
+        "id": "home.dirs",
+        "what": "Visible directories",
+        "value": "Documents Downloads Music Pictures Videos Work",
+        "unit": "list",
+        "expr": "mkdir Downloads/Pictures/Videos; DOCUMENTS/MUSIC created when unnamed; Work from mise-work.sh",
+        "source": "bin/omarchy-provision-user:106-117; install/user/mise-work.sh:2-3"
+      },
+      {
+        "id": "home.removed",
+        "what": "Removed directories",
+        "value": "Templates Public Desktop",
+        "unit": "list",
+        "expr": "xdg dirs set to $HOME, then rmdir",
+        "source": "bin/omarchy-provision-user:107-109,118"
+      },
+      {
+        "id": "home.bookmarks",
+        "what": "Files sidebar bookmarks",
+        "value": "Downloads Projects Pictures Videos",
+        "unit": "list",
+        "expr": "Projects is bookmarked but never created",
+        "source": "bin/omarchy-provision-user:120-123"
+      },
+      {
+        "id": "home.tries",
+        "what": "try experiments dir",
+        "value": "~/Work/tries",
+        "unit": "path",
+        "expr": "",
+        "source": "install/user/mise-work.sh:3; default/bash/init:16"
+      },
+      {
+        "id": "home.skel",
+        "what": "Dotfiles from /etc/skel",
+        "value": ".bashrc; .config/** (alacritty btop foot ghostty git herdr hypr kitty lazygit omarchy starship.toml tmux ...); .local/state/omarchy/...",
+        "unit": "list",
+        "expr": "config/** -> /etc/skel/.config/**",
+        "source": "docs/file-layout.md:88-98,124-128,149; config/"
+      },
+      {
+        "id": "home.ls",
+        "what": "`ls ~` rendering",
+        "value": "eza -lh --group-directories-first --icons=auto",
+        "unit": "alias",
+        "expr": "long format with header row (-h is --header in eza); hidden files need lsa",
+        "source": "default/bash/aliases:3-4"
+      }
+    ]
+  },
+  "notes": [
+    "Runtime: `omarchy version` prints pacman's version for the omarchy package. The repo's version file reads 4.0.0.alpha (version:1), but the packaged string (pkgrel etc.) cannot be read from the repo. A demo could show '4.0.0.alpha'.",
+    "Runtime: fastfetch module values (host model, CPU name and cores, GPU, display resolution, disk 'used / total (percent) - fs', memory, swap, kernel, WM 'Hyprland (Wayland)', DE, terminal 'foot', packages count, wmtheme, terminal font 'JetBrainsMono Nerd Font (9pt)') use fastfetch's own upstream formats. The config sets only keys, colours and the GPU format. The separator between key and value is fastfetch's default; the config does not set display.separator.",
+    "Runtime: the theme swatch row emits \\e[38m before the first dot. That is an incomplete extended-colour SGR, so how the first dot is coloured depends on foot's parser. The other seven dots are white, cyan, magenta, blue, yellow, green and red (SGR 37..31) (etc/fastfetch/config.jsonc:122).",
+    "Runtime: the 'Dev branch' row (omarchy-version-branch) exits 1 on a packaged install (bin/omarchy-version-branch:9), so fastfetch's command module prints nothing for it. Whether the key still shows is fastfetch's behaviour, not specified here.",
+    "Runtime: About's sheen animation (bin/omarchy-branding-about-animation) repaints logo cells in frames. Its timing constants live in that file and were not extracted here.",
+    "Upstream: Starship's default directory style (applied outside a repo root), add_newline behaviour on the very first prompt, and the exact eza column layout are upstream defaults, not set in this repo.",
+    "Upstream: LazyVim's dashboard (header art, entries such as Find File / New File / Recent Files / Config / Restore Session / Lazy Extras / Lazy / Quit and their keys) is a LazyVim/snacks.nvim default. omarchy-nvim may override it. Neither ships in this repo, so the spec makes no claim about it.",
+    "Interactive: `omarchy theme switcher`, `omarchy background`, `omarchy menu`, `omarchy pkg install` and `omarchy debug` open overlays or gum/fzf pickers rather than printing text. A demo should map them to the desktop overlay or a canned picker.",
+    "Dispatcher subtlety: `omarchy menu --help` gets the dispatcher's generic command help (bin/omarchy:1039-1055). Only `omarchy menu help` reaches the script's own usage block (bin/omarchy-menu:32-46).",
+    "Dispatcher subtlety: `omarchy theme set` with no name prints the dispatcher's command help, because args are required (bin/omarchy:1058-1070). The script's own 'Usage: omarchy-theme-set <theme-name>' appears only when run directly as omarchy-theme-set.",
+    "omarchy update writes its whole session to /tmp/omarchy-update.log via script(1) (bin/omarchy-update:56-59). Inside the gum box, bullets are '• ' and the border is gum's 'normal' style (bin/omarchy-update-confirm:5-11).",
+    "Name clash: 'Starship' is both the prompt (config/starship.toml) and a theme (themes/starship). The theme uses the aether template for Neovim.",
+    "Upstream: in eza, -h means --header, so every `ls` begins with a column header row. -l without --no-user shows permissions, size, user, date and name. Column set and date format are eza defaults (default/bash/aliases:3)."
+  ]
+}

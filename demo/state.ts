@@ -3,12 +3,15 @@ import { HOME, lookup, pretty, resolve } from "@/lib/fs";
 import { insert, neighbor, rectsOf, remove, swapIds, toggleSplit, type Dir, type Node, type Rect } from "@/lib/layout";
 import { prompt, run, type Line } from "@/lib/shell";
 import { backgroundIndex, backgroundsOf } from "@/lib/backgrounds";
+import { openAt } from "./menu-state";
+import { openPicker } from "./picker-state";
 import type { ThemeSlug } from "@/lib/themes";
 
 export const WORKSPACES = 9;
 export const BAR_WORKSPACES = 5;
 
-export type TermData = { kind: "terminal"; lines: Line[]; input: string; cwd: string; history: string[]; cursor: number | null };
+/** `code` is the last command's exit status, which the prompt shows. */
+export type TermData = { kind: "terminal"; lines: Line[]; input: string; cwd: string; history: string[]; cursor: number | null; code: number };
 export type EditorMode = "normal" | "insert" | "command";
 export type EditorData = { kind: "editor"; path: string; text: string; mode: EditorMode; cmd: string; dirty: boolean; caret: number };
 export type GitData = { kind: "git"; sel: number };
@@ -162,18 +165,11 @@ export function initialState(theme: ThemeSlug): State {
   };
 }
 
-const WELCOME: Line[] = [
-  [
-    { t: "Welcome to the Omarchui demo. Type ", c: "muted" },
-    { t: "help", c: "accent" },
-    { t: " to see what works.", c: "muted" },
-  ],
-];
-
 export function newData(app: AppKind, file?: string): AppData {
   switch (app) {
     case "terminal":
-      return { kind: "terminal", lines: WELCOME, input: "", cwd: HOME, history: [], cursor: null };
+      // Omarchy's shell prints nothing before the first prompt. default/bashrc:1-16.
+      return { kind: "terminal", lines: [], input: "", cwd: HOME, history: [], cursor: null, code: 0 };
     case "editor": {
       const path = file ?? resolve(HOME, "~/.config/hypr/looknfeel.lua");
       const node = lookup(path);
@@ -316,8 +312,8 @@ export function reducer(s: State, a: Action): State {
       const id = `w${s.seq}`;
       let data = newData(a.app, a.file);
       if (a.run && data.kind === "terminal") {
-        const res = run(a.run, { cwd: data.cwd, theme: s.theme, history: [], now: a.now });
-        data = { ...data, lines: [...data.lines, [...prompt(data.cwd), { t: a.run }], ...res.out], history: [a.run] };
+        const res = run(a.run, { ...shellCtx(s, data.cwd), history: [], now: a.now });
+        data = { ...data, lines: [...data.lines, ...echo(data, a.run), ...res.out], history: [a.run], code: res.code };
       }
       const win: Win = { id, app: a.app, ws: s.ws, data, ...(FLOATS.has(a.app) ? { float: { ...FLOAT_SIZE, dx: 0, dy: 0 } } : {}) };
       return {
@@ -469,15 +465,15 @@ export function reducer(s: State, a: Action): State {
       const d = win.data;
       const input = d.input;
       const history = input.trim() ? [...d.history, input] : d.history;
-      const res = run(input, { cwd: d.cwd, theme: s.theme, history, now: a.now });
-      const echo: Line = [...prompt(d.cwd), { t: input }];
+      const res = run(input, { ...shellCtx(s, d.cwd), history, now: a.now });
       let next = updateData(s, a.id, "terminal", (t) => ({
         ...t,
-        lines: res.clear ? [] : [...t.lines, echo, ...res.out].slice(-400),
+        lines: res.clear ? [] : [...t.lines, ...echo(t, input), ...res.out].slice(-400),
         cwd: res.cwd,
         input: "",
         history,
         cursor: null,
+        code: res.code,
       }));
       if (res.exit) next = removeWindow(next, a.id);
       return applyShellCommands(next, res.commands, a.now);
@@ -524,9 +520,33 @@ export function reducer(s: State, a: Action): State {
   }
 }
 
+function shellCtx(s: State, cwd: string) {
+  return { cwd, theme: s.theme, bg: backgroundIndex(s.theme, s.bg[s.theme]), idle: s.idle };
+}
+
+/**
+ * The lines a submitted command leaves: its prompt and what was typed. Starship's
+ * add_newline puts a blank line above every prompt but the first (config/starship.toml:1).
+ */
+export function echo(t: Pick<TermData, "lines" | "cwd" | "code">, input: string): Line[] {
+  return [...(t.lines.length ? [[]] : []), [...prompt(t.cwd, t.code), { t: input }]];
+}
+
 function applyShellCommands(s: State, cmds: ReturnType<typeof run>["commands"], now: Date): State {
   return cmds.reduce<State>((acc, c) => {
     switch (c.type) {
+      case "menu":
+        return reducer(acc, { type: "overlay", overlay: openAt("omarchy", c.path ?? [], acc) });
+      case "picker":
+        return reducer(acc, { type: "picker", picker: openPicker(c.mode, acc) });
+      case "toggle":
+        return reducer(acc, { type: "toggle", what: c.what });
+      case "bg-next":
+      case "screenshot":
+      case "shutdown":
+        return reducer(acc, { type: c.type });
+      case "restart":
+        return reducer(acc, { type: "restart", theme: acc.theme });
       case "theme":
         return reducer(acc, { type: "theme", slug: c.slug });
       case "view":

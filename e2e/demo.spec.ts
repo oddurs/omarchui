@@ -18,7 +18,7 @@ test("unlock, open a terminal and change the theme from the shell", async ({ pag
   await page.keyboard.press("Alt+Enter");
   const input = page.getByRole("textbox", { name: "Terminal input" });
   await expect(input).toBeFocused();
-  await input.fill("omarchy-theme-set gruvbox");
+  await input.fill("omarchy theme set gruvbox");
   await input.press("Enter");
   await expect.poll(() => accent(page)).toBe(THEMES.gruvbox.accent);
 });
