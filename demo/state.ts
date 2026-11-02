@@ -2,6 +2,7 @@ import { APP_TITLES, VIEWS, type AppKind, type Toggle, type View } from "@/lib/c
 import { HOME, lookup, pretty, resolve } from "@/lib/fs";
 import { dwindle, neighbor, type Dir } from "@/lib/layout";
 import { prompt, run, type Line } from "@/lib/shell";
+import { backgroundIndex, backgroundsOf } from "@/lib/backgrounds";
 import type { ThemeSlug } from "@/lib/themes";
 
 export const WORKSPACES = 9;
@@ -18,6 +19,8 @@ export type AppData = TermData | EditorData | GitData | KeysData | MonitorData;
 export type Win = { id: string; app: AppKind; ws: number; data: AppData };
 export type Toast = { id: number; who: string; title: string; body: string; critical: boolean };
 export type Overlay = { root: "launcher" | "omarchy"; path: string[]; q: string; sel: number } | null;
+/** Omarchy's image picker, open on themes or on the current theme's backgrounds. */
+export type Picker = { mode: "theme" | "background"; sel: number; q: string } | null;
 export type Osd = { kind: "volume" | "brightness"; value: number; muted: boolean; key: number } | null;
 export type Metrics = { cores: number[]; mem: number; net: number[] };
 
@@ -32,6 +35,7 @@ export type State = {
   fullscreen: Record<number, string | null>;
   flip: Record<number, boolean>;
   overlay: Overlay;
+  picker: Picker;
   toasts: Toast[];
   osd: Osd;
   volume: number;
@@ -40,7 +44,8 @@ export type State = {
   night: boolean;
   dnd: boolean;
   idle: boolean;
-  wallpaper: number;
+  /** The background last shown in each theme, by index; Omarchy remembers one per theme. */
+  bg: Partial<Record<ThemeSlug, number>>;
   flash: number;
   aspect: number;
   metrics: Metrics;
@@ -65,6 +70,8 @@ export type Action =
   | { type: "fullscreen" }
   | { type: "flip" }
   | { type: "overlay"; overlay: Overlay }
+  | { type: "picker"; picker: Picker }
+  | { type: "background"; index: number }
   | { type: "notify"; who: string; title: string; body: string; critical?: boolean }
   | { type: "dismiss"; id: number }
   | { type: "volume"; delta: number }
@@ -72,7 +79,7 @@ export type Action =
   | { type: "brightness"; delta: number }
   | { type: "osd-done"; key: number }
   | { type: "toggle"; what: Toggle }
-  | { type: "wallpaper" }
+  | { type: "bg-next" }
   | { type: "screenshot" }
   | { type: "aspect"; value: number }
   | { type: "metrics"; metrics: Metrics }
@@ -83,8 +90,6 @@ export type Action =
   | { type: "editor-command"; id: string }
   | { type: "git-sel"; id: string; sel: number }
   | { type: "keys-q"; id: string; q: string };
-
-export const WALLPAPERS = 4;
 
 export function initialMetrics(): Metrics {
   return { cores: [12, 28, 9, 41, 17, 33, 6, 22], mem: 41, net: Array.from({ length: 24 }, (_, i) => 20 + ((i * 37) % 50)) };
@@ -102,6 +107,7 @@ export function initialState(theme: ThemeSlug): State {
     fullscreen: {},
     flip: {},
     overlay: null,
+    picker: null,
     toasts: [],
     osd: null,
     volume: 64,
@@ -110,7 +116,7 @@ export function initialState(theme: ThemeSlug): State {
     night: false,
     dnd: false,
     idle: true,
-    wallpaper: 0,
+    bg: {},
     flash: 0,
     aspect: 16 / 9,
     metrics: initialMetrics(),
@@ -211,17 +217,26 @@ export function reducer(s: State, a: Action): State {
             },
           );
     case "lock":
-      return { ...s, phase: "lock", overlay: null };
+      return { ...s, phase: "lock", overlay: null, picker: null };
     case "restart":
-      return { ...initialState(a.theme), view: s.view, split: s.split, aspect: s.aspect };
+      return { ...initialState(a.theme), view: s.view, split: s.split, aspect: s.aspect, bg: s.bg };
     case "view":
       return { ...s, view: a.view };
     case "view-cycle":
       return { ...s, view: VIEWS[(VIEWS.indexOf(s.view) + 1) % VIEWS.length] ?? "tuned" };
     case "split":
       return { ...s, split: clamp(a.value, 0.04, 0.96) };
-    case "theme":
-      return { ...s, theme: a.slug };
+    // Choosing the theme already in use moves to its next background; another theme returns to
+    // the background last used in it. omarchy-theme-set:163-196.
+    case "theme": {
+      if (a.slug !== s.theme) return { ...s, theme: a.slug, picker: null };
+      const n = backgroundsOf(a.slug).length;
+      return { ...s, picker: null, bg: { ...s.bg, [a.slug]: (backgroundIndex(a.slug, s.bg[a.slug]) + 1) % n } };
+    }
+    case "background":
+      return { ...s, picker: null, bg: { ...s.bg, [s.theme]: a.index } };
+    case "picker":
+      return { ...s, picker: a.picker, overlay: a.picker ? null : s.overlay };
     case "open": {
       const id = `w${s.seq}`;
       let data = newData(a.app, a.file);
@@ -318,8 +333,9 @@ export function reducer(s: State, a: Action): State {
       });
       return { ...shown, [a.what]: on };
     }
-    case "wallpaper":
-      return { ...s, wallpaper: (s.wallpaper + 1) % WALLPAPERS };
+    // omarchy-theme-bg-next: the next background of the current theme, wrapping. bin/omarchy-theme-bg-next:19-48.
+    case "bg-next":
+      return reducer(s, { type: "background", index: (backgroundIndex(s.theme, s.bg[s.theme]) + 1) % backgroundsOf(s.theme).length });
     case "screenshot":
       return toast(
         { ...s, flash: s.flash + 1, overlay: null },
