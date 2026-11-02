@@ -1,6 +1,5 @@
 import { APP_TITLES, type AppKind, type Command, type Toggle } from "./commands";
 import { REF_BINDINGS, REF_MENU, type RefMenu } from "./reference.generated";
-import { SLUGS, THEMES } from "./themes";
 
 export type MenuItem = {
   id: string;
@@ -57,7 +56,8 @@ const TOP_GLYPHS: Record<string, string> = {
 const ACTIONS: Record<string, Command> = {
   apps: { type: "launcher" },
   "learn.keybindings": { type: "open", app: "keys" },
-  "appearance.background": { type: "wallpaper" },
+  "appearance.theme": { type: "picker", mode: "theme" },
+  "appearance.background": { type: "picker", mode: "background" },
   "trigger.capture.screenshot": { type: "screenshot" },
   about: { type: "open", app: "terminal", run: "fastfetch" },
   "system.lock": { type: "lock" },
@@ -117,14 +117,6 @@ function commandFor(n: RefMenu): Command | undefined {
   };
 }
 
-const THEME_ITEMS: MenuItem[] = SLUGS.map((s) => ({
-  id: s,
-  glyph: THEMES[s].mode === "dark" ? "●" : "○",
-  name: THEMES[s].name,
-  desc: THEMES[s].mode,
-  command: { type: "theme", slug: s },
-}));
-
 /** Omarchui's own entry, added under Appearance and labelled as not Omarchy's. */
 const BEFORE_AFTER: MenuItem = {
   id: "omarchui.view",
@@ -152,7 +144,6 @@ function toItem(n: RefMenu, depth: number, state: MenuState): MenuItem | null {
     command: commandFor(n),
     src: n.src,
   };
-  if (n.id === "appearance.theme") return { ...item, desc: `${THEME_ITEMS.length} themes`, hint: "Super Ctrl T", command: undefined, children: THEME_ITEMS };
   if (n.id === "appearance" && kids) return { ...item, children: [...kids, BEFORE_AFTER] };
   return kids?.length ? { ...item, children: kids } : item;
 }

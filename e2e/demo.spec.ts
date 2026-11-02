@@ -66,15 +66,27 @@ test("before/after: the dock and Alt+Ctrl+B cycle stock, split and tuned", async
   await expect(page.locator("[data-mode=stock]")).toHaveCount(1);
 });
 
-test("the Omarchy menu previews themes and the demo passes axe", async ({ page }) => {
+test("the theme picker changes nothing until Enter, then applies the theme, and the demo passes axe", async ({ page }) => {
   await unlock(page);
   const before = await accent(page);
   await page.keyboard.press("Alt+Control+t");
-  await expect(page.getByRole("listbox", { name: "Theme" })).toBeVisible();
-  await page.keyboard.press("ArrowDown");
+  const picker = page.getByRole("listbox", { name: "Themes" });
+  await expect(picker).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  // Omarchy shows only the preview image while you move. ImagePicker.qml:196-205.
+  expect(await accent(page)).toBe(before);
+  await page.keyboard.press("Enter");
+  await expect(picker).toHaveCount(0);
   await expect.poll(() => accent(page)).not.toBe(before);
-  await page.keyboard.press("Escape");
-  await expect.poll(() => accent(page)).toBe(before);
+  // Check contrast on the settled theme, not on colours halfway through their transition.
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((a) => a.effect?.getTiming().iterations !== Infinity)
+        .map((a) => a.finished.catch(() => undefined)),
+    ),
+  );
   const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
 });

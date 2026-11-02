@@ -215,4 +215,31 @@ test.describe("the stock view matches Omarchy's source", () => {
     expect(Math.abs(f.x + f.width / 2 - 720), "lock.field.position centre").toBeLessThanOrEqual(1);
     await expect(screen.getByText(/^\d{1,2}:\d{2}/), "lock.clock absent (LockView.qml:105-263)").toBeHidden();
   });
+
+  test("background and picker", async ({ page }) => {
+    const screen = await stock(page);
+    // The theme's first background, scaled to cover. omarchy-theme-set:186-196, BackgroundMedia.qml:38-47.
+    const wall = screen.locator("[data-wallpaper] > div").last();
+    expect(await css(wall, "background-image"), "theme.first-run: 0-liftoff.webp").toContain("0-liftoff.webp");
+    expect(await css(wall, "background-size"), "bg.render.fill PreserveAspectCrop").toBe("cover");
+
+    // Super+Ctrl+W opens the background picker on the background in use. utilities.lua:14-15.
+    await page.keyboard.press("Alt+Control+w");
+    const picker = screen.getByRole("listbox", { name: "Backgrounds" });
+    await expect(picker).toBeFocused();
+    const options = picker.getByRole("option");
+    await expect(options, "tokyo-night ships 9 backgrounds").toHaveCount(9);
+    const [card, slice, next] = [await box(options.nth(0)), await box(options.nth(1)), await box(options.nth(2))];
+    expect([card.width, card.height], "picker.layout card 768x475 (ImagePicker.qml:58-59)").toEqual([768, 475]);
+    expect([slice.width, slice.height], "picker.layout slice 108x432 (ImagePicker.qml:60-61)").toEqual([108, 432]);
+    expect(next.x - slice.x, "slice step = 108 + spacing -30 (ImagePicker.qml:62)").toBe(78);
+    expect(slice.x - (card.x + card.width), "first slice overlaps the card by 30").toBe(-30);
+
+    // Enter on another background reveals it; the picker closes.
+    await page.keyboard.press("ArrowRight");
+    await page.keyboard.press("Enter");
+    await expect(picker).toHaveCount(0);
+    // The swap waits for the image to decode, as Omarchy's does; that includes fetching it.
+    await expect.poll(() => css(screen.locator("[data-wallpaper] > div").last(), "background-image"), { timeout: 30_000 }).toContain("1-winding-road.webp");
+  });
 });

@@ -2,7 +2,6 @@
 
 import * as stylex from "@stylexjs/stylex";
 import { useEffect, useLayoutEffect, useRef, useState, type Dispatch, type ReactNode } from "react";
-import { face, typo } from "@/design/primitives/typography";
 import { Bar, type BarModule } from "@/design/shell/Bar";
 import { Osd } from "@/design/shell/Osd";
 import { Toast } from "@/design/shell/Toast";
@@ -23,8 +22,12 @@ import { Keys } from "./apps/Keys";
 import { Monitor } from "./apps/Monitor";
 import { Terminal } from "./apps/Terminal";
 import type { AppProps } from "./apps/types";
+import { backgroundSrc } from "@/lib/background-images";
+import { backgroundIndex } from "@/lib/backgrounds";
 import { LockScreen } from "./LockScreen";
 import { MenuOverlay } from "./MenuOverlay";
+import { PickerOverlay } from "./PickerOverlay";
+import { Wallpaper } from "./Wallpaper";
 import { BAR_WORKSPACES, windowsOn, windowTitle, WORKSPACES, type Action, type State, type Win } from "./state";
 
 const popIn = stylex.keyframes({ from: { transform: "scale(0.97)" }, to: { transform: "scale(1)" } });
@@ -43,19 +46,6 @@ const s = stylex.create({
     fontFamily: font.mono,
     color: color["--text"],
     backgroundColor: color["--wall"],
-  },
-  wp0: {
-    backgroundImage: `radial-gradient(110% 90% at 85% -10%, color-mix(in oklab, ${color["--accent"]} 14%, ${color["--wall"]}), transparent 60%), radial-gradient(80% 70% at 0% 110%, color-mix(in oklab, ${color["--magenta"]} 10%, ${color["--wall"]}), transparent 60%)`,
-  },
-  wp1: {
-    backgroundImage: `repeating-linear-gradient(135deg, transparent 0 22px, color-mix(in oklab, ${color["--line"]} 60%, transparent) 22px 23px)`,
-  },
-  wp2: {
-    backgroundImage: `radial-gradient(${color["--line-2"]} 1px, transparent 1px)`,
-    backgroundSize: "24px 24px",
-  },
-  wp3: {
-    backgroundImage: `linear-gradient(180deg, ${color["--surface"]}, ${color["--wall"]} 70%)`,
   },
   area: { position: "relative", flex: 1, minHeight: 0, overflow: "hidden" },
   ws: {
@@ -77,18 +67,6 @@ const s = stylex.create({
   slotFull: { zIndex: layer.fullscreen, padding: 0 },
   hidden: { visibility: "hidden" },
   pop: { animationName: popIn, animationDuration: motion.move, animationTimingFunction: motion.ease },
-  empty: {
-    position: "absolute",
-    inset: 0,
-    display: "grid",
-    placeItems: "center",
-    alignContent: "center",
-    gap: "8px",
-    textAlign: "center",
-    color: color["--text-3"],
-    pointerEvents: "none",
-  },
-  emptyNum: { color: color["--line-2"] },
   toasts: {
     position: "absolute",
     top: chrome.toastInset,
@@ -154,8 +132,6 @@ const pos = stylex.create({
   shift: (n: number) => ({ transform: `translateX(${n * 100}%)` }),
   frozen: (top: number) => ({ alignItems: "flex-start", paddingTop: `${top}px` }),
 });
-
-const WALLPAPER = [s.wp0, s.wp1, s.wp2, s.wp3];
 
 type Props = {
   state: State;
@@ -295,7 +271,8 @@ export function Screen({ state, dispatch, exec, mode, interactive, id }: Props) 
   };
 
   return (
-    <div {...stylex.props(s.screen, WALLPAPER[state.wallpaper], mode === "stock" && stock)} data-mode={mode} data-screen={id}>
+    <div {...stylex.props(s.screen, mode === "stock" && stock)} data-mode={mode} data-screen={id}>
+      <Wallpaper src={backgroundSrc(state.theme, backgroundIndex(state.theme, state.bg[state.theme]))} />
       <Bar
         workspaces={Array.from({ length: shown }, (_, i) => ({ n: i + 1, busy: busy.has(i + 1), active: i + 1 === state.ws }))}
         clock={{ day: clock.day, time: clock.time }}
@@ -315,12 +292,6 @@ export function Screen({ state, dispatch, exec, mode, interactive, id }: Props) 
           const full = state.fullscreen[n] ?? null;
           return (
             <div key={n} aria-hidden={n !== state.ws || undefined} inert={n !== state.ws || undefined} {...stylex.props(s.ws, pos.shift(n - state.ws))}>
-              {wins.length === 0 && (
-                <div {...stylex.props(typo.small, face.mono, s.empty)}>
-                  <span {...stylex.props(typo.display, s.emptyNum)}>{n}</span>
-                  <span>Empty workspace. Alt+Return opens a terminal, Alt+Space the Omarchy menu.</span>
-                </div>
-              )}
               <div {...stylex.props(s.tiles)}>{wins.map((w) => renderWindow(w, rects, full))}</div>
             </div>
           );
@@ -361,6 +332,9 @@ export function Screen({ state, dispatch, exec, mode, interactive, id }: Props) 
         >
           <MenuOverlay overlay={state.overlay} state={state} interactive={interactive} mode={mode} listId={`${id}-menu`} dispatch={dispatch} exec={exec} />
         </MenuLayer>
+      )}
+      {state.picker && state.phase === "desktop" && (
+        <PickerOverlay picker={state.picker} state={state} interactive={interactive} listId={`${id}-picker`} dispatch={dispatch} exec={exec} />
       )}
       {state.night && <div aria-hidden {...stylex.props(s.night)} />}
       {state.flash > 0 && <div key={state.flash} aria-hidden {...stylex.props(s.flash)} />}

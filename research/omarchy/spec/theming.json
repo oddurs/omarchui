@@ -1,0 +1,2233 @@
+{
+  "commit": "175e63b62dc3201866722e45ee9a60714cde16fa",
+  "part": "theming",
+  "assumptions": {
+    "paths": "$OMARCHY_PATH is the install root (/usr/share/omarchy on an installed system, docs/theming.md:3-4). Stock themes live in themes/<slug>/.",
+    "owe": "OWE is an external package (install/omarchy-base.packages:112; migrations/1789764927.sh:3), not in this repo. What it does (video decode, intro playback, its own fades) is known only from how Omarchy calls it and from docs/theming.md:13.",
+    "animations": "Durations assume Hyprland animations are on. With them off, every shell duration is 0 and intros do not play (shell/Commons/Style.qml:360-367; bin/omarchy-theme-bg-boot-intro:81-83, 98-101)."
+  },
+  "switching": {
+    "layout": "omarchy-theme-set <name> takes a lock, stages the theme into a fresh next-theme directory, chooses the new background while the old theme still exists, renders templates into the staging directory, then replaces current/theme (a real directory, moved, not a symlink) and writes theme.name. The background link current/background is a symlink to one file. The palette is handed to the shell as base64 colors.toml and shell.toml and applied in the same frame as the background reveal starts. There is no flash: a still-to-still change is a slanted-band reveal (840ms OutCubic) of the new wallpaper over the old one, and the new palette lands when that reveal begins. A change with an intro video holds the old frame on a cover, plays the clip under it via OWE, then crossfades the cover away over 420ms OutCubic and applies the palette at that moment. Terminals, tmux, btop, helix etc. and the Hyprland reload run in parallel right after; other apps retint later in the background.",
+    "items": [
+      {
+        "id": "theme.paths",
+        "what": "State paths used by a switch",
+        "value": "~/.local/state/omarchy/current/{theme,theme.name,next-theme,background}, ~/.local/state/omarchy/theme-backgrounds/<slug>",
+        "unit": "",
+        "expr": "CURRENT_THEME_PATH, CURRENT_THEME_NAME_PATH, NEXT_THEME_PATH, CURRENT_BACKGROUND_LINK, THEME_BACKGROUND_STATE_PATH",
+        "source": "bin/omarchy-theme-set:12-16"
+      },
+      {
+        "id": "theme.sources",
+        "what": "Theme sources: stock themes under $OMARCHY_PATH/themes, user themes under ~/.config/omarchy/themes; stock copied first, user overlaid on top",
+        "value": "",
+        "unit": "",
+        "expr": "cp -r $OMARCHY_THEMES_PATH/$THEME_NAME/* $NEXT_THEME_PATH/; then user copy (filtered if it has .git)",
+        "source": "bin/omarchy-theme-set:22-23, 414-422"
+      },
+      {
+        "id": "theme.name.normalise",
+        "what": "Argument is display name or slug; tags stripped, lowercased, spaces to hyphens",
+        "value": "\"Tokyo Night\" -> tokyo-night",
+        "unit": "",
+        "expr": "sed -E 's/<[^>]+>//g' | tr upper lower | tr ' ' '-'",
+        "source": "bin/omarchy-theme-set:379"
+      },
+      {
+        "id": "theme.display-name",
+        "what": "Display name is the slug with each hyphen-separated word capitalised",
+        "value": "tokyo-night -> Tokyo Night",
+        "unit": "",
+        "expr": "sed -E 's/(^|-)([a-z])/\\1\\u\\2/g; s/-/ /g'",
+        "source": "bin/omarchy-theme-current:9; bin/omarchy-theme-list:9"
+      },
+      {
+        "id": "theme.lock",
+        "what": "Theme switches and background sets serialise on one flock",
+        "value": "${XDG_RUNTIME_DIR:-/tmp}/omarchy-theme-set.lock",
+        "unit": "",
+        "expr": "exec 9>...; flock 9",
+        "source": "bin/omarchy-theme-set:18, 398-399; bin/omarchy-theme-bg-set:21-22"
+      },
+      {
+        "id": "theme.wait-previous-intro",
+        "what": "A switch first waits (max 3s, 20ms polls) for a previous cover/reveal to finish",
+        "value": "3",
+        "unit": "s",
+        "expr": "wait_for_theme_intro pending themeIntroBusy",
+        "source": "bin/omarchy-theme-set:78-85, 401-405; shell/shell.qml:1776-1778"
+      },
+      {
+        "id": "theme.remember-bg",
+        "what": "Before switching, the outgoing theme's current background path is saved per theme",
+        "value": "~/.local/state/omarchy/theme-backgrounds/<previous-slug>",
+        "unit": "",
+        "expr": "printf '%s\\n' $(readlink -f current/background) > state_file",
+        "source": "bin/omarchy-theme-set:128-137, 407-408"
+      },
+      {
+        "id": "theme.bg-choice.other-theme",
+        "what": "Switching to a different theme: use that theme's remembered background if the file still exists, else the first in sorted order",
+        "value": "remembered ?? backgrounds[0]",
+        "unit": "",
+        "expr": "choose_theme_background",
+        "source": "bin/omarchy-theme-set:186-196"
+      },
+      {
+        "id": "theme.bg-choice.same-theme",
+        "what": "Reselecting the current theme cycles to the next background (wraps); if the current one is not in the list, the first",
+        "value": "backgrounds[(index+1) % n]",
+        "unit": "",
+        "expr": "PREVIOUS_THEME_NAME == THEME_NAME branch",
+        "source": "bin/omarchy-theme-set:163-184, 443-444"
+      },
+      {
+        "id": "theme.bg-list",
+        "what": "Background candidates: files (not dirs, so not intros/) at depth 1 of ~/.config/omarchy/backgrounds/<slug>/ and <theme>/backgrounds/, any of jpg jpeg png gif bmp webp mp4 m4v mov webm mkv avi, case-insensitive, sorted together by full path",
+        "value": "",
+        "unit": "",
+        "expr": "find -L user/ theme/backgrounds/ -maxdepth 1 -type f \\( -iname ... \\) -print0 | sort -z",
+        "source": "bin/omarchy-theme-set:154-159"
+      },
+      {
+        "id": "theme.first-run",
+        "what": "Default theme seeded on install when no theme.name exists",
+        "value": "Tokyo Night (so first background 0-liftoff.webp)",
+        "unit": "",
+        "expr": "omarchy-theme-set \"Tokyo Night\"",
+        "source": "install/user/theme.sh:4-11"
+      },
+      {
+        "id": "theme.intro-decision",
+        "what": "An intro plays on a theme switch when the theme or background changes, the background-intros-off toggle is absent, Hyprland animations are enabled, and backgrounds/intros/<stem>.<videoext> exists next to the chosen still",
+        "value": "",
+        "unit": "",
+        "expr": "omarchy-theme-bg-boot-intro --resolve-only $STAGED_THEME_BACKGROUND",
+        "source": "bin/omarchy-theme-set:445-449; bin/omarchy-theme-bg-boot-intro:15-38"
+      },
+      {
+        "id": "theme.cover",
+        "what": "With an intro (or one already playing), the current frame is snapshotted and shown as a cover; OWE pre-decodes the clip while templates render",
+        "value": "",
+        "unit": "",
+        "expr": "THEME_BACKGROUND_COVER=true; snapshot_current_background; owe intro-prepare; prepareThemeIntro",
+        "source": "bin/omarchy-theme-set:453-461, 106-119"
+      },
+      {
+        "id": "theme.prepare-still",
+        "what": "Without an intro (still to still), the next still is snapshotted and handed to the shell to decode ahead while templates render",
+        "value": "",
+        "unit": "",
+        "expr": "shell_ipc background prepare $PREPARED_BACKGROUND_SNAPSHOT",
+        "source": "bin/omarchy-theme-set:462-472; shell/plugins/background/Background.qml:220-227"
+      },
+      {
+        "id": "theme.templates",
+        "what": "Templates: every default/themed/*.tpl (and user ~/.config/omarchy/themed/*.tpl first) is rendered into next-theme unless the theme already ships that file; only when colors.toml exists. Then shell.<section>.toml overrides are merged and glass settings applied",
+        "value": "21 stock templates",
+        "unit": "",
+        "expr": "omarchy-theme-set-templates",
+        "source": "bin/omarchy-theme-set:480; bin/omarchy-theme-set-templates:6-7, 319-332, 428-454"
+      },
+      {
+        "id": "theme.templates.tokens",
+        "what": "Template tokens: {{ key }}, {{ key_strip }} (no #), {{ key_rgb }} (r,g,b), {{ mix[_strip|_rgb] a b pct }}, {{ hypr_gradient|gradient_start|shell_gradient key [fallback] }}",
+        "value": "",
+        "unit": "",
+        "expr": "add_template_value, add_mix_value, add_gradient_function_value",
+        "source": "bin/omarchy-theme-set-templates:162-217"
+      },
+      {
+        "id": "theme.swap",
+        "what": "Staging dir replaces current/theme by rm + mv; theme.name written; a generation token guards deferred retints",
+        "value": "",
+        "unit": "",
+        "expr": "rm -rf current/theme; mv next-theme current/theme",
+        "source": "bin/omarchy-theme-set:488-501"
+      },
+      {
+        "id": "theme.palette-handoff",
+        "what": "colors.toml and shell.toml are base64'd and passed to the shell with the background transition, so the palette changes with the reveal",
+        "value": "",
+        "unit": "",
+        "expr": "themeTransition old new final colors shell",
+        "source": "bin/omarchy-theme-set:505-506, 256-270; shell/plugins/background/Background.qml:170-174, 336-338"
+      },
+      {
+        "id": "theme.palette-timing.still",
+        "what": "Still-to-still: palette applies when the reveal animation starts (after every screen decoded the new frame, or a 250ms grace), with a 300ms fallback if no reveal starts",
+        "value": "0 / 250 / 300",
+        "unit": "ms",
+        "expr": "beginReveal() -> applyPendingTheme(); revealGraceTimer 250; pendingThemeFallbackTimer 300",
+        "source": "shell/plugins/background/Background.qml:195-204, 354-366"
+      },
+      {
+        "id": "theme.palette-timing.intro",
+        "what": "With an intro: palette applies when the cover starts to fade, i.e. when OWE reports a moving video frame, or at the 10s fallback",
+        "value": "",
+        "unit": "",
+        "expr": "revealTheme(): loadColors/loadShell then revealDelayFrames = 2",
+        "source": "shell/services/BackgroundIntro.qml:103-126, 226-230, 245-259"
+      },
+      {
+        "id": "theme.no-background",
+        "what": "If the theme has no backgrounds, a notification is shown and only the palette is applied",
+        "value": "theme.noBackground i18n, 2000ms",
+        "unit": "ms",
+        "expr": "omarchy-notification-send ... -t 2000",
+        "source": "bin/omarchy-theme-set:218-224"
+      },
+      {
+        "id": "theme.visible-retint",
+        "what": "Run in parallel immediately after the swap (waited for)",
+        "value": "omarchy-restart-terminal, omarchy-theme-set-foot, omarchy-theme-set-tmux, omarchy-restart-btop, omarchy-restart-opencode, omarchy-restart-helix, omarchy-theme-set-hunk, + omarchy-restart-hyprctl unless an intro plays",
+        "unit": "",
+        "expr": "visible_theme_commands",
+        "source": "bin/omarchy-theme-set:526-534, 608-614"
+      },
+      {
+        "id": "theme.other-retint",
+        "what": "Run later, in parallel, detached when not launched from a terminal; wait for intro reveal first (max 3s)",
+        "value": "gnome (GTK), pi, claude, hermes, t3code, slack, browser, vscode, obsidian, keyboard, fcitx5; then hook theme-set",
+        "unit": "",
+        "expr": "other_theme_commands; apply_other_theme_commands",
+        "source": "bin/omarchy-theme-set:539-551, 558-606, 621-626"
+      },
+      {
+        "id": "theme.hypr-reload-intro",
+        "what": "With an intro, Hyprland reload is deferred until no video plays (a reload pauses video)",
+        "value": "",
+        "unit": "",
+        "expr": "reloadLock -> omarchy-restart-hyprctl",
+        "source": "bin/omarchy-theme-set:608-613; shell/services/BackgroundSwitch.qml:38-40, 168-170, 198-212"
+      },
+      {
+        "id": "theme.bg-cache-warm",
+        "what": "After the reveal, background-picker thumbnails are warmed",
+        "value": "",
+        "unit": "",
+        "expr": "omarchy-theme-bg-cache &",
+        "source": "bin/omarchy-theme-set:567-570"
+      },
+      {
+        "id": "theme.refresh",
+        "what": "omarchy-theme-refresh re-runs the switch with OMARCHY_THEME_SKIP_BACKGROUND=1: no background change, no intro",
+        "value": "",
+        "unit": "",
+        "expr": "OMARCHY_THEME_WAIT=1 OMARCHY_THEME_SKIP_BACKGROUND=1 omarchy-theme-set",
+        "source": "bin/omarchy-theme-refresh:9-11; bin/omarchy-theme-set:512-513"
+      },
+      {
+        "id": "picker.keybinding",
+        "what": "Theme picker keybindings",
+        "value": "SUPER+CTRL+T and SUPER+SHIFT+CTRL+SPACE",
+        "unit": "",
+        "expr": "o.bind(..., \"Theme menu\", { menu = \"theme\" })",
+        "source": "default/hypr/bindings/utilities.lua:16-17; default/hypr/helpers.lua:97-98"
+      },
+      {
+        "id": "picker.menu",
+        "what": "Menu entry Appearance > Theme summons the shell image picker in themes mode",
+        "value": "omarchy-shell shell summon omarchy.image-picker '{\"source\":\"themes\"}'",
+        "unit": "",
+        "expr": "appearance.theme",
+        "source": "default/omarchy/omarchy-menu.jsonc:56; shell/plugins/image-picker/ImagePicker.qml:576-578"
+      },
+      {
+        "id": "picker.desktop-click",
+        "what": "Right-button double-click on the desktop opens the theme picker; left double-click opens the background picker",
+        "value": "",
+        "unit": "",
+        "expr": "onDoubleClicked: RightButton ? openThemeSwitcher() : openSelector()",
+        "source": "shell/plugins/background/Background.qml:587-596"
+      },
+      {
+        "id": "picker.preview-source",
+        "what": "Each theme's picker image is its preview.png (else preview.jpg/.jpeg/.webp/.gif/.bmp/video), else its first sorted background; a user theme without one falls back to the stock theme's",
+        "value": "preview.png",
+        "unit": "",
+        "expr": "find_preview",
+        "source": "bin/omarchy-theme-switcher:23-42, 89-104"
+      },
+      {
+        "id": "picker.thumbnails",
+        "what": "Picker thumbnails: vipsthumbnail to 1536x864 smartcrop centre, JPEG Q82; videos via ffmpegthumbnailer -s 1536. Theme picker uses lazy thumbnails (raw file shown until cached)",
+        "value": "1536x864",
+        "unit": "px",
+        "expr": "vipsthumbnail --size 1536x864 --smartcrop=centre",
+        "source": "bin/omarchy-menu-images:182-188, 228-240; bin/omarchy-theme-switcher:118-124"
+      },
+      {
+        "id": "picker.layout",
+        "what": "Carousel: selected card 768x475, other slices 108x432 skewed by 28px, spacing -30px",
+        "value": "768x475 / 108x432",
+        "unit": "px",
+        "expr": "expandedWidth/Height, sliceWidth/Height, skewOffset, sliceSpacing",
+        "source": "shell/plugins/image-picker/ImagePicker.qml:58-63"
+      },
+      {
+        "id": "picker.preview-is-static",
+        "what": "No live preview: moving the selection only shows the preview image and, after 75ms, asks OWE to pre-decode that theme's remembered intro offscreen. Enter or clicking the selected card runs omarchy-theme-set; Esc cancels; Left/Right/Tab move",
+        "value": "75",
+        "unit": "ms",
+        "expr": "introPrepareTimer; applySelected -> omarchy-theme-set",
+        "source": "shell/plugins/image-picker/ImagePicker.qml:196-205, 324-346, 686-720; bin/omarchy-theme-bg-boot-intro:41-79"
+      }
+    ]
+  },
+  "backgrounds": {
+    "layout": "The wallpaper is drawn by the Omarchy shell (Quickshell), not swaybg/hyprpaper: one Background-layer PanelWindow per screen (namespace omarchy-background) with a still image at fill mode PreserveAspectCrop (scale to cover, centre-cropped). Video wallpapers and intro clips are drawn by an external engine, OWE (package 'owe'), on its own layer; the shell's layer is hidden ('suspended') while OWE shows video. A change between stills is a reveal: the new image appears inside a parallelogram band centred on the screen, slanted (top centre at x = w/2 + 0.09h, bottom centre at x = w/2 - 0.09h), whose half-width grows from 0 to reach = w/2 + 0.18h/2 + 4 over 840ms with OutCubic easing; edges are slightly softened (mask spread 0.02). It is a wipe outward from the centre, not a crossfade. All screens start together once each has decoded the frame (250ms grace). Changes to or from video are instant cuts in the shell (OWE fades its own). Intro covers crossfade out over 420ms OutCubic. All durations go to 0 when Hyprland animations are off. Hyprland's own layer animation is disabled for these layers; the compositor background colour is black.",
+    "items": [
+      {
+        "id": "bg.dirs",
+        "what": "Background locations: the active theme's backgrounds/ (stock: $OMARCHY_PATH/themes/<slug>/backgrounds, copied into ~/.local/state/omarchy/current/theme/backgrounds) plus user extras in ~/.config/omarchy/backgrounds/<slug>/",
+        "value": "",
+        "unit": "",
+        "expr": "THEME_BACKGROUNDS_PATH, USER_BACKGROUNDS_PATH",
+        "source": "bin/omarchy-theme-bg-next:6-9; manual/39-backgrounds.md:3"
+      },
+      {
+        "id": "bg.link",
+        "what": "The active wallpaper is the symlink ~/.local/state/omarchy/current/background",
+        "value": "",
+        "unit": "",
+        "expr": "CURRENT_BACKGROUND_LINK",
+        "source": "bin/omarchy-theme-bg-set:13; docs/theming.md:9"
+      },
+      {
+        "id": "bg.order.next",
+        "what": "Cycling order (bg-next and theme reselect): user and theme files merged and sorted by full path with sort -z; user extras (~/.config/...) therefore sort before theme files (~/.local/state/...). Stock filenames carry numeric prefixes (0-, 1-, 01-) and omarchy.webp sorts last",
+        "value": "",
+        "unit": "",
+        "expr": "find -L $USER_BACKGROUNDS_PATH $THEME_BACKGROUNDS_PATH ... | sort -z",
+        "source": "bin/omarchy-theme-bg-next:11-16; bin/omarchy-theme-set:154-159"
+      },
+      {
+        "id": "bg.order.picker",
+        "what": "Picker order: theme directory first, then user directory, each sorted on its own",
+        "value": "",
+        "unit": "",
+        "expr": "omarchy-menu-images theme/backgrounds ~/.config/omarchy/backgrounds/<slug>; per-dir find | sort -z",
+        "source": "bin/omarchy-theme-bg-switcher:11-14; bin/omarchy-menu-images:136-149"
+      },
+      {
+        "id": "bg.formats",
+        "what": "Accepted extensions (case-insensitive)",
+        "value": "jpg jpeg png gif bmp webp mp4 m4v mov webm mkv avi",
+        "unit": "",
+        "expr": "-iname patterns",
+        "source": "bin/omarchy-theme-bg-next:12-14"
+      },
+      {
+        "id": "bg.next",
+        "what": "omarchy-theme-bg-next: start from the shell's pending selection (so quick presses advance), else the link target, find its index, take index+1 mod n (or the first if not found), then omarchy-theme-bg-set",
+        "value": "",
+        "unit": "",
+        "expr": "NEXT_INDEX=$(((INDEX + 1) % TOTAL))",
+        "source": "bin/omarchy-theme-bg-next:19-48; shell/shell.qml:1770-1772"
+      },
+      {
+        "id": "bg.next.keybinding",
+        "what": "No keybinding calls omarchy-theme-bg-next at this commit; it is CLI-only ('omarchy theme bg next'). The background keybindings open the picker instead",
+        "value": "none",
+        "unit": "",
+        "expr": "only callers: docs and tests",
+        "source": "bin/omarchy-theme-bg-next:3-4; default/agents/skills/omarchy/theming.md:11"
+      },
+      {
+        "id": "bg.picker.keybinding",
+        "what": "Background picker keybindings",
+        "value": "SUPER+CTRL+W and SUPER+CTRL+SPACE",
+        "unit": "",
+        "expr": "o.bind(..., \"Background switcher\", { menu = \"background\" })",
+        "source": "default/hypr/bindings/utilities.lua:14-15"
+      },
+      {
+        "id": "bg.picker.menu",
+        "what": "Menu Appearance > Background runs the picker then bg-set; Install > Style > Background opens the user folder in nautilus",
+        "value": "",
+        "unit": "",
+        "expr": "appearance.background; install.style.background",
+        "source": "default/omarchy/omarchy-menu.jsonc:57, 276; bin/omarchy-theme-bg-install:5-9"
+      },
+      {
+        "id": "bg.set",
+        "what": "omarchy-theme-bg-set <path>: realpath, take the theme lock, resolve an intro (honours toggle/animations), hand to the shell (switchBackground). If the shell does not answer ok, link directly and call background set",
+        "value": "",
+        "unit": "",
+        "expr": "omarchy-shell shell switchBackground $BACKGROUND $INTRO",
+        "source": "bin/omarchy-theme-bg-set:12-31"
+      },
+      {
+        "id": "bg.set.shell",
+        "what": "Shell switchTo: same path as current -> nothing; with an intro or while video shows -> cover sequence; else ln -nsf + ordinary reveal. A selection during a running change is queued and replayed after",
+        "value": "",
+        "unit": "",
+        "expr": "BackgroundSwitch.switchTo",
+        "source": "shell/services/BackgroundSwitch.qml:64-80, 168-183"
+      },
+      {
+        "id": "bg.current",
+        "what": "omarchy-theme-bg-current prints the link target's basename without extension and numeric prefix, hyphens to spaces, words capitalised",
+        "value": "0-liftoff.webp -> Liftoff",
+        "unit": "",
+        "expr": "perl -pe 's/\\.[^.]+$//; s/^\\d+-//; s/-/ /g; s/\\b(\\w)/\\U$1/g'",
+        "source": "bin/omarchy-theme-bg-current:6-12"
+      },
+      {
+        "id": "bg.switcher",
+        "what": "omarchy-theme-bg-switcher opens the shell image picker on the theme and user dirs, current background preselected, and prints the chosen path",
+        "value": "",
+        "unit": "",
+        "expr": "omarchy-menu-images --selected ...",
+        "source": "bin/omarchy-theme-bg-switcher:8-14"
+      },
+      {
+        "id": "bg.cache",
+        "what": "omarchy-theme-bg-cache pre-generates picker thumbnails for the current theme",
+        "value": "",
+        "unit": "",
+        "expr": "omarchy-menu-images --cache-only",
+        "source": "bin/omarchy-theme-bg-cache:5-10"
+      },
+      {
+        "id": "bg.install",
+        "what": "omarchy-theme-bg-install creates and opens ~/.config/omarchy/backgrounds/<slug> in nautilus",
+        "value": "",
+        "unit": "",
+        "expr": "mkdir -p; nautilus",
+        "source": "bin/omarchy-theme-bg-install:5-9"
+      },
+      {
+        "id": "bg.intro.toggle",
+        "what": "omarchy-theme-bg-intro enable|disable|toggle|status; disabled = file ~/.local/state/omarchy/toggles/background-intros-off",
+        "value": "",
+        "unit": "",
+        "expr": "",
+        "source": "bin/omarchy-theme-bg-intro:9-34"
+      },
+      {
+        "id": "bg.intro.match",
+        "what": "Intro for a still <dir>/<stem>.<jpg|jpeg|png|bmp|webp> is <dir>/intros/<stem>.<mp4|m4v|mov|webm|mkv|avi>, first extension found",
+        "value": "",
+        "unit": "",
+        "expr": "resolve_intro",
+        "source": "bin/omarchy-theme-bg-boot-intro:13-38"
+      },
+      {
+        "id": "bg.intro.when",
+        "what": "Intros play at login (once per Hyprland session), on switching to a theme with that background, on choosing that background, and on reselecting the theme. Never on theme refresh/headless, or when animations or intros are off",
+        "value": "",
+        "unit": "",
+        "expr": "",
+        "source": "docs/theming.md:11, 13; manual/39-backgrounds.md:9-11; bin/omarchy-theme-bg-boot-intro:110-146"
+      },
+      {
+        "id": "bg.intro.login",
+        "what": "Login intro: shell runs omarchy-theme-bg-boot-intro at start; it marks the session, waits up to 5s for OWE, then 'owe intro --start first-frame <clip>'",
+        "value": "5",
+        "unit": "s",
+        "expr": "deadline=$((SECONDS + 5))",
+        "source": "shell/services/BackgroundIntro.qml:428-435; bin/omarchy-theme-bg-boot-intro:110-146"
+      },
+      {
+        "id": "bg.intro.sequence",
+        "what": "Intro sequence: cover shows outgoing frame -> link moves -> new still set instantly under cover -> OWE plays clip from first frame -> when OWE reports a moving frame, cover fades (420ms OutCubic, after a 2-frame delay) -> clip ends on the matching still and OWE hands back to the shell",
+        "value": "",
+        "unit": "",
+        "expr": "BackgroundSwitch.advance; BackgroundIntro.revealTheme/themeFade",
+        "source": "shell/services/BackgroundSwitch.qml:6-11, 140-166; shell/services/BackgroundIntro.qml:190-198, 216-224, 245-259"
+      },
+      {
+        "id": "bg.intro.cut",
+        "what": "If the new background has no intro but a video/intro was showing, the cover opens with the same slanted-band cut as a normal reveal (840ms OutCubic)",
+        "value": "840",
+        "unit": "ms",
+        "expr": "themeCutReveal",
+        "source": "shell/services/BackgroundIntro.qml:34-37, 200-214, 390-417"
+      },
+      {
+        "id": "bg.render.layer",
+        "what": "Each screen: Background-layer PanelWindow, namespace omarchy-background, no keyboard focus, ignores exclusive zones",
+        "value": "",
+        "unit": "",
+        "expr": "WlrLayershell.layer: WlrLayer.Background",
+        "source": "shell/plugins/background/Background.qml:393-458"
+      },
+      {
+        "id": "bg.render.fill",
+        "what": "Fill mode: cover and centre-crop (Qt PreserveAspectCrop; default centre alignment). Decoded at screen size x devicePixelRatio, or native size if smaller",
+        "value": "PreserveAspectCrop",
+        "unit": "",
+        "expr": "fillMode: Image.PreserveAspectCrop",
+        "source": "shell/Ui/BackgroundMedia.qml:38-47; shell/plugins/background/Background.qml:426-445, 481, 515"
+      },
+      {
+        "id": "bg.render.video",
+        "what": "Video wallpapers are drawn by OWE on its own layer (owe-background); the shell layer is suspended",
+        "value": "",
+        "unit": "",
+        "expr": "OWE owns video backgrounds",
+        "source": "shell/Ui/BackgroundMedia.qml:4-5; shell/plugins/background/Background.qml:460-462, 328-330; default/hypr/apps/omarchy-shell.lua:15-17"
+      },
+      {
+        "id": "bg.transition.duration",
+        "what": "Still-to-still reveal duration",
+        "value": "840",
+        "unit": "ms",
+        "expr": "duration: Style.duration(840)",
+        "source": "shell/plugins/background/Background.qml:368-375"
+      },
+      {
+        "id": "bg.transition.easing",
+        "what": "Reveal easing",
+        "value": "OutCubic",
+        "unit": "",
+        "expr": "easing.type: Easing.OutCubic",
+        "source": "shell/plugins/background/Background.qml:375"
+      },
+      {
+        "id": "bg.transition.shape",
+        "what": "Reveal mask: parallelogram centred on screen, slant -0.18; half-width = reach * progress where reach = w/2 + 0.18*h/2 + 4; top edge centred at w/2 + 0.09h, bottom at w/2 - 0.09h; mask threshold 0.5, spread 0.02",
+        "value": "slant -0.18",
+        "unit": "",
+        "expr": "revealMask ShapePath",
+        "source": "shell/plugins/background/Background.qml:524-550, 498-503"
+      },
+      {
+        "id": "bg.transition.video",
+        "what": "Any change to or from a video is an instant cut in the shell",
+        "value": "0",
+        "unit": "ms",
+        "expr": "if (instant || !displayedBackground || isVideo(path) || isVideo(displayedBackground))",
+        "source": "shell/plugins/background/Background.qml:132-141"
+      },
+      {
+        "id": "bg.transition.reduced-motion",
+        "what": "All shell durations become 0 when Hyprland animations are disabled",
+        "value": "0",
+        "unit": "ms",
+        "expr": "duration(ms) = reduceMotion ? 0 : ms",
+        "source": "shell/Commons/Style.qml:360-367"
+      },
+      {
+        "id": "bg.transition.compositor",
+        "what": "Hyprland layer animations are off for omarchy-background and owe-background; compositor background colour black",
+        "value": "rgb(000000)",
+        "unit": "",
+        "expr": "no_anim = true; background_color",
+        "source": "default/hypr/apps/omarchy-shell.lua:17; default/hypr/looknfeel.lua:111"
+      },
+      {
+        "id": "bg.startup",
+        "what": "On a fresh login a black overlay covers bar and wallpaper until ready (bar loaded, intro moving or still decoded), then fades over 420ms OutCubic; 10s safety timeout",
+        "value": "420",
+        "unit": "ms",
+        "expr": "startupFade; Timer 10000",
+        "source": "shell/services/BackgroundIntro.qml:167-188, 301-332"
+      },
+      {
+        "id": "bg.recover",
+        "what": "If the displayed file fails to load, the link is re-read; if it dangles, the first sorted image in the theme's backgrounds is used",
+        "value": "",
+        "unit": "",
+        "expr": "recoverProc",
+        "source": "shell/plugins/background/Background.qml:70-98, 298-311"
+      }
+    ]
+  },
+  "per_theme": {
+    "layout": "Measured from the checkout. Order is byte order of filenames, which is what sort -z yields here for every stock theme (all names start with a digit or 'omarchy', and none has a two-digit prefix that would sort out of numeric order). 'logo_colours' marks the Omarchy-logo wallpaper (omarchy.webp, or 2-omarchy.webp in flexoki-light, 06-omarchy.webp in lupine): a two-colour image, a flat ground with a logo in the second colour. These can be redrawn rather than shipped. Intros: all H.264 .mp4 with no audio stream.",
+    "totals": {
+      "themes": 23,
+      "background_files": 98,
+      "background_bytes": 72836752,
+      "intro_files": 19,
+      "intro_bytes": 86196373,
+      "themes_with_intros": [
+        "catppuccin",
+        "catppuccin-latte",
+        "ethereal",
+        "everforest",
+        "flexoki-light",
+        "hackerman",
+        "last-horizon",
+        "lumon",
+        "matte-black",
+        "miasma",
+        "nord",
+        "retro-82",
+        "ristretto",
+        "rose-pine",
+        "vantablack",
+        "white"
+      ],
+      "themes_without_intros": [
+        "gruvbox",
+        "jade-horse",
+        "kanagawa",
+        "lupine",
+        "solitude",
+        "starship",
+        "tokyo-night"
+      ],
+      "themes_without_unlock_png": [
+        "starship"
+      ],
+      "themes_without_preview_unlock_png": [
+        "starship"
+      ]
+    },
+    "items": [
+      {
+        "id": "theme.catppuccin",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "catppuccin",
+          "first_background": "1-totoro.webp",
+          "backgrounds": [
+            {
+              "file": "1-totoro.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 46504
+            },
+            {
+              "file": "2-waves.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 639444
+            },
+            {
+              "file": "3-blue-eye.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 217056
+            },
+            {
+              "file": "omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 716,
+              "logo_colours": {
+                "ground": "#181824",
+                "mark": "#89B4FA"
+              }
+            }
+          ],
+          "intros": [
+            {
+              "file": "1-totoro.mp4",
+              "width": 2560,
+              "height": 1440,
+              "bytes": 196564,
+              "duration_s": 5.2,
+              "codec": "h264",
+              "fps": "30/1",
+              "audio": false
+            },
+            {
+              "file": "2-waves.mp4",
+              "width": 2560,
+              "height": 1440,
+              "bytes": 2508932,
+              "duration_s": 6.0,
+              "codec": "h264",
+              "fps": "30/1",
+              "audio": false
+            },
+            {
+              "file": "3-blue-eye.mp4",
+              "width": 2560,
+              "height": 1440,
+              "bytes": 769505,
+              "duration_s": 5.6,
+              "codec": "h264",
+              "fps": "30/1",
+              "audio": false
+            }
+          ],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 248384
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 22680
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 188,
+            "bytes": 2512
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/catppuccin/backgrounds/* (depth 1, files)",
+        "source": "themes/catppuccin/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.catppuccin-latte",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "catppuccin-latte",
+          "first_background": "1-color-fade.webp",
+          "backgrounds": [
+            {
+              "file": "1-color-fade.webp",
+              "width": 1536,
+              "height": 1024,
+              "bytes": 10126
+            },
+            {
+              "file": "omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 714,
+              "logo_colours": {
+                "ground": "#EFF1F5",
+                "mark": "#1E66F5"
+              }
+            }
+          ],
+          "intros": [
+            {
+              "file": "1-color-fade.mp4",
+              "width": 2160,
+              "height": 1440,
+              "bytes": 720804,
+              "duration_s": 6.5,
+              "codec": "h264",
+              "fps": "24/1",
+              "audio": false
+            }
+          ],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 230632
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 22115
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 188,
+            "bytes": 2512
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/catppuccin-latte/backgrounds/* (depth 1, files)",
+        "source": "themes/catppuccin-latte/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.ethereal",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "ethereal",
+          "first_background": "1-cosmic.webp",
+          "backgrounds": [
+            {
+              "file": "1-cosmic.webp",
+              "width": 5120,
+              "height": 2880,
+              "bytes": 327998
+            },
+            {
+              "file": "2-meadow.webp",
+              "width": 6000,
+              "height": 3375,
+              "bytes": 864376
+            },
+            {
+              "file": "3-roadster-starlight.webp",
+              "width": 7680,
+              "height": 4283,
+              "bytes": 3628372
+            },
+            {
+              "file": "omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 716,
+              "logo_colours": {
+                "ground": "#060B1E",
+                "mark": "#7D82D9"
+              }
+            }
+          ],
+          "intros": [
+            {
+              "file": "1-cosmic.mp4",
+              "width": 2560,
+              "height": 1440,
+              "bytes": 13413892,
+              "duration_s": 6.0,
+              "codec": "h264",
+              "fps": "24/1",
+              "audio": false
+            }
+          ],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 244067
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 22499
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 188,
+            "bytes": 2512
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/ethereal/backgrounds/* (depth 1, files)",
+        "source": "themes/ethereal/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.everforest",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "everforest",
+          "first_background": "1-tree-tops.webp",
+          "backgrounds": [
+            {
+              "file": "1-tree-tops.webp",
+              "width": 4288,
+              "height": 2848,
+              "bytes": 221494
+            },
+            {
+              "file": "omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 716,
+              "logo_colours": {
+                "ground": "#2D353B",
+                "mark": "#7FBBB3"
+              }
+            }
+          ],
+          "intros": [
+            {
+              "file": "1-tree-tops.mp4",
+              "width": 2560,
+              "height": 1700,
+              "bytes": 7385413,
+              "duration_s": 7.0,
+              "codec": "h264",
+              "fps": "24/1",
+              "audio": false
+            }
+          ],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 237934
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 22591
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 188,
+            "bytes": 2512
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/everforest/backgrounds/* (depth 1, files)",
+        "source": "themes/everforest/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.flexoki-light",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "flexoki-light",
+          "first_background": "1-orb.webp",
+          "backgrounds": [
+            {
+              "file": "1-orb.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 96890
+            },
+            {
+              "file": "2-omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 4268,
+              "logo_colours": {
+                "ground": "#FFFCF0",
+                "mark": "#100F0F"
+              }
+            }
+          ],
+          "intros": [
+            {
+              "file": "1-orb.mp4",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 768238,
+              "duration_s": 5.0,
+              "codec": "h264",
+              "fps": "24/1",
+              "audio": false
+            }
+          ],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 214019
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 22678
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 188,
+            "bytes": 2512
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/flexoki-light/backgrounds/* (depth 1, files)",
+        "source": "themes/flexoki-light/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.gruvbox",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "gruvbox",
+          "first_background": "1-the-backwater.jpg",
+          "backgrounds": [
+            {
+              "file": "1-the-backwater.jpg",
+              "width": 4096,
+              "height": 2428,
+              "bytes": 4127598
+            },
+            {
+              "file": "2-flower-basket.webp",
+              "width": 3160,
+              "height": 1944,
+              "bytes": 1038098
+            },
+            {
+              "file": "3-village-square.jpg",
+              "width": 3160,
+              "height": 2360,
+              "bytes": 1924485
+            },
+            {
+              "file": "4-idyllic-procession.jpg",
+              "width": 3160,
+              "height": 1996,
+              "bytes": 1908429
+            },
+            {
+              "file": "5-leaves.jpg",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 443959
+            },
+            {
+              "file": "omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 716,
+              "logo_colours": {
+                "ground": "#282828",
+                "mark": "#7DAEA3"
+              }
+            }
+          ],
+          "intros": [],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 360359
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 22797
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 188,
+            "bytes": 2512
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/gruvbox/backgrounds/* (depth 1, files)",
+        "source": "themes/gruvbox/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.hackerman",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "hackerman",
+          "first_background": "1-synth-scape.jpg",
+          "backgrounds": [
+            {
+              "file": "1-synth-scape.jpg",
+              "width": 5000,
+              "height": 3542,
+              "bytes": 2330372
+            },
+            {
+              "file": "2-geometric.webp",
+              "width": 5000,
+              "height": 3542,
+              "bytes": 1708432
+            },
+            {
+              "file": "omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 716,
+              "logo_colours": {
+                "ground": "#0B0C16",
+                "mark": "#82FB9C"
+              }
+            }
+          ],
+          "intros": [
+            {
+              "file": "1-synth-scape.mp4",
+              "width": 2560,
+              "height": 1814,
+              "bytes": 6968575,
+              "duration_s": 5.7,
+              "codec": "h264",
+              "fps": "30/1",
+              "audio": false
+            }
+          ],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 229361
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 22428
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 188,
+            "bytes": 2512
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/hackerman/backgrounds/* (depth 1, files)",
+        "source": "themes/hackerman/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.jade-horse",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "jade-horse",
+          "first_background": "01-mountain-horses.webp",
+          "backgrounds": [
+            {
+              "file": "01-mountain-horses.webp",
+              "width": 6688,
+              "height": 3764,
+              "bytes": 3995290
+            },
+            {
+              "file": "02-ink-horse.webp",
+              "width": 6688,
+              "height": 3764,
+              "bytes": 5031484
+            },
+            {
+              "file": "03-carved-jade-horse.webp",
+              "width": 6688,
+              "height": 3764,
+              "bytes": 1210046
+            },
+            {
+              "file": "omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 670,
+              "logo_colours": {
+                "ground": "#142620",
+                "mark": "#8BCBB1"
+              }
+            }
+          ],
+          "intros": [],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 337602
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 7280
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 188,
+            "bytes": 2496
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/jade-horse/backgrounds/* (depth 1, files)",
+        "source": "themes/jade-horse/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.kanagawa",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "kanagawa",
+          "first_background": "1-kanagawa.jpg",
+          "backgrounds": [
+            {
+              "file": "1-kanagawa.jpg",
+              "width": 4335,
+              "height": 2990,
+              "bytes": 1624027
+            },
+            {
+              "file": "omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 716,
+              "logo_colours": {
+                "ground": "#1F1F28",
+                "mark": "#DCD7BA"
+              }
+            }
+          ],
+          "intros": [],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 341399
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 22631
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 188,
+            "bytes": 2512
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/kanagawa/backgrounds/* (depth 1, files)",
+        "source": "themes/kanagawa/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.last-horizon",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "last-horizon",
+          "first_background": "1-eyes-wide.webp",
+          "backgrounds": [
+            {
+              "file": "1-eyes-wide.webp",
+              "width": 3160,
+              "height": 1778,
+              "bytes": 201876
+            },
+            {
+              "file": "2-blink.webp",
+              "width": 3160,
+              "height": 1778,
+              "bytes": 333810
+            },
+            {
+              "file": "3-bokeh.webp",
+              "width": 3160,
+              "height": 1776,
+              "bytes": 63620
+            },
+            {
+              "file": "4-new-horizons.jpg",
+              "width": 3160,
+              "height": 1778,
+              "bytes": 1293016
+            }
+          ],
+          "intros": [
+            {
+              "file": "1-eyes-wide.mp4",
+              "width": 2560,
+              "height": 1440,
+              "bytes": 3837559,
+              "duration_s": 5.5,
+              "codec": "h264",
+              "fps": "24/1",
+              "audio": false
+            }
+          ],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 250574
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 22749
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 188,
+            "bytes": 2512
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/last-horizon/backgrounds/* (depth 1, files)",
+        "source": "themes/last-horizon/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.lumon",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "lumon",
+          "first_background": "01-united-in-severance.webp",
+          "backgrounds": [
+            {
+              "file": "01-united-in-severance.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 39018
+            },
+            {
+              "file": "02-opinions-equally.webp",
+              "width": 5181,
+              "height": 3456,
+              "bytes": 253452
+            },
+            {
+              "file": "omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 716,
+              "logo_colours": {
+                "ground": "#213442",
+                "mark": "#8BC9EB"
+              }
+            }
+          ],
+          "intros": [
+            {
+              "file": "01-united-in-severance.mp4",
+              "width": 2560,
+              "height": 1440,
+              "bytes": 212753,
+              "duration_s": 5.67,
+              "codec": "h264",
+              "fps": "30/1",
+              "audio": false
+            },
+            {
+              "file": "02-opinions-equally.mp4",
+              "width": 2560,
+              "height": 1708,
+              "bytes": 750824,
+              "duration_s": 6.0,
+              "codec": "h264",
+              "fps": "30/1",
+              "audio": false
+            }
+          ],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 207322
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 151219
+          },
+          "unlock.png": {
+            "width": 541,
+            "height": 278,
+            "bytes": 109838
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/lumon/backgrounds/* (depth 1, files)",
+        "source": "themes/lumon/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.lupine",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "lupine",
+          "first_background": "01-cherry-blossom-bokeh.webp",
+          "backgrounds": [
+            {
+              "file": "01-cherry-blossom-bokeh.webp",
+              "width": 6000,
+              "height": 4000,
+              "bytes": 620524
+            },
+            {
+              "file": "02-cherry-blossom-white.webp",
+              "width": 6000,
+              "height": 4000,
+              "bytes": 1957592
+            },
+            {
+              "file": "03-pastel-clouds.webp",
+              "width": 6000,
+              "height": 4000,
+              "bytes": 753312
+            },
+            {
+              "file": "04-elegant-blue-wave.webp",
+              "width": 6000,
+              "height": 3000,
+              "bytes": 208514
+            },
+            {
+              "file": "05-abstract-wave.webp",
+              "width": 5000,
+              "height": 4000,
+              "bytes": 146796
+            },
+            {
+              "file": "06-omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 716,
+              "logo_colours": {
+                "ground": "#FAFAFA",
+                "mark": "#3264EB"
+              }
+            }
+          ],
+          "intros": [],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 238873
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 20786
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 188,
+            "bytes": 2512
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/lupine/backgrounds/* (depth 1, files)",
+        "source": "themes/lupine/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.matte-black",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "matte-black",
+          "first_background": "0-ship-at-sea.jpg",
+          "backgrounds": [
+            {
+              "file": "0-ship-at-sea.jpg",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 1681677
+            },
+            {
+              "file": "1-dark-waters.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 332512
+            },
+            {
+              "file": "2-dot-hands.webp",
+              "width": 3456,
+              "height": 2234,
+              "bytes": 236190
+            },
+            {
+              "file": "omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 716,
+              "logo_colours": {
+                "ground": "#121212",
+                "mark": "#E68E0D"
+              }
+            }
+          ],
+          "intros": [
+            {
+              "file": "0-ship-at-sea.mp4",
+              "width": 2560,
+              "height": 1440,
+              "bytes": 22713391,
+              "duration_s": 7.42,
+              "codec": "h264",
+              "fps": "24/1",
+              "audio": false
+            }
+          ],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 244535
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 22524
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 188,
+            "bytes": 2512
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/matte-black/backgrounds/* (depth 1, files)",
+        "source": "themes/matte-black/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.miasma",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "miasma",
+          "first_background": "01-nature-of-fear.webp",
+          "backgrounds": [
+            {
+              "file": "01-nature-of-fear.webp",
+              "width": 3841,
+              "height": 2160,
+              "bytes": 63996
+            },
+            {
+              "file": "02-crowned.webp",
+              "width": 3841,
+              "height": 2160,
+              "bytes": 134442
+            },
+            {
+              "file": "omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 716,
+              "logo_colours": {
+                "ground": "#222222",
+                "mark": "#78824B"
+              }
+            }
+          ],
+          "intros": [
+            {
+              "file": "01-nature-of-fear.mp4",
+              "width": 2560,
+              "height": 1440,
+              "bytes": 3691744,
+              "duration_s": 7.71,
+              "codec": "h264",
+              "fps": "24/1",
+              "audio": false
+            }
+          ],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 231353
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 22611
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 188,
+            "bytes": 2512
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/miasma/backgrounds/* (depth 1, files)",
+        "source": "themes/miasma/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.nord",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "nord",
+          "first_background": "0-black-moon.jpg",
+          "backgrounds": [
+            {
+              "file": "0-black-moon.jpg",
+              "width": 4096,
+              "height": 2730,
+              "bytes": 3255290
+            },
+            {
+              "file": "1-city-view.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 355776
+            },
+            {
+              "file": "2-night-hawks.webp",
+              "width": 6000,
+              "height": 3274,
+              "bytes": 697878
+            },
+            {
+              "file": "omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 716,
+              "logo_colours": {
+                "ground": "#2E3440",
+                "mark": "#81A1C1"
+              }
+            }
+          ],
+          "intros": [
+            {
+              "file": "0-black-moon.mp4",
+              "width": 2560,
+              "height": 1706,
+              "bytes": 5443306,
+              "duration_s": 6.0,
+              "codec": "h264",
+              "fps": "30/1",
+              "audio": false
+            }
+          ],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 375351
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 22860
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 188,
+            "bytes": 2512
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/nord/backgrounds/* (depth 1, files)",
+        "source": "themes/nord/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.retro-82",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "retro-82",
+          "first_background": "1-in-the-groove.webp",
+          "backgrounds": [
+            {
+              "file": "1-in-the-groove.webp",
+              "width": 5184,
+              "height": 3456,
+              "bytes": 854620
+            },
+            {
+              "file": "2-dusk-guardian.webp",
+              "width": 5616,
+              "height": 3744,
+              "bytes": 484858
+            },
+            {
+              "file": "3-glassy-lines.webp",
+              "width": 6144,
+              "height": 3456,
+              "bytes": 2374162
+            },
+            {
+              "file": "4-gateway.webp",
+              "width": 6144,
+              "height": 3456,
+              "bytes": 807956
+            },
+            {
+              "file": "5-zen-boat.webp",
+              "width": 10456,
+              "height": 3455,
+              "bytes": 1216728
+            },
+            {
+              "file": "6-abstract-pyramids.webp",
+              "width": 6908,
+              "height": 3456,
+              "bytes": 2347944
+            },
+            {
+              "file": "7-the-journey.webp",
+              "width": 6144,
+              "height": 3456,
+              "bytes": 825734
+            },
+            {
+              "file": "8-glitter-glass.webp",
+              "width": 3600,
+              "height": 2400,
+              "bytes": 601034
+            },
+            {
+              "file": "omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 716,
+              "logo_colours": {
+                "ground": "#05182E",
+                "mark": "#FAA968"
+              }
+            }
+          ],
+          "intros": [
+            {
+              "file": "1-in-the-groove.mp4",
+              "width": 2176,
+              "height": 1440,
+              "bytes": 11846735,
+              "duration_s": 7.5,
+              "codec": "h264",
+              "fps": "24/1",
+              "audio": false
+            }
+          ],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 254388
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 22614
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 188,
+            "bytes": 2512
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/retro-82/backgrounds/* (depth 1, files)",
+        "source": "themes/retro-82/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.ristretto",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "ristretto",
+          "first_background": "0-launch.webp",
+          "backgrounds": [
+            {
+              "file": "0-launch.webp",
+              "width": 5120,
+              "height": 3414,
+              "bytes": 68118
+            },
+            {
+              "file": "1-color-curves.webp",
+              "width": 2912,
+              "height": 1632,
+              "bytes": 51580
+            },
+            {
+              "file": "2-coffee-beans.jpg",
+              "width": 2912,
+              "height": 1632,
+              "bytes": 1196995
+            },
+            {
+              "file": "3-industrial-moon.webp",
+              "width": 2912,
+              "height": 1632,
+              "bytes": 206608
+            },
+            {
+              "file": "omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 716,
+              "logo_colours": {
+                "ground": "#2C2525",
+                "mark": "#F38D70"
+              }
+            }
+          ],
+          "intros": [
+            {
+              "file": "0-launch.mp4",
+              "width": 2560,
+              "height": 1708,
+              "bytes": 530161,
+              "duration_s": 5.6,
+              "codec": "h264",
+              "fps": "30/1",
+              "audio": false
+            }
+          ],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 190481
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 22775
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 188,
+            "bytes": 2512
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/ristretto/backgrounds/* (depth 1, files)",
+        "source": "themes/ristretto/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.rose-pine",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "rose-pine",
+          "first_background": "1-funky-shapes.webp",
+          "backgrounds": [
+            {
+              "file": "1-funky-shapes.webp",
+              "width": 5000,
+              "height": 3000,
+              "bytes": 133650
+            },
+            {
+              "file": "2-dot-map.webp",
+              "width": 5120,
+              "height": 2880,
+              "bytes": 344352
+            },
+            {
+              "file": "3-omarchy-plants.webp",
+              "width": 5120,
+              "height": 3202,
+              "bytes": 132598
+            },
+            {
+              "file": "omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 716,
+              "logo_colours": {
+                "ground": "#FAF4ED",
+                "mark": "#56949F"
+              }
+            }
+          ],
+          "intros": [
+            {
+              "file": "1-funky-shapes.mp4",
+              "width": 2560,
+              "height": 1536,
+              "bytes": 651827,
+              "duration_s": 5.77,
+              "codec": "h264",
+              "fps": "30/1",
+              "audio": false
+            }
+          ],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 208656
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 22649
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 188,
+            "bytes": 2512
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/rose-pine/backgrounds/* (depth 1, files)",
+        "source": "themes/rose-pine/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.solitude",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "solitude",
+          "first_background": "1-on-pole.webp",
+          "backgrounds": [
+            {
+              "file": "1-on-pole.webp",
+              "width": 3160,
+              "height": 2281,
+              "bytes": 1487492
+            },
+            {
+              "file": "2-wreakage.webp",
+              "width": 3160,
+              "height": 1778,
+              "bytes": 1153372
+            },
+            {
+              "file": "3-climb.jpg",
+              "width": 3160,
+              "height": 2286,
+              "bytes": 2510503
+            },
+            {
+              "file": "4-ether.webp",
+              "width": 3160,
+              "height": 1778,
+              "bytes": 581468
+            },
+            {
+              "file": "5-eyed.jpg",
+              "width": 3160,
+              "height": 1778,
+              "bytes": 2178852
+            }
+          ],
+          "intros": [],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 294154
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 22826
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 188,
+            "bytes": 2512
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/solitude/backgrounds/* (depth 1, files)",
+        "source": "themes/solitude/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.starship",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "starship",
+          "first_background": "1-starbase.webp",
+          "backgrounds": [
+            {
+              "file": "1-starbase.webp",
+              "width": 6016,
+              "height": 3384,
+              "bytes": 690606
+            },
+            {
+              "file": "2-flight14-dawn.webp",
+              "width": 6144,
+              "height": 3314,
+              "bytes": 359636
+            },
+            {
+              "file": "3-engine-cluster.webp",
+              "width": 8192,
+              "height": 5461,
+              "bytes": 812796
+            },
+            {
+              "file": "4-morning-pad.webp",
+              "width": 6016,
+              "height": 3384,
+              "bytes": 431568
+            }
+          ],
+          "intros": [],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 262990
+          },
+          "preview-unlock.png": null,
+          "unlock.png": null
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/starship/backgrounds/* (depth 1, files)",
+        "source": "themes/starship/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.tokyo-night",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "tokyo-night",
+          "first_background": "0-liftoff.webp",
+          "backgrounds": [
+            {
+              "file": "0-liftoff.webp",
+              "width": 8192,
+              "height": 4608,
+              "bytes": 2240964
+            },
+            {
+              "file": "1-winding-road.webp",
+              "width": 6016,
+              "height": 3384,
+              "bytes": 653482
+            },
+            {
+              "file": "2-quattro.webp",
+              "width": 5120,
+              "height": 2880,
+              "bytes": 625422
+            },
+            {
+              "file": "3-swirl-buck.webp",
+              "width": 6336,
+              "height": 2688,
+              "bytes": 344156
+            },
+            {
+              "file": "4-sunset-lake.webp",
+              "width": 7680,
+              "height": 3215,
+              "bytes": 364966
+            },
+            {
+              "file": "5-omakub.webp",
+              "width": 6930,
+              "height": 3960,
+              "bytes": 184050
+            },
+            {
+              "file": "6-oma-cityscape.jpg",
+              "width": 3160,
+              "height": 1778,
+              "bytes": 1408419
+            },
+            {
+              "file": "7-oma.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 280578
+            },
+            {
+              "file": "omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 716,
+              "logo_colours": {
+                "ground": "#1A1B26",
+                "mark": "#7AA2F7"
+              }
+            }
+          ],
+          "intros": [],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 298816
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 678049
+          },
+          "unlock.png": {
+            "width": 1108,
+            "height": 523,
+            "bytes": 411535
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/tokyo-night/backgrounds/* (depth 1, files)",
+        "source": "themes/tokyo-night/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.vantablack",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "vantablack",
+          "first_background": "0-dot-hands.webp",
+          "backgrounds": [
+            {
+              "file": "0-dot-hands.webp",
+              "width": 3456,
+              "height": 2234,
+              "bytes": 236190
+            },
+            {
+              "file": "1-twisted-stairs.webp",
+              "width": 7680,
+              "height": 4320,
+              "bytes": 163340
+            },
+            {
+              "file": "2-layers-deep.webp",
+              "width": 7680,
+              "height": 4320,
+              "bytes": 107244
+            },
+            {
+              "file": "3-layers-stacked.webp",
+              "width": 6000,
+              "height": 3000,
+              "bytes": 83534
+            },
+            {
+              "file": "omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 712,
+              "logo_colours": {
+                "ground": "#000000",
+                "mark": "#8D8D8D"
+              }
+            }
+          ],
+          "intros": [
+            {
+              "file": "0-dot-hands.mp4",
+              "width": 1920,
+              "height": 1242,
+              "bytes": 1425447,
+              "duration_s": 4.73,
+              "codec": "h264",
+              "fps": "60/1",
+              "audio": false
+            }
+          ],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 192582
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 270790
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 378,
+            "bytes": 136340
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/vantablack/backgrounds/* (depth 1, files)",
+        "source": "themes/vantablack/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      },
+      {
+        "id": "theme.white",
+        "what": "Backgrounds in Omarchy order (sorted filename), with pixel size and bytes",
+        "value": {
+          "slug": "white",
+          "first_background": "1-white.webp",
+          "backgrounds": [
+            {
+              "file": "1-white.webp",
+              "width": 6000,
+              "height": 3375,
+              "bytes": 100582
+            },
+            {
+              "file": "2-white.webp",
+              "width": 6001,
+              "height": 4001,
+              "bytes": 63850
+            },
+            {
+              "file": "3-white.webp",
+              "width": 6240,
+              "height": 4160,
+              "bytes": 85154
+            },
+            {
+              "file": "omarchy.webp",
+              "width": 3840,
+              "height": 2160,
+              "bytes": 716,
+              "logo_colours": {
+                "ground": "#FFFFFF",
+                "mark": "#6E6E6E"
+              }
+            }
+          ],
+          "intros": [
+            {
+              "file": "1-white.mp4",
+              "width": 2560,
+              "height": 1440,
+              "bytes": 2360703,
+              "duration_s": 6.5,
+              "codec": "h264",
+              "fps": "24/1",
+              "audio": false
+            }
+          ],
+          "preview.png": {
+            "width": 2560,
+            "height": 1440,
+            "bytes": 217382
+          },
+          "preview-unlock.png": {
+            "width": 1920,
+            "height": 1080,
+            "bytes": 277574
+          },
+          "unlock.png": {
+            "width": 800,
+            "height": 378,
+            "bytes": 136340
+          }
+        },
+        "unit": "px, bytes",
+        "expr": "sort of themes/white/backgrounds/* (depth 1, files)",
+        "source": "themes/white/backgrounds/ (measured with ImageMagick identify and ffprobe at 175e63b)"
+      }
+    ]
+  },
+  "lock_and_reuse": {
+    "layout": "The lock screen (shell lock plugin) reuses the current background: it resolves the background link when locking, draws it with PreserveAspectCrop at the lock surface size over a solid 'background' colour, and puts a MultiEffect blur over it (blur 1.0, blurMax 128, blurMultiplier 1.25, contrast -0.08). A video wallpaper is replaced by a cached poster frame (ffmpegthumbnailer, 1920px wide). The decoded lock wallpaper is kept warm in the image cache so it is there on the first frame. unlock.png is not the lock screen: it is the Plymouth boot/disk-decryption logo. A transparent bar also samples the wallpaper to choose its text colour.",
+    "items": [
+      {
+        "id": "lock.bg.source",
+        "what": "Lock reads current/background (readlink -f + mtime:size) when a lock is requested and at start; a new path or changed file bumps a version used as a cache-buster",
+        "value": "",
+        "unit": "",
+        "expr": "readlinkProc",
+        "source": "shell/plugins/lock/Service.qml:19, 142-144, 225-232, 687-708"
+      },
+      {
+        "id": "lock.bg.draw",
+        "what": "Wallpaper drawn over a solid Color.background fill, PreserveAspectCrop, decoded at the lock's own size",
+        "value": "",
+        "unit": "",
+        "expr": "BackgroundMedia { constrainDecode: true; decodeSize: Qt.size(width, height) }",
+        "source": "shell/plugins/lock/LockView.qml:105-122"
+      },
+      {
+        "id": "lock.bg.blur",
+        "what": "Blur and contrast over the wallpaper",
+        "value": "blur 1.0, blurMax 128, blurMultiplier 1.25, contrast -0.08",
+        "unit": "",
+        "expr": "MultiEffect",
+        "source": "shell/plugins/lock/LockView.qml:124-133"
+      },
+      {
+        "id": "lock.bg.video",
+        "what": "A video wallpaper shows a still poster; nothing plays behind the lock",
+        "value": "ffmpegthumbnailer -s 1920 -q 8, cached in ~/.cache/omarchy/lock-poster",
+        "unit": "px",
+        "expr": "poster.sh",
+        "source": "shell/plugins/lock/LockView.qml:44-45, 113; shell/plugins/lock/poster.sh:7-24; manual/39-backgrounds.md:15"
+      },
+      {
+        "id": "lock.bg.prewarm",
+        "what": "Each screen's lock wallpaper is kept decoded at screen size so the first lock frame has it",
+        "value": "",
+        "unit": "",
+        "expr": "hidden Image per screen, cache: true",
+        "source": "shell/plugins/lock/Service.qml:607-630"
+      },
+      {
+        "id": "unlock.png",
+        "what": "unlock.png and preview-unlock.png feed the Plymouth boot (disk-unlock) screen, chosen under Appearance > Unlock, not the session lock",
+        "value": "",
+        "unit": "",
+        "expr": "omarchy-plymouth-set \"$bg\" \"$text\" \"$theme_dir/unlock.png\"",
+        "source": "bin/omarchy-plymouth-set-by-theme:7-8, 53; bin/omarchy-plymouth-switcher:13; manual/06-themes.md:68-70"
+      },
+      {
+        "id": "bar.text-colour",
+        "what": "With a transparent bar, the shell samples the mean colour of the wallpaper strip under the bar (cover-scaled, centre-cropped, at most 1920px wide, first frame only) and uses whichever of the theme text colour or the contrast colour has the higher contrast",
+        "value": "",
+        "unit": "",
+        "expr": "omarchy-bar-text-color position size text contrast",
+        "source": "shell/plugins/bar/Bar.qml:1512-1523; bin/omarchy-bar-text-color:77-80, 119-145"
+      },
+      {
+        "id": "startup.cover",
+        "what": "At login the shell gets the current background via OMARCHY_STARTUP_BACKGROUND to hold it as the first frame",
+        "value": "",
+        "unit": "",
+        "expr": "OMARCHY_STARTUP_BACKGROUND=$(readlink -f current/background)",
+        "source": "bin/omarchy-launch-shell:18-20; shell/services/BackgroundIntro.qml:25-26"
+      }
+    ]
+  },
+  "licensing": {
+    "layout": "The only licence in the repository is the MIT licence at the root, copyright David Heinemeier Hansson, granted for 'this software and associated documentation files'. No theme directory has a README, LICENSE or credits file. No file records who made or owns any wallpaper image or intro clip, and the checkout's one squashed commit carries no history to trace them. Several filenames name third-party works or franchises: 1-totoro, 01-united-in-severance, 02-opinions-equally (Lumon is from Severance), 2-night-hawks. The manual points users to dharmx/walls for more wallpapers, a third-party collection. Conclusion: the repository grants no clear right to redistribute the wallpaper images or intros apart from the code. The demo should link to them, for example raw.githubusercontent.com/basecamp/omarchy/<commit>/themes/<slug>/backgrounds/<file>, or have the user fetch them. It should not vendor them. The two-colour Omarchy-logo wallpapers are the exception: they are Omarchy's own brand art, simple enough to redraw from the two colours recorded above, and come under the MIT notice, though that is still a judgement and not stated anywhere. Not legal advice.",
+    "items": [
+      {
+        "id": "license.repo",
+        "what": "Repository licence: MIT",
+        "value": "Copyright (c) David Heinemeier Hansson ... Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the \"Software\") ...",
+        "unit": "",
+        "expr": "",
+        "source": "LICENSE:1-12"
+      },
+      {
+        "id": "license.readme",
+        "what": "README states the licence",
+        "value": "Omarchy is released under the [MIT License](https://opensource.org/licenses/MIT).",
+        "unit": "",
+        "expr": "",
+        "source": "README.md:75-77"
+      },
+      {
+        "id": "license.per-theme",
+        "what": "Per-theme credit or licence files",
+        "value": "none",
+        "unit": "",
+        "expr": "find -iname '*licen*' -o -iname '*credit*' -o -iname 'copying*' -o -iname 'notice*' finds only LICENSE and an unrelated ALSA UCM licence",
+        "source": "LICENSE:1; default/alsa/ucm2/Qualcomm/x1e80100/LICENSE.HP-EliteBook"
+      },
+      {
+        "id": "license.third-party-hint",
+        "what": "The manual links to a third-party wallpaper collection for more backgrounds",
+        "value": "You can find a huge collection of cool curated backgrounds in [dharmx/walls](https://github.com/dharmx/walls).",
+        "unit": "",
+        "expr": "",
+        "source": "manual/39-backgrounds.md:13"
+      }
+    ]
+  },
+  "notes": [
+    "Runtime: sort -z collates by the session locale. For every stock filename, byte order and en_US.UTF-8 order agree. User extras (~/.config/omarchy/backgrounds/<slug>) sort ahead of theme files in the cycling order, because '.config' sorts before '.local'. The picker lists theme files first. So the two orders differ only when user extras exist.",
+    "Runtime: whether an intro plays depends on the background-intros-off toggle, Hyprland animations:enabled, OWE being reachable, and, at login, whether this Hyprland session has already played one. In a VM Omarchy turns animations off by default (manual/39-backgrounds.md:11).",
+    "Runtime: the reveal waits for every screen to decode the incoming frame, with a 250ms grace. On a slow disk the visible start can lag the command by the decode time. The source cites about 130ms for a large WebP (shell/plugins/background/Background.qml:25-29).",
+    "The reveal is a wipe and not a crossfade. Only intro covers and the login cover fade (opacity, 420ms OutCubic).",
+    "Remembered background per theme: switching away records the current background for that theme. Switching back restores it if the file still exists, otherwise the theme's first background. A fresh install with no state lands on 0-liftoff.webp in Tokyo Night.",
+    "The manual says Omarchy has 22 themes (manual/06-themes.md:3). This checkout has 23 theme directories; starship is not in the manual's list and has no unlock.png, preview-unlock.png or icons.theme.",
+    "The manual says video wallpapers play their sound through the default audio output (manual/39-backgrounds.md:7). None of the stock intro clips has an audio stream (measured with ffprobe).",
+    "docs/theming.md:13 recommends intro clips of 5 to 7 seconds that end on the matching still. The stock clips run 4.73 to 7.71s at 1920 to 3840px wide, smaller than the stills they end on."
+  ]
+}

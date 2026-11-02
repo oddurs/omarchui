@@ -6,11 +6,11 @@ import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState }
 import { color } from "@/design/tokens/color.stylex";
 import type { Command } from "@/lib/commands";
 import { match } from "@/lib/keymap";
-import { choose, paint, readChosen, systemSlug } from "@/lib/theme-runtime";
-import type { ThemeSlug } from "@/lib/themes";
+import { choose, readChosen, systemSlug } from "@/lib/theme-runtime";
 import { Dock } from "./Dock";
 import { Inspector } from "./Inspector";
-import { openAt, overlayItems } from "./menu-state";
+import { openPicker } from "./picker-state";
+import { openAt } from "./menu-state";
 import { step } from "./metrics";
 import { Screen } from "./Screen";
 import { Splitter } from "./Splitter";
@@ -54,7 +54,7 @@ export function Desktop() {
         case "flip":
         case "lock":
         case "screenshot":
-        case "wallpaper":
+        case "bg-next":
         case "view-cycle":
           dispatch({ type: c.type });
           break;
@@ -77,6 +77,9 @@ export function Desktop() {
         case "theme":
           dispatch({ type: "theme", slug: c.slug });
           break;
+        case "picker":
+          dispatch({ type: "picker", picker: cur.picker?.mode === c.mode ? null : openPicker(c.mode, cur) });
+          return;
         case "volume":
           dispatch({ type: "volume", delta: c.delta });
           break;
@@ -151,18 +154,6 @@ export function Desktop() {
     }
     choose(state.theme);
   }, [state.theme]);
-
-  // The theme picker previews whichever row is highlighted.
-  let preview: ThemeSlug | null = null;
-  if (state.overlay?.root === "omarchy" && state.overlay.path.at(-1) === "appearance.theme") {
-    const item = overlayItems(state.overlay, state).items[state.overlay.sel];
-    if (item?.command?.type === "theme") preview = item.command.slug;
-  }
-  useEffect(() => {
-    if (!preview) return;
-    paint(preview);
-    return () => paint(readChosen());
-  }, [preview]);
 
   const split = state.view === "split";
 

@@ -24,6 +24,9 @@ import { Text } from "@/design/primitives/Text";
 import type { TypeVariant } from "@/design/primitives/typography";
 import { Bar } from "@/design/shell/Bar";
 import { Icon, Mark, type IconName } from "@/design/shell/Icon";
+import { previewSrc } from "@/lib/background-images";
+import { THEMES } from "@/lib/themes";
+import { ImagePicker } from "@/design/shell/ImagePicker";
 import { LockField, LockPanel } from "@/design/shell/LockPanel";
 import { MenuPanel } from "@/design/shell/MenuPanel";
 import { Osd } from "@/design/shell/Osd";
@@ -553,6 +556,29 @@ export const EXAMPLES: Record<string, Example> = {
         </Stack>
       </div>
     ),
+  },
+  "image-picker": {
+    Live: () => {
+      const themes = ["catppuccin", "everforest", "gruvbox", "kanagawa", "nord", "rose-pine", "tokyo-night"] as const;
+      const [sel, setSel] = useState(2);
+      return (
+        <ImagePicker
+          label="Themes"
+          listId="example-picker"
+          showLabels
+          sel={sel}
+          images={themes.map((t) => ({ key: t, label: THEMES[t].name, src: previewSrc(t) }))}
+          onSelect={setSel}
+          onPick={setSel}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowLeft") setSel((i) => (i + themes.length - 1) % themes.length);
+            else if (e.key === "ArrowRight") setSel((i) => (i + 1) % themes.length);
+            else return;
+            e.preventDefault();
+          }}
+        />
+      );
+    },
   },
   osd: {
     Live: () => {

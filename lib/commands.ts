@@ -23,7 +23,8 @@ export type Command =
   | { type: "theme"; slug: ThemeSlug }
   | { type: "volume"; delta: number }
   | { type: "brightness"; delta: number }
-  | { type: "wallpaper" }
+  | { type: "bg-next" }
+  | { type: "picker"; mode: "theme" | "background" }
   | { type: "screenshot" }
   | { type: "lock" }
   | { type: "restart" }

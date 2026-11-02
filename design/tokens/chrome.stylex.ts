@@ -145,6 +145,16 @@ export const chrome = stylex.defineVars({
   /** Window fill and border colours. */
   winBg: "var(--surface)",
   winActive: "var(--accent)",
+  /** Image picker: the tint over unselected slices, label ink, the selected and resting edges, and the selected edge's width and the label's weight. */
+  pickerDim: "var(--wall)",
+  pickerInk: "var(--text)",
+  pickerSel: "var(--accent)",
+  pickerEdge: "color-mix(in srgb, var(--text) 28%, transparent)",
+  pickerStroke: "2px",
+  pickerWeight: "500",
+  /** Image picker label and filter text sizes. */
+  pickerLabel: "24px",
+  pickerFilter: "14px",
   /** The active workspace shows its number (tuned) or its layout glyph (stock). */
   wsActiveNumber: "inline",
   wsActiveGlyph: "none",
@@ -180,6 +190,15 @@ export const stock = stylex.createTheme(chrome, {
   lockHeight: "67px", // LockView.qml:25
   wsActiveNumber: "none", // Workspaces.qml:138-142,273
   wsActiveGlyph: "inline-grid",
+  // shell/plugins/image-picker/ImagePicker.qml and [image-picker] in shell.toml.tpl:226-235
+  pickerDim: "var(--o-background)", // ImagePicker.qml:54
+  pickerInk: "var(--o-foreground)",
+  pickerSel: "var(--o-accent)",
+  pickerEdge: "color-mix(in srgb, var(--o-foreground) 28%, transparent)",
+  pickerStroke: "3px", // ImagePicker.qml:835
+  pickerWeight: "600", // Font.DemiBold, ImagePicker.qml:867
+  pickerLabel: "24px", // Style.font.display, ImagePicker.qml:866
+  pickerFilter: "14px", // Style.font.title, ImagePicker.qml:884
   // research/omarchy/spec/bar.json
   barBg: "var(--o-background)", // shell/Commons/Color.qml:80
   barInk: "var(--o-foreground)", // Color.qml:81
