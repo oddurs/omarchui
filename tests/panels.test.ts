@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { audioMood, displayMood, isoWeek, monthWeeks } from "@/demo/Panels";
+import { audioMood, displayMood, monthWeeks } from "@/demo/Panels";
+import { formatClock, isoWeek } from "@/lib/use-clock";
 import { initialState, reducer, type State } from "@/demo/state";
 
 const desk = (): State => ({ ...initialState("tokyo-night"), phase: "desktop" });
@@ -28,6 +29,11 @@ describe("bar panels", () => {
     expect(isoWeek(new Date(2027, 0, 1))).toBe(53);
   });
 
+  it("formats the clock's second format as d MMMM 'W'ww yyyy, the week in two digits", () => {
+    expect(formatClock(new Date(2026, 10, 2, 14, 5)).alt).toBe("2 November W45 2026");
+    expect(formatClock(new Date(2026, 0, 5, 9, 0)).alt).toBe("5 January W02 2026");
+  });
+
   it("opens one panel at a time, and the open one again closes it (panel.single)", () => {
     let s = reducer(desk(), { type: "panel", id: "audio" });
     expect(s.panel).toBe("audio");
@@ -41,5 +47,15 @@ describe("bar panels", () => {
     expect(s.volume).toBe(42);
     expect(s.brightness).toBe(1);
     expect(s.osd).toBeNull();
+  });
+});
+
+describe("a clear bar's ink", () => {
+  it("averages the strip and keeps the foreground unless the background stands out more", async () => {
+    const { meanHex, pickInk } = await import("@/lib/bar-ink");
+    expect(meanHex([255, 0, 0, 255, 0, 0, 255, 255])).toBe("#800080");
+    // bin/omarchy-bar-text-color: the background wins only when it contrasts strictly more.
+    expect(pickInk("#f0e6d0", "#a9b1d6", "#1a1b26")).toBe("#1a1b26");
+    expect(pickInk("#2a1f3d", "#a9b1d6", "#1a1b26")).toBe("#a9b1d6");
   });
 });

@@ -4,42 +4,21 @@ import { shelltype } from "../tokens/shelltype.stylex";
 import { color } from "../tokens/color.stylex";
 import { size } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
+import { ICON_INK, ICON_PATHS, type IconName } from "./icon-paths";
 
-const PATHS = {
-  wifi: "M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01",
-  volume: "M4 9v6h4l5 4V5L8 9zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12",
-  mute: "M4 9v6h4l5 4V5L8 9zM17 9l5 6M22 9l-5 6",
-  battery: "M2 7h18v10H2zM22 10.5v3M5 10h10v4H5z",
-  bluetooth: "M7 7l10 10-5 4V3l5 4L7 17",
-  cpu: "M6 6h12v12H6zM9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4",
-  search: "M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5 21 21",
-  sun: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4",
-  moon: "M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z",
-  bell: "M6 16V11a6 6 0 1 1 12 0v5l2 2H4zM10 20h4",
-  bellOff: "M6 16V11a6 6 0 0 1 9-5.2M18 11v5l2 2H8M10 20h4M3 3l18 18",
-  expand: "M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5",
-  exit: "M14 4h6v16h-6M10 8l-4 4 4 4M6 12h10",
-  chevron: "M9 6l6 6-6 6",
-  dwindle: "M3 4h8v16H3zM14 4h7v7h-7zM14 14h7v6h-7z",
-  globe: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18",
-  cloud: "M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 9.5 4.3 4.3 0 0 0 7 18z",
-  monitor: "M3 4h18v12H3zM8 20h8M12 16v4",
-  agents: "M5 8h14v11H5zM12 4v4M9 13h.01M15 13h.01M2 12v3M22 12v3",
-  coffee: "M4 8h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM17 10h2a2 2 0 0 1 0 4h-2M8 3v2M12 3v2",
-  calendar: "M3 5h18v16H3zM3 10h18M8 2v5M16 2v5",
-  mic: "M9 3h6v10H9zM5 11a7 7 0 0 0 14 0M12 18v3",
-  lock: "M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4",
-  laptop: "M4 5h16v11H4zM2 19h20",
-  pin: "M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12zM12 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",
-  close: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM9 9l6 6M15 9l-6 6",
-  leaf: "M5 19C5 9 11 5 20 4c-1 9-5 15-15 15zM5 19l7-7",
-  gauge: "M4 17a8 8 0 1 1 16 0M12 17l4-6",
-  bolt: "M13 2L4 14h7l-1 8 9-12h-7z",
-  power: "M12 3v9M7 6a8 8 0 1 0 10 0",
-  reboot: "M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5",
-} as const;
+export type { IconName };
 
-export type IconName = keyof typeof PATHS;
+// Omarchy sizes a bar glyph by its ink, not its box: the longer painted side is exactly the bar's
+// icon size, centred on the ink (research/omarchy/spec/bar.json, icon.paintedSize). The stroke does
+// not scale with the box, so the ink is fitted with room for it: a tenth covers 1–1.25px of stroke
+// at 12–13px within a tenth of a pixel.
+const STROKE_ROOM = 1.1;
+function inkBox(name: IconName): string {
+  const [x, y, w, h] = ICON_INK[name];
+  const side = Math.max(w, h) * STROKE_ROOM;
+  const r = (v: number) => Math.round(v * 1000) / 1000;
+  return `${r(x + w / 2 - side / 2)} ${r(y + h / 2 - side / 2)} ${r(side)} ${r(side)}`;
+}
 
 const s = stylex.create({
   icon: {
@@ -53,6 +32,9 @@ const s = stylex.create({
   },
   large: { width: size.iconLg, height: size.iconLg },
   bar: { width: chrome.barIcon, height: chrome.barIcon },
+  // One line weight for every bar glyph, whatever its ink box scales it by.
+  barLine: { strokeWidth: chrome.barStroke, vectorEffect: "non-scaling-stroke" },
+  charge: { fill: "currentColor", stroke: "none" },
   osd: { width: chrome.osdIcon, height: chrome.osdIcon },
   hero: { width: shelltype.display, height: shelltype.display },
   clock: { width: shelltype.clockGlyph, height: shelltype.clockGlyph },
@@ -64,18 +46,29 @@ export type IconProps = {
   name: IconName;
   /** 16px instead of 14px, for icons that stand alone. */
   large?: boolean;
-  /** Sized by the bar's icon token: 12px of ink in the stock view. */
+  /** Sized by its ink to the bar's icon token, as Omarchy sizes its glyphs: 12px in the stock view. */
   bar?: boolean;
+  /** The battery's charge, 0 to 1, drawn in tenths as MDI's battery glyphs step. */
+  level?: number;
   /** Sized by the OSD's icon token: Omarchy's 28px glyph in the stock view. */
   osd?: boolean;
   /** Panel sizes: a hero glyph (24px), the clock's (48px), the weather's (64px). */
   panel?: "hero" | "clock" | "weather";
 };
 
-export function Icon({ name, large, bar, osd, panel }: IconProps) {
+export function Icon({ name, large, bar, osd, panel, level }: IconProps) {
+  // The charge fills the battery's 6x12 well from the bottom, in tenths: 87% draws as 80%.
+  const tenths = level === undefined ? 0 : Math.floor(Math.min(Math.max(level, 0), 1) * 10);
+  const charge = name === "battery" && tenths > 0 ? `M9.5 ${19 - 1.2 * tenths}h5v${1.2 * tenths}h-5z` : null;
   return (
-    <svg viewBox="0 0 24 24" aria-hidden focusable="false" {...stylex.props(s.icon, large && s.large, bar && s.bar, osd && s.osd, panel && s[panel])}>
-      <path d={PATHS[name]} />
+    <svg
+      viewBox={bar ? inkBox(name) : "0 0 24 24"}
+      aria-hidden
+      focusable="false"
+      {...stylex.props(s.icon, large && s.large, bar && s.bar, osd && s.osd, panel && s[panel])}
+    >
+      <path d={ICON_PATHS[name]} {...stylex.props(bar && s.barLine)} />
+      {charge && <path d={charge} {...stylex.props(s.charge)} />}
     </svg>
   );
 }
@@ -84,6 +77,7 @@ const m = stylex.create({
   mark: { width: size.iconLg, height: size.iconLg, flexShrink: 0 },
   large: { width: size.glyph, height: size.glyph },
   display: { width: space.u16, height: space.u16 },
+  bar: { width: chrome.barIcon, height: chrome.barIcon },
   fill: { fill: color["--accent"] },
   line: { fill: "none", stroke: color["--text-2"], strokeWidth: 1.5 },
 });
@@ -94,11 +88,19 @@ export type MarkProps = {
   large?: boolean;
   /** 64px, for the boot splash. */
   display?: boolean;
+  /** In the bar: sized by its ink to the bar's icon token, like every other bar glyph. */
+  bar?: boolean;
 };
 
-export function Mark({ large, display }: MarkProps) {
+export function Mark({ large, display, bar }: MarkProps) {
+  // The mark's ink runs from 1 to 15.5; in the bar the box is fitted to it.
   return (
-    <svg viewBox="0 0 16 16" aria-hidden focusable="false" {...stylex.props(m.mark, large && m.large, display && m.display)}>
+    <svg
+      viewBox={bar ? "0.75 0.75 15 15" : "0 0 16 16"}
+      aria-hidden
+      focusable="false"
+      {...stylex.props(m.mark, large && m.large, display && m.display, bar && m.bar)}
+    >
       <rect x="1" y="1" width="7" height="14" {...stylex.props(m.fill)} />
       <rect x="10.25" y="1.75" width="4.5" height="5.5" {...stylex.props(m.line)} />
       <rect x="10.25" y="9.25" width="4.5" height="5.5" {...stylex.props(m.line)} />

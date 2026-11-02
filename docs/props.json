@@ -873,9 +873,9 @@
     "props": [
       {
         "name": "clock",
-        "type": "{ day: string; time: string; }",
+        "type": "{ day: string; time: string; alt?: string; }",
         "required": true,
-        "doc": ""
+        "doc": "The clock's two formats: \"dddd HH:mm\", and the date a right-click swaps in."
       },
       {
         "name": "modules",
@@ -918,6 +918,12 @@
         "type": "((n: number) => void)",
         "required": false,
         "doc": ""
+      },
+      {
+        "name": "wallpaper",
+        "type": "string",
+        "required": false,
+        "doc": "The wallpaper under the bar, which a clear bar reads its ink from."
       }
     ],
     "inherits": []
@@ -1105,7 +1111,7 @@
     "props": [
       {
         "name": "icon",
-        "type": "'search' | 'wifi' | 'volume' | 'mute' | 'battery' | 'bluetooth' | 'cpu' | 'sun' | 'moon' | 'bell' | 'bellOff' | 'expand' | 'exit' | 'chevron' | 'dwindle' | 'globe' | 'cloud' | 'monitor' | 'agents' | 'coffee' | 'calendar' | 'mic' | 'lock' | 'laptop' | 'pin' | 'close' | 'leaf' | 'gauge' | 'bolt' | 'power' | 'reboot'",
+        "type": "'search' | 'wifi' | 'volume' | 'volumeMid' | 'volumeLow' | 'mute' | 'battery' | 'bluetooth' | 'cpu' | 'sun' | 'moon' | 'bell' | 'bellOff' | 'expand' | 'exit' | 'chevron' | 'dwindle' | 'globe' | 'cloud' | 'monitor' | 'agents' | 'coffee' | 'calendar' | 'mic' | 'lock' | 'laptop' | 'pin' | 'close' | 'leaf' | 'gauge' | 'bolt' | 'power' | 'reboot' | 'key' | 'record' | 'remote'",
         "required": true,
         "doc": ""
       },
@@ -1161,7 +1167,7 @@
     "props": [
       {
         "name": "name",
-        "type": "'search' | 'wifi' | 'volume' | 'mute' | 'battery' | 'bluetooth' | 'cpu' | 'sun' | 'moon' | 'bell' | 'bellOff' | 'expand' | 'exit' | 'chevron' | 'dwindle' | 'globe' | 'cloud' | 'monitor' | 'agents' | 'coffee' | 'calendar' | 'mic' | 'lock' | 'laptop' | 'pin' | 'close' | 'leaf' | 'gauge' | 'bolt' | 'power' | 'reboot'",
+        "type": "'search' | 'wifi' | 'volume' | 'volumeMid' | 'volumeLow' | 'mute' | 'battery' | 'bluetooth' | 'cpu' | 'sun' | 'moon' | 'bell' | 'bellOff' | 'expand' | 'exit' | 'chevron' | 'dwindle' | 'globe' | 'cloud' | 'monitor' | 'agents' | 'coffee' | 'calendar' | 'mic' | 'lock' | 'laptop' | 'pin' | 'close' | 'leaf' | 'gauge' | 'bolt' | 'power' | 'reboot' | 'key' | 'record' | 'remote'",
         "required": true,
         "doc": ""
       },
@@ -1169,13 +1175,19 @@
         "name": "bar",
         "type": "boolean",
         "required": false,
-        "doc": "Sized by the bar's icon token: 12px of ink in the stock view."
+        "doc": "Sized by its ink to the bar's icon token, as Omarchy sizes its glyphs: 12px in the stock view."
       },
       {
         "name": "large",
         "type": "boolean",
         "required": false,
         "doc": "16px instead of 14px, for icons that stand alone."
+      },
+      {
+        "name": "level",
+        "type": "number",
+        "required": false,
+        "doc": "The battery's charge, 0 to 1, drawn in tenths as MDI's battery glyphs step."
       },
       {
         "name": "osd",
@@ -1196,6 +1208,12 @@
     "file": "design/shell/Icon.tsx",
     "type": "MarkProps",
     "props": [
+      {
+        "name": "bar",
+        "type": "boolean",
+        "required": false,
+        "doc": "In the bar: sized by its ink to the bar's icon token, like every other bar glyph."
+      },
       {
         "name": "display",
         "type": "boolean",
