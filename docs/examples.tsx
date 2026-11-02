@@ -30,7 +30,7 @@ import { ImagePicker } from "@/design/shell/ImagePicker";
 import { LockField, LockPanel } from "@/design/shell/LockPanel";
 import { MenuPanel } from "@/design/shell/MenuPanel";
 import { Osd } from "@/design/shell/Osd";
-import { Toast } from "@/design/shell/Toast";
+import { ToastDeck, type DeckToast } from "@/design/shell/Toast";
 import { WindowFrame } from "@/design/shell/WindowFrame";
 import { space } from "@/design/tokens/space.stylex";
 
@@ -548,14 +548,20 @@ export const EXAMPLES: Record<string, Example> = {
     },
   },
   toast: {
-    Live: () => (
-      <div {...stylex.props(s.narrow)}>
-        <Stack gap="u2">
-          <Toast who="Calendar" title="Design review moved to 15:00" body="Same room. Bring the theme file." />
-          <Toast who="Battery" critical title="Battery at 9%" body="Plug in within 15 minutes to avoid suspending." />
-        </Stack>
-      </div>
-    ),
+    Live: () => {
+      const start = 1_800_000_000_000;
+      const [toasts, setToasts] = useState<DeckToast[]>([
+        { id: 1, who: "Battery", title: "Battery at 9%", body: "Plug in within 15 minutes to avoid suspending.", critical: true, at: start - 3_600_000 },
+        { id: 2, who: "Calendar", title: "Design review moved to 15:00", body: "Same room. Bring the theme file.", at: start - 1_200_000 },
+        { id: 3, who: "Calendar", title: "Standup in 10 minutes", body: "Room 2, or the usual link.", at: start - 600_000 },
+        { id: 4, who: "Calendar", title: "Lunch with Ada", body: "12:30 at the corner place.", at: start },
+      ]);
+      return (
+        <div {...stylex.props(s.narrow)}>
+          <ToastDeck toasts={toasts} now={start + 60_000} onDismiss={(id) => setToasts((ts) => ts.filter((t) => t.id !== id))} />
+        </div>
+      );
+    },
   },
   "image-picker": {
     Live: () => {

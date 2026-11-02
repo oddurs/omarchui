@@ -3,6 +3,10 @@ import * as stylex from "@stylexjs/stylex";
 /** Named stacking steps, lowest first. Components never write a z-index literal. */
 export const layer = stylex.defineVars({
   base: "0",
+  /** Inside one notification deck (an isolated stack): the front card over the two peeking behind. */
+  cardBack: "1",
+  cardMid: "2",
+  cardFront: "3",
   window: "1",
   fullscreen: "5",
   sticky: "20",

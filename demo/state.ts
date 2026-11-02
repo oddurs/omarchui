@@ -17,7 +17,9 @@ export type MonitorData = { kind: "monitor" };
 export type AppData = TermData | EditorData | GitData | KeysData | MonitorData;
 
 export type Win = { id: string; app: AppKind; ws: number; data: AppData };
-export type Toast = { id: number; who: string; title: string; body: string; critical: boolean };
+/** Low lasts 5s, normal 8s, critical until dismissed. shell/plugins/notifications/Service.qml:141-148. */
+export type Urgency = "low" | "normal" | "critical";
+export type Toast = { id: number; who: string; title: string; body: string; critical: boolean; urgency: Urgency; at: number };
 export type Overlay = { root: "launcher" | "omarchy"; path: string[]; q: string; sel: number } | null;
 /** Omarchy's image picker, open on themes or on the current theme's backgrounds. */
 export type Picker = { mode: "theme" | "background"; sel: number; q: string } | null;
@@ -179,9 +181,12 @@ function rectsFor(s: State, ws: number) {
   );
 }
 
-function toast(s: State, t: Omit<Toast, "id">): State {
+// Omarchy's own messages go out at low urgency (bin/omarchy-notification-send:12); others at normal.
+function toast(s: State, t: Omit<Toast, "id" | "urgency" | "at"> & { urgency?: Urgency }): State {
   if (s.dnd && !t.critical) return s;
-  return { ...s, toasts: [...s.toasts, { ...t, id: s.seq }].slice(-4), seq: s.seq + 1 };
+  const urgency = t.critical ? "critical" : (t.urgency ?? (t.who.startsWith("Omarchy") ? "low" : "normal"));
+  // No cap on screen; Omarchy keeps up to 100 live. Service.qml:173.
+  return { ...s, toasts: [...s.toasts, { ...t, urgency, at: Date.now(), id: s.seq }].slice(-100), seq: s.seq + 1 };
 }
 
 function updateData<K extends AppData["kind"]>(s: State, id: string, kind: K, fn: (d: Extract<AppData, { kind: K }>) => Extract<AppData, { kind: K }>): State {

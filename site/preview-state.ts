@@ -29,6 +29,8 @@ export function previewState(theme: ThemeSlug): State {
     aspect: 16 / 9,
     windows,
     focus: { 1: "p1", 2: "p4" },
-    toasts: [{ id: 1, who: "Calendar", title: "Design review moved to 15:00", body: "Same room. Bring the theme file.", critical: false }],
+    toasts: [
+      { id: 1, who: "Calendar", title: "Design review moved to 15:00", body: "Same room. Bring the theme file.", critical: false, urgency: "normal", at: 0 },
+    ],
   };
 }
