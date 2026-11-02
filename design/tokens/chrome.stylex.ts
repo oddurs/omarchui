@@ -70,6 +70,10 @@ export const chrome = stylex.defineVars({
   toastPadBare: "8px",
   toastInset: "4px",
   toastStack: "8px",
+  /** Notification decks: the gap between decks, how far each card behind the front peeks out, and the leave duration. */
+  deckGap: "12px",
+  deckPeek: "8px",
+  toastOut: { default: "200ms", [REDUCED]: "0ms" },
   /** Border of a critical notification: err (tuned) or no change (stock). */
   critBorder: "var(--err)",
   /** Toast arrival: distance dropped and duration. */
@@ -213,6 +217,9 @@ export const stock = stylex.createTheme(chrome, {
   toastPadBare: "7px", // Toast.qml:84
   toastInset: "5px", // gaps_out / 2, Delivery.js:95-96
   toastStack: "6px", // Service.qml:64
+  deckGap: "11px", // Service.qml:535
+  deckPeek: "10px", // Layout.js:6
+  toastOut: { default: "200ms", [REDUCED]: "0ms" }, // Service.qml:443
   critBorder: "var(--o-active-border)", // urgency has no look, Toast.qml:73-77
   toastDrop: "-24px", // Service.qml:446
   toastIn: { default: "250ms", [REDUCED]: "0ms" }, // Service.qml:442

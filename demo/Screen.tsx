@@ -4,7 +4,7 @@ import * as stylex from "@stylexjs/stylex";
 import { useEffect, useLayoutEffect, useRef, useState, type Dispatch, type ReactNode } from "react";
 import { Bar, type BarModule } from "@/design/shell/Bar";
 import { Osd } from "@/design/shell/Osd";
-import { Toast } from "@/design/shell/Toast";
+import { ToastDeck } from "@/design/shell/Toast";
 import { WindowFrame } from "@/design/shell/WindowFrame";
 import { chrome, stock } from "@/design/tokens/chrome.stylex";
 import { color } from "@/design/tokens/color.stylex";
@@ -73,10 +73,6 @@ const s = stylex.create({
     right: chrome.toastInset,
     zIndex: layer.toast,
     width: `min(${chrome.toastWidth}, calc(100% - 24px))`,
-    display: "flex",
-    // Newest on top, as Omarchy stacks them. Layout.js:49-60.
-    flexDirection: "column-reverse",
-    gap: chrome.toastStack,
   },
   osd: {
     position: "absolute",
@@ -139,6 +135,8 @@ type Props = {
   exec: (c: Command) => void;
   mode: "stock" | "tuned";
   interactive: boolean;
+  /** Told when a notification deck opens or closes, so timeouts can pause. */
+  onToastsHeld?: (held: boolean) => void;
   id: string;
 };
 
@@ -189,9 +187,10 @@ function App(p: AppProps) {
 }
 
 /** One complete desktop. Drawn twice under the before/after divider, once per mode. */
-export function Screen({ state, dispatch, exec, mode, interactive, id }: Props) {
+export function Screen({ state, dispatch, exec, mode, interactive, id, onToastsHeld }: Props) {
   const area = useRef<HTMLDivElement>(null);
-  const clock = formatClock(useNow());
+  const now = useNow();
+  const clock = formatClock(now);
 
   useEffect(() => {
     const el = area.current;
@@ -298,17 +297,12 @@ export function Screen({ state, dispatch, exec, mode, interactive, id }: Props) 
         })}
 
         <div {...stylex.props(s.toasts)} aria-live="polite">
-          {state.toasts.map((t) => (
-            <Toast
-              key={t.id}
-              who={t.who}
-              title={t.title}
-              body={t.body}
-              critical={t.critical}
-              refKey={`toast:${t.id}`}
-              onDismiss={interactive ? () => dispatch({ type: "dismiss", id: t.id }) : undefined}
-            />
-          ))}
+          <ToastDeck
+            toasts={state.toasts}
+            now={now?.getTime() ?? 0}
+            onDismiss={interactive ? (id) => dispatch({ type: "dismiss", id }) : undefined}
+            onOpenChange={interactive ? onToastsHeld : undefined}
+          />
         </div>
 
         {state.osd && (

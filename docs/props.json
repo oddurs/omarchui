@@ -1022,7 +1022,7 @@
         "name": "who",
         "type": "string",
         "required": true,
-        "doc": "The app or subsystem that sent it."
+        "doc": "The app or subsystem that sent it; names it for assistive tech, and groups decks."
       },
       {
         "name": "body",
@@ -1034,19 +1034,43 @@
         "name": "critical",
         "type": "boolean",
         "required": false,
-        "doc": "Battery, failures: draws in err and is announced assertively."
+        "doc": "Battery, failures: announced assertively, never times out."
+      },
+      {
+        "name": "leaving",
+        "type": "boolean",
+        "required": false,
+        "doc": "Rising out after a dismissal or timeout."
       },
       {
         "name": "onDismiss",
         "type": "(() => void)",
         "required": false,
-        "doc": "Makes the whole toast a button that dismisses it."
+        "doc": "Dismisses: a click on the card, or its close mark."
+      },
+      {
+        "name": "open",
+        "type": "boolean",
+        "required": false,
+        "doc": "Lets the body run to 8 lines instead of 2."
+      },
+      {
+        "name": "plate",
+        "type": "boolean",
+        "required": false,
+        "doc": "Draw the plate only, as cards behind a closed deck do."
       },
       {
         "name": "refKey",
         "type": "string",
         "required": false,
         "doc": "Identifies this toast to the demo's reference inspector."
+      },
+      {
+        "name": "time",
+        "type": "string",
+        "required": false,
+        "doc": "Relative age, right of the title: empty for the first five minutes."
       }
     ],
     "inherits": []

@@ -245,4 +245,62 @@ test.describe("the stock view matches Omarchy's source", () => {
     // The swap waits for the image to decode, as Omarchy's does; that includes fetching it.
     await expect.poll(() => css(screen.locator("[data-wallpaper] > div").last(), "background-image"), { timeout: 30_000 }).toContain("1-winding-road.webp");
   });
+
+  test("notification deck", async ({ page }) => {
+    const screen = await stock(page);
+    await page.keyboard.press("Alt+Enter");
+    const term = screen.getByRole("textbox", { name: "Terminal input" });
+    for (const m of ["One", "Two", "Three", "Four"]) {
+      await term.fill(`notify-send "${m}" "body"`);
+      await term.press("Enter");
+    }
+    const cards = screen.locator("[data-ref=toast]");
+    // The welcome card, and three of the four in a closed deck.
+    await expect(cards).toHaveCount(4);
+    const front = screen.getByRole("status", { name: "notify-send: Four" });
+    await css(front, "opacity");
+    const peek = spec("services", "toast.deck.peek", "notifications");
+    const fb = await box(front);
+    // Card r of a closed deck sits r*10px lower, scaled 1 - 0.035r about its top centre, at 0.85 then 0.55.
+    for (const [name, r, opacity] of [
+      ["Three", 1, 0.85],
+      ["Two", 2, 0.55],
+    ] as const) {
+      // Back cards are hidden from assistive tech, so find them by label rather than role.
+      const holder = screen.locator(`[data-ref=toast][aria-label="notify-send: ${name}"]`).locator("..");
+      const b = await box(holder);
+      expect(b.y - fb.y, `${peek.why}, card ${r}`).toBeCloseTo(r * peek.n, 0);
+      expect(b.width / fb.width, "toast.deck.shrink (Layout.js:7,58)").toBeCloseTo(1 - r * 0.035, 2);
+      expect(Number(await css(holder, "opacity")), "toast.deck.opacity (Layout.js:9,59)").toBeCloseTo(opacity, 2);
+    }
+    await expect(screen.getByRole("status", { name: "notify-send: One" }), "toast.deck.visible: 3 cards").toHaveCount(0);
+
+    // Decks are 11px apart; the welcome card is a deck of its own below.
+    const welcome = await box(screen.getByRole("status", { name: /Welcome/ }));
+    const gap = spec("services", "toast.deck.deckGap", "notifications");
+    expect(welcome.y - (fb.y + fb.height + 2 * peek.n), gap.why).toBeCloseTo(gap.n, 0);
+
+    // Hovering opens the deck: every card, 6px apart.
+    await front.hover();
+    await expect(screen.getByRole("status", { name: "notify-send: One" })).toBeVisible();
+    // Opening moves cards; it must not replay their arrival.
+    const replaying = await screen
+      .getByRole("status", { name: "notify-send: Three" })
+      .evaluate((e) => e.getAnimations().filter((x) => x.playState === "running").length);
+    expect(replaying, "anim.expandCollapse moves cards, it does not re-drop them").toBe(0);
+    await page.evaluate(() =>
+      Promise.all(
+        document
+          .getAnimations()
+          .filter((x) => x.effect?.getTiming().iterations !== Infinity)
+          .map((x) => x.finished.catch(() => undefined)),
+      ),
+    );
+    const [a, b] = [
+      await box(screen.getByRole("status", { name: "notify-send: Four" })),
+      await box(screen.getByRole("status", { name: "notify-send: Three" })),
+    ];
+    const open = spec("services", "toast.deck.gap", "notifications");
+    expect(b.y - (a.y + a.height), open.why).toBeCloseTo(open.n, 0);
+  });
 });

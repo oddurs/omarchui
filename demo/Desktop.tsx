@@ -129,14 +129,36 @@ export function Desktop() {
     return () => window.clearInterval(id);
   }, []);
 
-  const scheduled = useRef(new Set<number>());
+  // Each notification counts down by its urgency; every countdown pauses while a deck is open.
+  // shell/plugins/notifications/Service.qml:141-151, 1647.
+  const [held, setHeld] = useState(false);
+  const timers = useRef(new Map<number, { left: number; started: number; handle?: number }>());
   useEffect(() => {
-    for (const t of state.toasts) {
-      if (scheduled.current.has(t.id)) continue;
-      scheduled.current.add(t.id);
-      window.setTimeout(() => dispatch({ type: "dismiss", id: t.id }), t.critical ? 9000 : 5000);
+    const m = timers.current;
+    const live = new Set(state.toasts.map((t) => t.id));
+    for (const [id, e] of m) {
+      if (live.has(id)) continue;
+      window.clearTimeout(e.handle);
+      m.delete(id);
     }
-  }, [state.toasts]);
+    for (const t of state.toasts) {
+      if (t.urgency === "critical") continue;
+      let e = m.get(t.id);
+      if (!e) {
+        e = { left: t.urgency === "low" ? 5000 : 8000, started: 0 };
+        m.set(t.id, e);
+      }
+      if (held && e.handle !== undefined) {
+        window.clearTimeout(e.handle);
+        e.left -= performance.now() - e.started;
+        e.handle = undefined;
+      } else if (!held && e.handle === undefined) {
+        const id = t.id;
+        e.started = performance.now();
+        e.handle = window.setTimeout(() => dispatch({ type: "dismiss", id }), Math.max(0, e.left));
+      }
+    }
+  }, [state.toasts, held]);
 
   const osdKey = state.osd?.key;
   useEffect(() => {
@@ -163,7 +185,7 @@ export function Desktop() {
   return (
     <main id="main" aria-label="Omarchui demo desktop" {...stylex.props(s.root)}>
       <h1 {...stylex.props(s.sr)}>Omarchui demo</h1>
-      <Screen id="live" state={state} dispatch={dispatch} exec={exec} mode={state.view === "stock" ? "stock" : "tuned"} interactive />
+      <Screen id="live" state={state} dispatch={dispatch} exec={exec} mode={state.view === "stock" ? "stock" : "tuned"} interactive onToastsHeld={setHeld} />
       {split && (
         <div inert aria-hidden {...stylex.props(s.clip, clip.left(state.split))}>
           <Screen id="before" state={state} dispatch={dispatch} exec={exec} mode="stock" interactive={false} />
