@@ -35,6 +35,8 @@ const PATHS = {
   leaf: "M5 19C5 9 11 5 20 4c-1 9-5 15-15 15zM5 19l7-7",
   gauge: "M4 17a8 8 0 1 1 16 0M12 17l4-6",
   bolt: "M13 2L4 14h7l-1 8 9-12h-7z",
+  power: "M12 3v9M7 6a8 8 0 1 0 10 0",
+  reboot: "M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5",
 } as const;
 
 export type IconName = keyof typeof PATHS;

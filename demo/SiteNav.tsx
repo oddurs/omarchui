@@ -63,6 +63,7 @@ const s = stylex.create({
   // Points down, toward folding the list away.
   chev: { display: "inline-grid", transform: "rotate(90deg)" },
   list: { listStyle: "none", margin: 0, padding: 0, minWidth: "13rem" },
+  hint: { margin: 0, maxWidth: "13rem", paddingBlock: space.u2, paddingInline: space.u2, color: color["--text-2"] },
 });
 
 function remembered(): boolean {
@@ -75,7 +76,7 @@ function remembered(): boolean {
 }
 
 /** The way out of the machine and into the reading: floats over the desktop, bottom left. */
-export function SiteNav() {
+export function SiteNav({ hint }: { hint?: string }) {
   const [open, setOpen] = useState(remembered);
   const id = useId();
   const toggle = () => {
@@ -91,6 +92,8 @@ export function SiteNav() {
   return (
     <nav aria-label="Site" data-dock {...stylex.props(s.root)}>
       <div {...stylex.props(s.panel)}>
+        {/* The splash is Omarchy's own, with nothing added; the demo's one instruction lives here. */}
+        {hint && open && <p {...stylex.props(typo.small, face.mono, s.hint)}>{hint}</p>}
         {open && (
           <ul id={id} {...stylex.props(s.list)}>
             {LINKS.map((l) => (

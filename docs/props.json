@@ -1099,7 +1099,7 @@
     "props": [
       {
         "name": "icon",
-        "type": "'search' | 'wifi' | 'volume' | 'mute' | 'battery' | 'bluetooth' | 'cpu' | 'sun' | 'moon' | 'bell' | 'bellOff' | 'expand' | 'exit' | 'chevron' | 'dwindle' | 'globe' | 'cloud' | 'monitor' | 'agents' | 'coffee' | 'calendar' | 'mic' | 'lock' | 'laptop' | 'pin' | 'close' | 'leaf' | 'gauge' | 'bolt'",
+        "type": "'search' | 'wifi' | 'volume' | 'mute' | 'battery' | 'bluetooth' | 'cpu' | 'sun' | 'moon' | 'bell' | 'bellOff' | 'expand' | 'exit' | 'chevron' | 'dwindle' | 'globe' | 'cloud' | 'monitor' | 'agents' | 'coffee' | 'calendar' | 'mic' | 'lock' | 'laptop' | 'pin' | 'close' | 'leaf' | 'gauge' | 'bolt' | 'power' | 'reboot'",
         "required": true,
         "doc": ""
       },
@@ -1114,6 +1114,12 @@
         "type": "number",
         "required": true,
         "doc": ""
+      },
+      {
+        "name": "message",
+        "type": "string",
+        "required": false,
+        "doc": "Says something instead of showing a level: \"Logging out\", \"Microphone muted\"."
       },
       {
         "name": "muted",
@@ -1149,7 +1155,7 @@
     "props": [
       {
         "name": "name",
-        "type": "'search' | 'wifi' | 'volume' | 'mute' | 'battery' | 'bluetooth' | 'cpu' | 'sun' | 'moon' | 'bell' | 'bellOff' | 'expand' | 'exit' | 'chevron' | 'dwindle' | 'globe' | 'cloud' | 'monitor' | 'agents' | 'coffee' | 'calendar' | 'mic' | 'lock' | 'laptop' | 'pin' | 'close' | 'leaf' | 'gauge' | 'bolt'",
+        "type": "'search' | 'wifi' | 'volume' | 'mute' | 'battery' | 'bluetooth' | 'cpu' | 'sun' | 'moon' | 'bell' | 'bellOff' | 'expand' | 'exit' | 'chevron' | 'dwindle' | 'globe' | 'cloud' | 'monitor' | 'agents' | 'coffee' | 'calendar' | 'mic' | 'lock' | 'laptop' | 'pin' | 'close' | 'leaf' | 'gauge' | 'bolt' | 'power' | 'reboot'",
         "required": true,
         "doc": ""
       },

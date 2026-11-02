@@ -62,8 +62,8 @@ const ACTIONS: Record<string, Command> = {
   about: { type: "open", app: "terminal", run: "fastfetch" },
   "system.lock": { type: "lock" },
   "system.reboot": { type: "restart" },
-  // Omarchy logs back in automatically, so logging out is a fresh session.
-  "system.logout": { type: "restart" },
+  // Logging out ends the session; SDDM's greeter waits for the next login.
+  "system.logout": { type: "logout" },
   "system.shutdown": { type: "shutdown" },
 };
 

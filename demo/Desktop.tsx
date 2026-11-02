@@ -10,6 +10,7 @@ import { match } from "@/lib/keymap";
 import { choose, readChosen, systemSlug } from "@/lib/theme-runtime";
 import { BootSplash } from "./BootSplash";
 import { Dock } from "./Dock";
+import { Greeter } from "./Greeter";
 import { Inspector } from "./Inspector";
 import { openPicker } from "./picker-state";
 import { openAt } from "./menu-state";
@@ -96,10 +97,13 @@ export function Desktop() {
         dispatch({ type: "brightness", delta: c.delta });
         break;
       case "restart":
-        dispatch({ type: "restart", theme: cur.theme });
+        dispatch({ type: "session-exit", action: "reboot" });
+        return;
+      case "logout":
+        dispatch({ type: "session-exit", action: "logout" });
         return;
       case "shutdown":
-        dispatch({ type: "shutdown" });
+        dispatch({ type: "session-exit", action: "shutdown" });
         return;
       case "notify":
         dispatch({ type: "notify", who: c.who ?? "Omarchy", title: c.title, body: c.body, critical: c.critical });
@@ -167,6 +171,13 @@ export function Desktop() {
     }
   }, [state.toasts, held]);
 
+  // A session ends once its windows have closed: omarchy-system waits for them, at most 2s.
+  useEffect(() => {
+    if (!state.exiting) return;
+    const t = window.setTimeout(() => dispatch({ type: "session-end" }), 900);
+    return () => window.clearTimeout(t);
+  }, [state.exiting]);
+
   // A closed window stays drawn while it shrinks out (119ms), then goes.
   useEffect(() => {
     if (!state.closing.length) return;
@@ -212,8 +223,9 @@ export function Desktop() {
         <BootSplash wallpaper={backgroundSrc(state.theme, backgroundIndex(state.theme, state.bg[state.theme]))} interactive onDone={unlock} />
       )}
       {state.phase === "off" && <PowerOff onPowerOn={powerOn} />}
+      {state.phase === "greeter" && <Greeter interactive onLogin={unlock} />}
       <StartupCover boot={state.boots} />
-      <SiteNav />
+      <SiteNav hint={state.phase === "boot" || state.phase === "greeter" ? "Any password boots it. Alt stands in for Super." : undefined} />
       <Dock view={state.view} onView={(v) => dispatch({ type: "view", view: v })} inspect={inspect} onInspect={() => setInspect((x) => !x)} />
     </main>
   );

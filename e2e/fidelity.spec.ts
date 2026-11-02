@@ -382,4 +382,58 @@ test.describe("the stock view matches Omarchy's source", () => {
     await page.keyboard.press("Escape");
     await expect(cal).toHaveCount(0);
   });
+
+  test("boot and login", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    const boot = page.getByRole("dialog", { name: "Boot" });
+    // Limine, quiet: its 1s timeout on the backdrop, nothing drawn. default/limine/limine.conf:2-3,11-12.
+    await expect(boot).toHaveAttribute("data-stage", "bootloader");
+    await expect(boot.locator("img")).toHaveCount(0);
+    expect(await css(boot, "background-color"), "backdrop 1a1b26 (limine.conf:12, omarchy.script:3-4)").toBe("rgb(26, 27, 38)");
+
+    // Plymouth: the logo centred, the entry 40px under it, the lock 15px to its left at 80% of its
+    // height, bullets from 20px in, 12px apart. default/plymouth/omarchy.script:122-134, 216-232.
+    const pw = boot.getByLabel("Password");
+    await expect(pw).toBeFocused();
+    await pw.pressSequentially("abc");
+    const img = (name: string) => boot.locator(`img[src$="/${name}"]`);
+    const logo = await box(img("logo.png"));
+    expect([logo.x, logo.y, logo.width, logo.height], "logo centred at its own size").toEqual([320, 356, 800, 188]);
+    const entry = await box(img("entry.png"));
+    expect([entry.x, entry.y], "entry centred, 40px under the logo").toEqual([577, 584]);
+    const lock = await box(img("lock.png"));
+    expect(lock.height, "lock at 80% of the entry's 48px").toBeCloseTo(38.4, 1);
+    expect(entry.x - (lock.x + lock.width), "15px between lock and entry").toBeCloseTo(15, 1);
+    const dots = img("bullet.png");
+    await expect(dots, "one bullet a character").toHaveCount(3);
+    const [d0, d1] = [await box(dots.nth(0)), await box(dots.nth(1))];
+    expect([d0.x - entry.x, d1.x - d0.x, d0.width], "bullets 7px, from 20px in, 12px apart").toEqual([20, 12, 7]);
+
+    // After the passphrase the dialog gives way to the progress bar.
+    await pw.press("Enter");
+    await expect(boot.getByRole("progressbar", { name: "Starting" })).toBeVisible();
+    await expect(img("entry.png")).toHaveCount(0);
+    await expect(boot).toHaveCount(0, { timeout: 15_000 });
+
+    // Logging out says so, closes the windows, and leaves SDDM's greeter. bin/omarchy-system:28-55.
+    await page.keyboard.press("Alt+Escape");
+    await page
+      .getByRole("option", { name: /Logout/ })
+      .first()
+      .click();
+    await expect(page.getByRole("status", { name: "Logging out" })).toBeVisible();
+    const login = page.getByRole("dialog", { name: "Login" });
+    await expect(login).toBeVisible();
+    // A centred column: the logo, 40px, then lock (33.25x38), 15px, entry. default/sddm/omarchy/Main.qml:33-56.
+    const gl = await box(login.locator('img[src$="/logo.png"]'));
+    const ge = await box(login.locator('img[src$="/entry.png"]'));
+    expect([gl.y, ge.y - (gl.y + gl.height)], "column centred, 40px apart").toEqual([312, 40]);
+    // An empty password fails: the field turns red. Main.qml:21-31.
+    await login.getByLabel("Password").press("Enter");
+    await expect(login.locator('img[src$="/entry-failed.png"]')).toBeVisible();
+    await login.getByLabel("Password").fill("anything");
+    await login.getByLabel("Password").press("Enter");
+    await expect(login).toHaveCount(0);
+  });
 });

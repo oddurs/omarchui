@@ -596,11 +596,11 @@ function binary(name: string, args: string[], ctx: ShellCtx): CliResult | null {
           return done(lines("Usage: omarchy-toggle-idle [toggle|stay-awake|allow-idle|status]"), [], 1);
       }
     }
-    // bin/omarchy-system:8-24. Logging out has no stand-in here.
+    // bin/omarchy-system:8-24: each prints nothing and ends the session its own way.
     case "omarchy-system":
       if (a === "reboot") return done([], [{ type: "restart" }]);
       if (a === "shutdown") return done([], [{ type: "shutdown" }]);
-      if (a === "logout") return null;
+      if (a === "logout") return done([], [{ type: "logout" }]);
       return done(lines("Usage: omarchy-system <logout|reboot|shutdown>"), [], 2);
     case "omarchy-system-lock":
       return done([], [{ type: "lock" }]);

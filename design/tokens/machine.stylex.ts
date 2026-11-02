@@ -8,4 +8,9 @@ import * as stylex from "@stylexjs/stylex";
 export const machine = stylex.defineVars({
   black: "#000000",
   ink: "#a3a3a3",
+  /**
+   * The boot's ground before any theme loads: Limine's backdrop (default/limine/limine.conf:11-12)
+   * and Plymouth's background, rgb(0.101, 0.105, 0.149) (default/plymouth/omarchy.script:3-4).
+   */
+  boot: "#1a1b26",
 });

@@ -447,10 +447,26 @@ export function Screen({ state, dispatch, exec, mode, interactive, id, onToastsH
         {state.osd && (
           <div {...stylex.props(s.osd)}>
             <Osd
-              // Omarchy's brightness glyph is a monitor (U+F0379), OsdModel.js:18.
-              icon={state.osd.kind === "volume" ? (state.osd.muted ? "mute" : "volume") : mode === "stock" ? "monitor" : "sun"}
+              // Omarchy's glyphs: brightness is a monitor (U+F0379, OsdModel.js:18); logout, reboot and
+              // power for the session's end (OsdModel.js:21-23).
+              icon={
+                state.osd.kind === "message"
+                  ? state.exiting === "logout"
+                    ? "exit"
+                    : state.exiting === "reboot"
+                      ? "reboot"
+                      : "power"
+                  : state.osd.kind === "volume"
+                    ? state.osd.muted
+                      ? "mute"
+                      : "volume"
+                    : mode === "stock"
+                      ? "monitor"
+                      : "sun"
+              }
               value={state.osd.value}
               muted={state.osd.muted}
+              message={state.osd.message}
               label={state.osd.kind === "volume" ? "Volume" : "Brightness"}
             />
           </div>
