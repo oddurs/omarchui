@@ -37,14 +37,18 @@ export type WindowFrameProps = {
   urgent?: boolean;
   children?: ReactNode;
   onPointerDown?: (e: PointerEvent<HTMLElement>) => void;
+  /** Identifies this window to the demo's reference inspector. */
+  refKey?: string;
 };
 
 /** A tiled window. No title bar, as in Omarchy; state lives in the border alone. */
-export function WindowFrame({ label, active, urgent, children, onPointerDown }: WindowFrameProps) {
+export function WindowFrame({ label, active, urgent, children, onPointerDown, refKey }: WindowFrameProps) {
   return (
     <section
       aria-label={label}
       data-active={active || undefined}
+      data-ref="window"
+      data-ref-key={refKey}
       onPointerDown={onPointerDown}
       {...stylex.props(typo.caption, face.mono, s.frame, urgent && s.urgent, active && s.active)}
     >

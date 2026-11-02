@@ -12,6 +12,7 @@ case "${1:-}" in
     pnpm exec eslint --max-warnings=0 .
     node scripts/gen-props.mts --check
     node scripts/gen-themes.mts --check
+    node scripts/gen-reference.mts --check
     ;;
   test)
     pnpm exec vitest run
@@ -22,6 +23,7 @@ case "${1:-}" in
   build) pnpm exec next build ;;
   docs)
     node scripts/gen-themes.mts
+    node scripts/gen-reference.mts
     node scripts/gen-props.mts
     ;;
   check)

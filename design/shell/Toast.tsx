@@ -17,7 +17,9 @@ const s = stylex.create({
     padding: chrome.toastPad,
     textAlign: "left",
     backgroundColor: chrome.panelBg,
-    border: chrome.panelBorder,
+    borderWidth: chrome.panelBorderWidth,
+    borderStyle: "solid",
+    borderColor: chrome.panelBorderColor,
     color: color["--text"],
     animationName: drop,
     animationDuration: motion.move,
@@ -30,7 +32,7 @@ const s = stylex.create({
   dot: { display: chrome.dot, width: "6px", height: "6px", backgroundColor: color["--info"] },
   dotCritical: { backgroundColor: color["--err"] },
   whoCritical: { color: color["--err"] },
-  title: { fontWeight: chrome.uiWeight },
+  title: { fontSize: chrome.toastTitle, fontWeight: chrome.toastTitleWeight },
   body: { color: chrome.quiet },
   time: { display: chrome.desc, fontWeight: weight.regular },
 });
@@ -45,10 +47,12 @@ export type ToastProps = {
   critical?: boolean;
   /** Makes the whole toast a button that dismisses it. */
   onDismiss?: () => void;
+  /** Identifies this toast to the demo's reference inspector. */
+  refKey?: string;
 };
 
 /** A notification card: source and time as a label, title in the UI face, body one tone quieter. */
-export function Toast({ who, title, body, time = "now", critical, onDismiss }: ToastProps) {
+export function Toast({ who, title, body, time = "now", critical, onDismiss, refKey }: ToastProps) {
   const content = (
     <>
       <span {...stylex.props(chromeLabel.base, s.head)}>
@@ -64,13 +68,20 @@ export function Toast({ who, title, body, time = "now", critical, onDismiss }: T
   );
   if (onDismiss) {
     return (
-      <button type="button" onClick={onDismiss} aria-label={`${who}: ${title}. Dismiss`} {...stylex.props(s.toast, s.button, critical && s.critical)}>
+      <button
+        type="button"
+        data-ref="toast"
+        data-ref-key={refKey}
+        onClick={onDismiss}
+        aria-label={`${who}: ${title}. Dismiss`}
+        {...stylex.props(s.toast, s.button, critical && s.critical)}
+      >
         {content}
       </button>
     );
   }
   return (
-    <div role={critical ? "alert" : "status"} {...stylex.props(s.toast, critical && s.critical)}>
+    <div role={critical ? "alert" : "status"} data-ref="toast" data-ref-key={refKey} {...stylex.props(s.toast, critical && s.critical)}>
       {content}
     </div>
   );

@@ -3,6 +3,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { color } from "@/design/tokens/color.stylex";
+import { stroke } from "@/design/tokens/size.stylex";
 import { font } from "@/design/tokens/type.stylex";
 import { pretty } from "@/lib/fs";
 import { typo } from "@/design/primitives/typography";
@@ -56,7 +57,9 @@ const s = stylex.create({
     display: "flex",
     alignItems: "stretch",
     backgroundColor: color["--sunken"],
-    borderTop: `1px solid ${color["--line"]}`,
+    borderTopWidth: stroke.hair,
+    borderTopStyle: "solid",
+    borderTopColor: color["--line"],
     lineHeight: 1.9,
     textTransform: "none",
     letterSpacing: "normal",

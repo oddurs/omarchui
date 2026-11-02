@@ -1,9 +1,13 @@
-import { at, filter, LAUNCHER, OMARCHY_MENU, type MenuItem } from "@/lib/menu";
+import { at, filter, LAUNCHER, omarchyMenu, searchAll, type MenuItem, type MenuState } from "@/lib/menu";
 import type { Overlay, State } from "./state";
 
-export function overlayItems(o: NonNullable<Overlay>): { items: MenuItem[]; trail: string[] } {
+export type MenuContext = Pick<State, "theme" | "view"> & MenuState;
+
+export function overlayItems(o: NonNullable<Overlay>, s: MenuContext): { items: MenuItem[]; trail: string[] } {
   if (o.root === "launcher") return { items: filter(LAUNCHER, o.q), trail: ["Apps"] };
-  const { items, trail } = at(OMARCHY_MENU, o.path);
+  const root = omarchyMenu(s);
+  if (!o.path.length && o.q.trim()) return { items: searchAll(root, o.q), trail: ["Search"] };
+  const { items, trail } = at(root, o.path);
   return { items: filter(items, o.q), trail };
 }
 
@@ -15,7 +19,7 @@ export function currentIndex(items: MenuItem[], s: Pick<State, "theme" | "view">
   return Math.max(0, i);
 }
 
-export function openAt(root: "launcher" | "omarchy", path: string[], s: Pick<State, "theme" | "view">): NonNullable<Overlay> {
+export function openAt(root: "launcher" | "omarchy", path: string[], s: MenuContext): NonNullable<Overlay> {
   const o = { root, path, q: "", sel: 0 };
-  return { ...o, sel: currentIndex(overlayItems(o).items, s) };
+  return { ...o, sel: currentIndex(overlayItems(o, s).items, s) };
 }

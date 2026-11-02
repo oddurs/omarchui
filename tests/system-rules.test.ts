@@ -26,6 +26,13 @@ describe("system rules", () => {
     expect(hits).toEqual([]);
   });
 
+  it("never writes a border shorthand", () => {
+    // StyleX drops border shorthands whose value contains a variable, without an error:
+    // the menu, notifications and overlay once rendered with no border at all.
+    const hits = outsideTokens.filter((f) => /\bborder(Top|Bottom|Left|Right|Inline|Block)?:\s/.test(f.src)).map((f) => f.rel);
+    expect(hits).toEqual([]);
+  });
+
   it("names every z-index", () => {
     const hits = outsideTokens.filter((f) => /zIndex:\s*["']?\d/.test(f.src)).map((f) => f.rel);
     expect(hits).toEqual([]);

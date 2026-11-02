@@ -41,7 +41,8 @@ export function Thesis() {
           </Inline>
           <Inline gap="u2" wrap>
             <Text variant="caption" tone="faint" as="span">
-              A working desktop: tiling, a shell, menus, before and after. Alt stands in for Super. Or press
+              A working desktop with Omarchy 4&apos;s real menu and bindings, before and after, and a reference mode that cites the source. Alt stands in for
+              Super. Or press
             </Text>
             <Chord chord="D" />
           </Inline>

@@ -42,12 +42,12 @@ const s = stylex.create({
   sep: { width: stroke.hair, alignSelf: "stretch", backgroundColor: color["--line"] },
 });
 
-type Props = { view: View; onView: (v: View) => void };
+type Props = { view: View; onView: (v: View) => void; inspect: boolean; onInspect: () => void };
 
 const IDLE_MS = 2500;
 
 /** Site chrome, not desktop chrome: always tuned, so it reads the same in every view. */
-export function Dock({ view, onView }: Props) {
+export function Dock({ view, onView, inspect, onInspect }: Props) {
   const [shown, setShown] = useState(true);
   const dock = useRef<HTMLDivElement>(null);
 
@@ -84,7 +84,7 @@ export function Dock({ view, onView }: Props) {
   };
 
   return (
-    <div ref={dock} role="region" aria-label="Demo controls" onFocus={() => setShown(true)} {...stylex.props(s.dock, !shown && s.away)}>
+    <div ref={dock} data-dock role="region" aria-label="Demo controls" onFocus={() => setShown(true)} {...stylex.props(s.dock, !shown && s.away)}>
       <Segmented<View>
         label="Before and after"
         value={view}
@@ -99,6 +99,9 @@ export function Dock({ view, onView }: Props) {
         <Chord chord="Alt+Ctrl+B" />
       </span>
       <span aria-hidden {...stylex.props(s.sep)} />
+      <Button variant={inspect ? "primary" : "ghost"} size="small" onPress={onInspect} aria-pressed={inspect}>
+        <Icon name="search" /> Reference
+      </Button>
       <Button variant="ghost" size="small" onPress={fullscreen}>
         <Icon name="expand" /> Fullscreen
       </Button>

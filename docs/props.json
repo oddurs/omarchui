@@ -933,6 +933,12 @@
         "doc": ""
       },
       {
+        "name": "refKey",
+        "type": "string",
+        "required": false,
+        "doc": "Identifies this window to the demo's reference inspector."
+      },
+      {
         "name": "urgent",
         "type": "boolean",
         "required": false,
@@ -1035,6 +1041,12 @@
         "type": "(() => void)",
         "required": false,
         "doc": "Makes the whole toast a button that dismisses it."
+      },
+      {
+        "name": "refKey",
+        "type": "string",
+        "required": false,
+        "doc": "Identifies this toast to the demo's reference inspector."
       },
       {
         "name": "time",

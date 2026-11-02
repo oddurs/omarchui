@@ -61,9 +61,10 @@ export const BINDINGS: Binding[] = [
 
   { chord: "Super+Alt+Space", label: "Apps", group: "Alternates", today: true, command: { type: "launcher" } },
   { chord: "Super+Alt+B", label: "Before / after", group: "Alternates", command: { type: "view-cycle" } },
+  { chord: "Super+Alt+R", label: "Reference mode", group: "Alternates", command: { type: "inspect" } },
 
-  { chord: "Super+Ctrl+T", label: "Theme menu", group: "Panels and toggles", today: true, command: { type: "menu", path: ["appearance", "theme"] } },
-  { chord: "Super+Ctrl+O", label: "Toggle menu", group: "Panels and toggles", today: true, command: { type: "menu", path: ["trigger", "toggle"] } },
+  { chord: "Super+Ctrl+T", label: "Theme menu", group: "Panels and toggles", today: true, command: { type: "menu", path: ["appearance", "appearance.theme"] } },
+  { chord: "Super+Ctrl+O", label: "Toggle menu", group: "Panels and toggles", today: true, command: { type: "menu", path: ["trigger", "trigger.toggle"] } },
   { chord: "Super+Ctrl+I", label: "Idle lock", group: "Panels and toggles", today: true, command: { type: "toggle", what: "idle" } },
   { chord: "Super+Ctrl+L", label: "Lock now", group: "Panels and toggles", today: true, command: { type: "lock" } },
 ];

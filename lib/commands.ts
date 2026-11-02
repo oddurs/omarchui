@@ -29,7 +29,8 @@ export type Command =
   | { type: "restart" }
   | { type: "shutdown" }
   | { type: "notify"; title: string; body: string; who?: string; critical?: boolean }
-  | { type: "link"; href: string };
+  | { type: "link"; href: string }
+  | { type: "inspect" };
 
 export const VIEWS: View[] = ["stock", "split", "tuned"];
 
