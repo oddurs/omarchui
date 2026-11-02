@@ -63,11 +63,13 @@ export const BINDINGS: Binding[] = [
   { chord: "Super+Shift+T", label: "Activity (btop)", group: "Move and launch", today: true, command: { type: "open", app: "monitor" } },
 
   { chord: "Super+Alt+Space", label: "Apps", group: "Alternates", today: true, command: { type: "launcher" } },
-  { chord: "Super+Alt+B", label: "Before / after", group: "Alternates", command: { type: "view-cycle" } },
+  { chord: "Super+Alt+U", label: "Before / after", group: "Alternates", command: { type: "view-cycle" } },
   { chord: "Super+Alt+R", label: "Reference mode", group: "Alternates", command: { type: "inspect" } },
 
   { chord: "Super+Ctrl+T", label: "Theme picker", group: "Panels and toggles", today: true, command: { type: "picker", mode: "theme" } },
   { chord: "Super+Ctrl+W", label: "Background picker", group: "Panels and toggles", today: true, command: { type: "picker", mode: "background" } },
+  { chord: "Super+Ctrl+A", label: "Audio panel", group: "Panels and toggles", today: true, command: { type: "panel", id: "audio" } },
+  { chord: "Super+Ctrl+B", label: "Bluetooth panel", group: "Panels and toggles", today: true, command: { type: "panel", id: "bluetooth" } },
   { chord: "Super+Ctrl+O", label: "Toggle menu", group: "Panels and toggles", today: true, command: { type: "menu", path: ["trigger", "trigger.toggle"] } },
   { chord: "Super+Ctrl+I", label: "Idle lock", group: "Panels and toggles", today: true, command: { type: "toggle", what: "idle" } },
   { chord: "Super+Ctrl+L", label: "Lock now", group: "Panels and toggles", today: true, command: { type: "lock" } },

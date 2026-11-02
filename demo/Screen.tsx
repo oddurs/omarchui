@@ -35,9 +35,10 @@ import { backgroundSrc } from "@/lib/background-images";
 import { backgroundIndex } from "@/lib/backgrounds";
 import { LockScreen } from "./LockScreen";
 import { MenuOverlay } from "./MenuOverlay";
+import { PanelLayer } from "./Panels";
 import { PickerOverlay } from "./PickerOverlay";
 import { Wallpaper } from "./Wallpaper";
-import { BAR_WORKSPACES, rectsFor, windowsOn, windowTitle, WORKSPACES, type Action, type Fullscreen, type State, type Win } from "./state";
+import { BAR_WORKSPACES, rectsFor, windowsOn, windowTitle, WORKSPACES, type Action, type Fullscreen, type PanelId, type State, type Win } from "./state";
 
 // Hyprland's windowsIn/Out: pop from and to 87% of the window's size, with a fade alongside.
 // default/hypr/looknfeel.lua:81-84.
@@ -227,6 +228,7 @@ function App(p: AppProps) {
 export function Screen({ state, dispatch, exec, mode, interactive, id, onToastsHeld }: Props) {
   const area = useRef<HTMLDivElement>(null);
   const now = useNow();
+  const root = useRef<HTMLDivElement>(null);
   const clock = formatClock(now);
 
   useEffect(() => {
@@ -245,30 +247,33 @@ export function Screen({ state, dispatch, exec, mode, interactive, id, onToastsH
   const shown = Math.max(BAR_WORKSPACES, state.ws, ...busy);
   const layers = Array.from({ length: WORKSPACES }, (_, i) => i + 1).filter((n) => n === state.ws || busy.has(n));
 
+  // A left click on a widget toggles its panel. research/omarchy/spec/panels.json, container.
+  const panel = (p: PanelId) => ({ panel: p, open: state.panel === p, onPress: interactive ? () => dispatch({ type: "panel", id: p }) : undefined });
+
   // Both views draw Omarchy's widgets in shell.json's sections and order (REF_BAR); only tokens differ.
   const right: BarModule[] = REF_BAR.right.flatMap((id): BarModule[] => {
     switch (id) {
       case "omarchy.agents":
         return [{ id, icon: "agents", label: "Agents" }];
       case "omarchy.bluetooth":
-        return [{ id, icon: "bluetooth", label: "Bluetooth" }];
+        return [{ id, icon: "bluetooth", label: "Bluetooth", ...panel("bluetooth") }];
       case "omarchy.network":
-        return [{ id, icon: "wifi", label: "Network" }];
+        return [{ id, icon: "wifi", label: "Network", ...panel("network") }];
       case "omarchy.audio":
         return [
           {
             id,
             icon: state.muted ? "mute" : "volume",
             label: state.muted ? "Audio, muted" : `Audio ${state.volume}%`,
-            onPress: interactive ? () => dispatch({ type: "mute" }) : undefined,
+            ...panel("audio"),
             onWheel: interactive ? (e) => dispatch({ type: "volume", delta: e.deltaY < 0 ? 5 : -5 }) : undefined,
           },
         ];
       case "omarchy.monitor":
-        return [{ id, icon: "monitor", label: "Display", onPress: interactive ? () => exec({ type: "open", app: "monitor" }) : undefined }];
+        return [{ id, icon: "monitor", label: "Display", ...panel("monitor") }];
       // The battery icon is never tinted, research/omarchy/spec/bar.json omarchy.power.
       case "omarchy.power":
-        return [{ id, icon: "battery", label: "Power", value: "82" }];
+        return [{ id, icon: "battery", label: "Power", value: "87%", ...panel("power") }];
       default:
         return [];
     }
@@ -283,7 +288,7 @@ export function Screen({ state, dispatch, exec, mode, interactive, id, onToastsH
   // centerEnd: the world clock and the weather.
   const after: BarModule[] = REF_BAR.centerEnd.flatMap((id): BarModule[] => {
     if (id === "omarchy.elsewhen") return [{ id, icon: "globe", label: "World clock", status: true }];
-    if (id === "omarchy.weather") return [{ id, icon: "cloud", label: "Weather", status: true }];
+    if (id === "omarchy.weather") return [{ id, icon: "cloud", label: "Weather", status: true, ...panel("weather") }];
     return [];
   });
 
@@ -399,7 +404,7 @@ export function Screen({ state, dispatch, exec, mode, interactive, id, onToastsH
   const barHidden = state.fullscreen[state.ws]?.kind === "full";
 
   return (
-    <div {...stylex.props(s.screen, mode === "stock" && stock)} data-mode={mode} data-screen={id}>
+    <div ref={root} {...stylex.props(s.screen, mode === "stock" && stock)} data-mode={mode} data-screen={id}>
       <Wallpaper src={backgroundSrc(state.theme, backgroundIndex(state.theme, state.bg[state.theme]))} />
       <div {...stylex.props(barHidden && s.noBar)}>
         <Bar
@@ -407,6 +412,7 @@ export function Screen({ state, dispatch, exec, mode, interactive, id, onToastsH
           clock={{ day: clock.day, time: clock.time }}
           modules={right}
           beside={{ before, after }}
+          clockPanel={{ open: state.panel === "clock", onPress: () => interactive && dispatch({ type: "panel", id: "clock" }) }}
           onWorkspace={interactive ? (n) => exec({ type: "workspace", n }) : undefined}
           onMark={interactive ? () => exec({ type: "menu" }) : undefined}
         />
@@ -459,6 +465,9 @@ export function Screen({ state, dispatch, exec, mode, interactive, id, onToastsH
         >
           <MenuOverlay overlay={state.overlay} state={state} interactive={interactive} mode={mode} listId={`${id}-menu`} dispatch={dispatch} exec={exec} />
         </MenuLayer>
+      )}
+      {state.panel && state.phase === "desktop" && now && (
+        <PanelLayer key={state.panel} id={state.panel} state={state} dispatch={dispatch} interactive={interactive} screen={root} now={now} />
       )}
       {state.picker && state.phase === "desktop" && (
         <PickerOverlay picker={state.picker} state={state} interactive={interactive} listId={`${id}-picker`} dispatch={dispatch} exec={exec} />

@@ -26,6 +26,9 @@ export type Toast = { id: number; who: string; title: string; body: string; crit
 export type Overlay = { root: "launcher" | "omarchy"; path: string[]; q: string; sel: number } | null;
 /** Omarchy's image picker, open on themes or on the current theme's backgrounds. */
 export type Picker = { mode: "theme" | "background"; sel: number; q: string } | null;
+/** The bar panels the demo draws; one is open at a time. research/omarchy/spec/panels.json. */
+export type PanelId = "clock" | "weather" | "audio" | "network" | "bluetooth" | "monitor" | "power";
+export type Profile = "power-saver" | "balanced" | "performance";
 export type Osd = { kind: "volume" | "brightness"; value: number; muted: boolean; key: number } | null;
 export type Metrics = { cores: number[]; mem: number; net: number[] };
 
@@ -48,6 +51,11 @@ export type State = {
   closing: { win: Win; rect: Rect | null }[];
   overlay: Overlay;
   picker: Picker;
+  panel: PanelId | null;
+  /** The radios and power profile the panels switch. */
+  wifi: boolean;
+  bluetooth: boolean;
+  profile: Profile;
   toasts: Toast[];
   osd: Osd;
   volume: number;
@@ -90,6 +98,11 @@ export type Action =
   | { type: "flip" }
   | { type: "overlay"; overlay: Overlay }
   | { type: "picker"; picker: Picker }
+  | { type: "panel"; id: PanelId | null }
+  | { type: "radio"; what: "wifi" | "bluetooth"; on: boolean }
+  | { type: "profile"; value: Profile }
+  | { type: "set-volume"; value: number }
+  | { type: "set-brightness"; value: number }
   | { type: "background"; index: number }
   | { type: "notify"; who: string; title: string; body: string; critical?: boolean }
   | { type: "dismiss"; id: number }
@@ -129,6 +142,10 @@ export function initialState(theme: ThemeSlug): State {
     closing: [],
     overlay: null,
     picker: null,
+    panel: null,
+    wifi: true,
+    bluetooth: true,
+    profile: "balanced",
     toasts: [],
     osd: null,
     volume: 64,
@@ -258,7 +275,7 @@ export function reducer(s: State, a: Action): State {
             },
           );
     case "lock":
-      return s.phase === "desktop" ? { ...s, phase: "lock", overlay: null, picker: null } : s;
+      return s.phase === "desktop" ? { ...s, phase: "lock", overlay: null, picker: null, panel: null } : s;
     // A restart boots a fresh session: windows go, the theme, view and backgrounds stay.
     case "restart":
       return { ...initialState(a.theme), view: s.view, split: s.split, aspect: s.aspect, bg: s.bg, boots: s.boots };
@@ -282,7 +299,19 @@ export function reducer(s: State, a: Action): State {
     case "background":
       return { ...s, picker: null, bg: { ...s.bg, [s.theme]: a.index } };
     case "picker":
-      return { ...s, picker: a.picker, overlay: a.picker ? null : s.overlay };
+      return { ...s, picker: a.picker, overlay: a.picker ? null : s.overlay, panel: a.picker ? null : s.panel };
+    // One panel per bar; asking for the open one again closes it. panel.single.
+    case "panel":
+      return { ...s, panel: a.id === s.panel ? null : a.id, overlay: a.id ? null : s.overlay };
+    case "radio":
+      return { ...s, [a.what]: a.on };
+    case "profile":
+      return { ...s, profile: a.value };
+    // Panel sliders change the level without the OSD, which shows for key presses.
+    case "set-volume":
+      return { ...s, volume: clamp(Math.round(a.value), 0, 100), muted: false };
+    case "set-brightness":
+      return { ...s, brightness: clamp(Math.round(a.value), 1, 100) };
     case "open": {
       const id = `w${s.seq}`;
       let data = newData(a.app, a.file);

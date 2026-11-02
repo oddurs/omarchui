@@ -27,6 +27,7 @@ import { Icon, Mark, type IconName } from "@/design/shell/Icon";
 import { previewSrc } from "@/lib/background-images";
 import { THEMES } from "@/lib/themes";
 import { ImagePicker } from "@/design/shell/ImagePicker";
+import { PanelCard, PanelHero, PanelPills, PanelRow, PanelRule, PanelSection, PanelSlider, PanelSwitch } from "@/design/shell/Panel";
 import { LockField, LockPanel } from "@/design/shell/LockPanel";
 import { MenuPanel } from "@/design/shell/MenuPanel";
 import { Osd } from "@/design/shell/Osd";
@@ -560,6 +561,43 @@ export const EXAMPLES: Record<string, Example> = {
         <div {...stylex.props(s.narrow)}>
           <ToastDeck toasts={toasts} now={start + 60_000} onDismiss={(id) => setToasts((ts) => ts.filter((t) => t.id !== id))} />
         </div>
+      );
+    },
+  },
+  panel: {
+    Live: () => {
+      const [on, setOn] = useState(true);
+      const [v, setV] = useState(0.64);
+      const [pick, setPick] = useState<"saver" | "balanced" | "fast">("balanced");
+      return (
+        <PanelCard label="Audio" width={380} origin={190}>
+          <PanelHero
+            glyph={<Icon name="volume" panel="hero" />}
+            title="Audio"
+            meta={on ? "Steady groove" : "Muted"}
+            dim={!on}
+            end={<PanelSwitch label="Mute" checked={on} onChange={setOn} />}
+          />
+          <PanelRule />
+          <PanelSection title="OUTPUT" value={`${Math.round(v * 100)}%`}>
+            <PanelSlider label="Output volume" value={v} onChange={setV} />
+            <PanelRow glyph={<Icon name="volume" />} name="Built-in Speakers" strong current />
+            <PanelRow glyph={<Icon name="volume" />} name="WH-1000XM5" />
+          </PanelSection>
+          <PanelRule />
+          <PanelSection title="POWER PROFILE">
+            <PanelPills
+              label="Power profile"
+              value={pick}
+              onChange={setPick}
+              options={[
+                { value: "saver", label: "Saver" },
+                { value: "balanced", label: "Balanced" },
+                { value: "fast", label: "Fast" },
+              ]}
+            />
+          </PanelSection>
+        </PanelCard>
       );
     },
   },

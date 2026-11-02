@@ -13,6 +13,7 @@ export type Command =
   | { type: "close" }
   | { type: "fullscreen"; kind?: "full" | "max" }
   | { type: "float" }
+  | { type: "panel"; id: "clock" | "weather" | "audio" | "network" | "bluetooth" | "monitor" | "power" }
   | { type: "pop" }
   | { type: "flip" }
   | { type: "focus"; dir: Dir }

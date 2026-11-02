@@ -71,7 +71,7 @@ const NOTES = `Things to try in this demo
   Alt+Space      Omarchy menu
   Alt+Ctrl+Space apps
   Alt+K          every keybinding
-  Alt+Ctrl+B     flip between stock, split and tuned
+  Alt+Ctrl+U     flip between stock, split and tuned
   omarchy-theme-set nord
 `;
 

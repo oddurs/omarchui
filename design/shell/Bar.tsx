@@ -23,6 +23,10 @@ export type BarModule = {
   tone?: "ok" | "warn" | "err";
   /** A status icon (indicator, world clock, weather): the narrower slot. */
   status?: boolean;
+  /** The panel this widget opens, by id; its card is centred on the widget. */
+  panel?: string;
+  /** Its panel is open: an accent pill sits under the widget. */
+  open?: boolean;
   onPress?: () => void;
   onWheel?: (e: WheelEvent) => void;
 };
@@ -103,6 +107,32 @@ const s = stylex.create({
   ok: { color: color["--ok"] },
   warn: { color: color["--warn"] },
   err: { color: color["--err"] },
+  // While a widget's panel is open, a 2px accent pill sits 2px above the bar's bottom edge, a
+  // little over half the slot wide. shell/plugins/bar/Bar.qml:2871-2878, 3009-3036.
+  openable: { position: "relative" },
+  pill: {
+    position: "absolute",
+    left: "50%",
+    bottom: "2px",
+    width: "55%",
+    minWidth: "10px",
+    height: "2px",
+    borderRadius: "1px",
+    transform: "translateX(-50%)",
+    backgroundColor: chrome.selText,
+    opacity: 0.9,
+    pointerEvents: "none",
+  },
+  clockButton: {
+    height: chrome.barHeight,
+    padding: 0,
+    borderWidth: 0,
+    backgroundColor: "transparent",
+    color: "inherit",
+    cursor: "pointer",
+    outline: "none",
+    ":focus-visible": { boxShadow: focus.inset },
+  },
   // On a phone the bar keeps workspaces, the time and the battery; the rest waits for room.
   minor: { display: { default: "inline-flex", [bp.phone]: "none" } },
 });
@@ -113,6 +143,8 @@ export type BarProps = {
   modules: BarModule[];
   /** Modules on either side of the clock: Omarchy's indicators before it, world clock and weather after. */
   beside?: { before: BarModule[]; after: BarModule[] };
+  /** The clock opens the calendar. */
+  clockPanel?: { open: boolean; onPress: () => void };
   onWorkspace?: (n: number) => void;
   onMark?: () => void;
   /** Draw a hairline frame, for showing the bar on its own. */
@@ -120,7 +152,7 @@ export type BarProps = {
 };
 
 /** The bar in three zones: where you are, when it is, what the machine is doing. */
-export function Bar({ workspaces, clock, modules, beside, onWorkspace, onMark, framed }: BarProps) {
+export function Bar({ workspaces, clock, modules, beside, clockPanel, onWorkspace, onMark, framed }: BarProps) {
   return (
     <div role="toolbar" aria-label="Bar" data-ref="bar" {...stylex.props(s.bar, framed && s.framed)}>
       <div {...stylex.props(s.zone)}>
@@ -158,10 +190,27 @@ export function Bar({ workspaces, clock, modules, beside, onWorkspace, onMark, f
             ))}
           </div>
         )}
-        <div data-ref="clock" {...stylex.props(typo.caption, face.mono, s.clock)}>
-          <span {...stylex.props(s.day)}>{clock.day}</span>
-          {clock.time}
-        </div>
+        {clockPanel ? (
+          <button
+            type="button"
+            aria-label={`${clock.day} ${clock.time}. Calendar`}
+            aria-expanded={clockPanel.open}
+            data-panel="clock"
+            onClick={clockPanel.onPress}
+            {...stylex.props(s.clockButton, s.openable)}
+          >
+            <span data-ref="clock" {...stylex.props(typo.caption, face.mono, s.clock)}>
+              <span {...stylex.props(s.day)}>{clock.day}</span>
+              {clock.time}
+            </span>
+            {clockPanel.open && <span aria-hidden {...stylex.props(s.pill)} />}
+          </button>
+        ) : (
+          <div data-ref="clock" {...stylex.props(typo.caption, face.mono, s.clock)}>
+            <span {...stylex.props(s.day)}>{clock.day}</span>
+            {clock.time}
+          </div>
+        )}
         {beside && beside.after.length > 0 && (
           <div {...stylex.props(s.side, s.after)}>
             {beside.after.map((m) => (
@@ -186,8 +235,17 @@ function BarMod({ m, minor }: { m: BarModule; minor?: boolean }) {
   const look = [typo.label, s.mod, m.status && s.statusSlot, toneStyle, minor && s.minor];
   if (m.onPress) {
     return (
-      <button type="button" aria-label={label} onClick={m.onPress} onWheel={m.onWheel} {...stylex.props(s.press, ...look, s.hover, toneStyle)}>
+      <button
+        type="button"
+        aria-label={label}
+        aria-expanded={m.panel ? Boolean(m.open) : undefined}
+        data-panel={m.panel}
+        onClick={m.onPress}
+        onWheel={m.onWheel}
+        {...stylex.props(s.press, ...look, s.hover, toneStyle, s.openable)}
+      >
         {inner}
+        {m.open && <span aria-hidden {...stylex.props(s.pill)} />}
       </button>
     );
   }
