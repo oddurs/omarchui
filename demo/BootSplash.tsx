@@ -1,83 +1,120 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import { face, typo } from "@/design/primitives/typography";
-import { Mark } from "@/design/shell/Icon";
 import { layer } from "@/design/tokens/layer.stylex";
-import { omarchy } from "@/design/tokens/omarchy.stylex";
+import { machine } from "@/design/tokens/machine.stylex";
+import { OMARCHY_COMMIT } from "@/lib/themes.generated";
 
-// Omarchy's Plymouth splash (default/plymouth/omarchy.script): the logo centred on the theme
-// background; 40px below it a 286x48 password field with a lock to its left; once the password
-// is in, a 300x10 progress bar in the field's place. Omarchui shows its own mark, not Omarchy's logo.
+// Omarchy's boot, stage by stage, from its source at the pinned commit:
+//   bootloader  Limine, quiet, for its 1s timeout on the backdrop.     default/limine/limine.conf:2-3,11-12
+//   logo        Plymouth's logo alone, centred on the screen.          default/plymouth/omarchy.script:6-8,220-221
+//   password    the disk passphrase: lock, entry, one bullet a key.    omarchy.script:112-128,133-189,223-232
+//   progress    the bar, easing toward 70% until real progress leads.  omarchy.script:10-12,37-54,137-147,195-212
+// The disk password is the login: encrypted installs autologin into Hyprland
+// (bin/omarchy-provision-owner:765-774), where the shell lifts a black cover (demo/Power.tsx).
+// The images are Omarchy's own, read from its repository at the pinned commit, not copied here.
+const ASSETS = `https://raw.githubusercontent.com/basecamp/omarchy/${OMARCHY_COMMIT}/default/plymouth`;
+
+const LOGO = { w: 800, h: 188 };
+const ENTRY = { w: 286, h: 48 };
+// The 84x96 lock is scaled to 80% of the entry's height. omarchy.script:122-127.
+const LOCK = { h: ENTRY.h * 0.8, w: 84 * ((ENTRY.h * 0.8) / 96) };
+const BAR = { w: 300, h: 10 };
+const BULLET = 7;
+const MAX_BULLETS = 21;
+
+/** How long each stage before the password holds, in ms. Limine's timeout is 1s. */
+const LOADER_MS = 1000;
+const LOGO_MS = 700;
+// Fake progress eases (1 - (1 - t)^2) toward 70% over 15s. omarchy.script:10-12, 46-51.
+const FAKE_LIMIT = 0.7;
+const FAKE_MS = 15_000;
+// Never wait on a slow image for long; Omarchy's own startup cover gives up after 10s.
+const READY_CAP_MS = 4000;
+
+export type BootStage = "bootloader" | "logo" | "password" | "progress";
+
 const s = stylex.create({
-  root: {
-    position: "fixed",
-    inset: 0,
-    zIndex: layer.boot,
-    display: "grid",
-    placeItems: "center",
-    backgroundColor: omarchy["--o-background"],
-    color: omarchy["--o-foreground"],
-  },
-  // The logo sits on the centre line; what is below it hangs from its bottom edge. omarchy.script:216-241.
-  logo: { position: "relative", display: "grid", placeItems: "center" },
-  below: { position: "absolute", top: "calc(100% + 40px)", left: "50%", transform: "translateX(-50%)", display: "grid", placeItems: "center" },
-  field: { position: "relative", width: "286px", height: "48px" },
+  root: { position: "fixed", inset: 0, zIndex: layer.boot, overflow: "hidden", backgroundColor: machine.boot },
+  stage: { position: "absolute", left: "50%", top: "50%", width: `${LOGO.w}px`, height: `${LOGO.h}px` },
+  img: { position: "absolute", display: "block", userSelect: "none", pointerEvents: "none" },
   input: {
     position: "absolute",
-    inset: 0,
-    width: "100%",
-    height: "100%",
     padding: 0,
-    borderWidth: "2px",
-    borderStyle: "solid",
-    borderColor: omarchy["--o-foreground"],
+    borderWidth: 0,
     backgroundColor: "transparent",
-    // The typed text is drawn as dots below; the real characters stay invisible.
+    // Plymouth shows only bullets; the characters themselves are never drawn.
     color: "transparent",
     caretColor: "transparent",
     outline: "none",
-    ":focus-visible": { borderColor: omarchy["--o-accent"] },
+    cursor: "default",
   },
-  // Lock at 80% of the field's height, 15px to its left. omarchy.script:122-128, 227-229.
-  lock: { position: "absolute", right: "calc(100% + 15px)", top: "50%", transform: "translateY(-50%)", width: "34px", height: "38px" },
-  dots: { position: "absolute", left: "20px", top: "50%", transform: "translateY(-50%)", display: "flex", gap: "5px", pointerEvents: "none" },
-  dot: { width: "7px", height: "7px", borderRadius: "50%", backgroundColor: omarchy["--o-foreground"] },
-  box: { position: "relative", width: "300px", height: "10px", backgroundColor: omarchy["--o-lighter-background"] },
-  bar: { position: "absolute", inset: 0, transformOrigin: "left", backgroundColor: omarchy["--o-foreground"] },
-  hint: { position: "absolute", top: "calc(100% + 24px)", margin: 0, whiteSpace: "nowrap", color: omarchy["--o-foreground"], opacity: 0.6 },
 });
 
-const fill = stylex.create({ to: (p: number) => ({ transform: `scaleX(${p})` }) });
+const at = stylex.create({
+  // Plymouth draws at the images' own pixel size; only a screen narrower than the logo scales down.
+  stage: (k: number) => ({ transform: `translate(-50%, -50%) scale(${k})` }),
+  box: (x: number, y: number, w: number, h: number) => ({ left: `${x}px`, top: `${y}px`, width: `${w}px`, height: `${h}px` }),
+});
 
-// Omarchy eases its stand-in progress toward 70% (ease-out quadratic) until real progress
-// overtakes it. omarchy.script:10-54. Here the real work is the first wallpaper loading.
-const FAKE_LIMIT = 0.7;
-const FAKE_MS = 1600;
+// Positions inside the logo's own box, which is centred on the screen. omarchy.script:216-241.
+const entryX = LOGO.w / 2 - ENTRY.w / 2;
+const entryY = LOGO.h + 40;
+const lockX = entryX - LOCK.w - 15;
+const lockY = entryY + ENTRY.h / 2 - LOCK.h / 2;
+const barX = LOGO.w / 2 - BAR.w / 2;
+const barY = entryY + ENTRY.h / 2 - BAR.h / 2;
+
+/** Scale for screens narrower than the logo; 1 everywhere else, and on the server. */
+function fit(): number {
+  return typeof window === "undefined" ? 1 : Math.min(1, (window.innerWidth - 32) / LOGO.w);
+}
 
 type Props = {
   /** The first background, decoded while the splash is up so the desktop arrives complete. */
   wallpaper?: string;
   interactive: boolean;
   onDone: () => void;
+  /** Hold at one stage: the server-rendered fallback shows the bootloader's blank backdrop. */
+  hold?: BootStage;
 };
 
-export function BootSplash({ wallpaper, interactive, onDone }: Props) {
+export function BootSplash({ wallpaper, interactive, onDone, hold }: Props) {
+  const [stage, setStage] = useState<BootStage>(hold ?? "bootloader");
   const [pw, setPw] = useState("");
-  const [booting, setBooting] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [k, setK] = useState(fit);
   const ready = useRef<Promise<void> | null>(null);
+  const field = useRef<HTMLInputElement>(null);
 
+  // The wallpaper decodes while the boot plays, as the shell prepares its first frame.
   useEffect(() => {
     if (!wallpaper) return;
-    const img = new Image();
+    const img = new window.Image();
     img.src = wallpaper;
     ready.current = img.decode().catch(() => undefined);
   }, [wallpaper]);
 
+  // Bootloader, then the logo alone, then the passphrase prompt.
   useEffect(() => {
-    if (!booting) return;
+    if (hold) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const a = window.setTimeout(() => setStage("logo"), reduced ? 0 : LOADER_MS);
+    const b = window.setTimeout(() => setStage("password"), reduced ? 0 : LOADER_MS + LOGO_MS);
+    return () => {
+      window.clearTimeout(a);
+      window.clearTimeout(b);
+    };
+  }, [hold]);
+
+  useEffect(() => {
+    if (stage === "password" && interactive) field.current?.focus({ preventScroll: true });
+  }, [stage, interactive]);
+
+  useEffect(() => {
+    if (stage !== "progress") return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     let raf = 0;
     let live = true;
@@ -88,73 +125,123 @@ export function BootSplash({ wallpaper, interactive, onDone }: Props) {
       if (t < 1) raf = requestAnimationFrame(tick);
     };
     if (!reduced) raf = requestAnimationFrame(tick);
-    const minimum = new Promise((r) => setTimeout(r, reduced ? 0 : 700));
-    // Never wait on a slow image for long; the desktop draws the theme colour until it lands.
-    // Omarchy's own startup cover gives up after 10s. BackgroundIntro.qml:167-188.
-    const loaded = Promise.race([ready.current, new Promise((r) => setTimeout(r, 4000))]);
+    const minimum = new Promise((r) => setTimeout(r, reduced ? 0 : 900));
+    const loaded = Promise.race([ready.current, new Promise((r) => setTimeout(r, READY_CAP_MS))]);
+    // Real progress takes over once it passes the fake, and Plymouth quits at the end.
     Promise.all([loaded, minimum]).then(() => {
       if (!live) return;
       cancelAnimationFrame(raf);
       setProgress(1);
-      setTimeout(() => live && onDone(), reduced ? 0 : 180);
+      setTimeout(() => live && onDone(), reduced ? 0 : 200);
     });
     return () => {
       live = false;
       cancelAnimationFrame(raf);
     };
-  }, [booting, onDone]);
+  }, [stage, onDone]);
 
+  useEffect(() => {
+    const onResize = () => setK(fit());
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  const filled = Math.max(1, Math.round(BAR.w * progress));
   return (
-    <div role="dialog" aria-label="Boot" {...stylex.props(s.root)}>
-      <div {...stylex.props(s.logo)}>
-        <Mark display />
-        <div {...stylex.props(s.below)}>
-          {booting ? (
-            <div
-              role="progressbar"
-              aria-label="Starting"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(progress * 100)}
-              {...stylex.props(s.box)}
-            >
-              <div {...stylex.props(s.bar, fill.to(progress))} />
-            </div>
-          ) : (
+    <div role="dialog" aria-label="Boot" data-stage={stage} {...stylex.props(s.root)}>
+      {stage !== "bootloader" && (
+        <div {...stylex.props(s.stage, at.stage(k))}>
+          <Image
+            src={`${ASSETS}/logo.png`}
+            alt="Omarchy"
+            width={LOGO.w}
+            height={LOGO.h}
+            unoptimized
+            priority
+            {...stylex.props(s.img, at.box(0, 0, LOGO.w, LOGO.h))}
+          />
+          {stage === "password" && (
             <form
-              {...stylex.props(s.field)}
               onSubmit={(e) => {
                 e.preventDefault();
-                if (interactive) setBooting(true);
+                if (interactive) setStage("progress");
               }}
             >
-              <svg viewBox="0 0 84 96" aria-hidden {...stylex.props(s.lock)}>
-                <path
-                  fill="currentColor"
-                  d="M42 0a28 28 0 0 0-28 28v12H8a8 8 0 0 0-8 8v40a8 8 0 0 0 8 8h68a8 8 0 0 0 8-8V48a8 8 0 0 0-8-8h-6V28A28 28 0 0 0 42 0zm0 12a16 16 0 0 1 16 16v12H26V28a16 16 0 0 1 16-16zm0 44a8 8 0 0 1 4 15v9h-8v-9a8 8 0 0 1 4-15z"
+              <Image
+                src={`${ASSETS}/lock.png`}
+                alt=""
+                width={84}
+                height={96}
+                unoptimized
+                loading="eager"
+                {...stylex.props(s.img, at.box(lockX, lockY, LOCK.w, LOCK.h))}
+              />
+              <Image
+                src={`${ASSETS}/entry.png`}
+                alt=""
+                width={ENTRY.w}
+                height={ENTRY.h}
+                unoptimized
+                loading="eager"
+                {...stylex.props(s.img, at.box(entryX, entryY, ENTRY.w, ENTRY.h))}
+              />
+              {Array.from({ length: Math.min(pw.length, MAX_BULLETS) }, (_, i) => (
+                <Image
+                  key={i}
+                  src={`${ASSETS}/bullet.png`}
+                  alt=""
+                  width={14}
+                  height={14}
+                  unoptimized
+                  loading="eager"
+                  {...stylex.props(s.img, at.box(entryX + 20 + i * (BULLET + 5), entryY + ENTRY.h / 2 - BULLET / 2, BULLET, BULLET))}
                 />
-              </svg>
+              ))}
               <input
+                ref={field}
                 type="password"
                 aria-label="Password"
                 value={pw}
                 onChange={(e) => setPw(e.target.value)}
                 readOnly={!interactive}
                 tabIndex={interactive ? 0 : -1}
-                autoFocus={interactive}
                 autoComplete="off"
-                {...stylex.props(s.input)}
+                {...stylex.props(s.input, at.box(entryX, entryY, ENTRY.w, ENTRY.h))}
               />
-              <span aria-hidden {...stylex.props(s.dots)}>
-                {Array.from({ length: Math.min(pw.length, 21) }, (_, i) => (
-                  <span key={i} {...stylex.props(s.dot)} />
-                ))}
-              </span>
             </form>
           )}
-          {!booting && <p {...stylex.props(typo.caption, face.mono, s.hint)}>Any password, then Enter. Alt stands in for Super.</p>}
+          {stage === "progress" && (
+            <div
+              role="progressbar"
+              aria-label="Starting"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(progress * 100)}
+              {...stylex.props(s.img, at.box(barX, barY, BAR.w, BAR.h))}
+            >
+              <Image
+                src={`${ASSETS}/progress_box.png`}
+                alt=""
+                width={BAR.w}
+                height={BAR.h}
+                unoptimized
+                loading="eager"
+                {...stylex.props(s.img, at.box(0, 0, BAR.w, BAR.h))}
+              />
+              {/* The bar image is scaled to the progress width, as update_progress_bar does. omarchy.script:62-72. */}
+              <Image
+                src={`${ASSETS}/progress_bar.png`}
+                alt=""
+                width={BAR.w}
+                height={BAR.h}
+                unoptimized
+                loading="eager"
+                {...stylex.props(s.img, at.box(0, 0, filled, BAR.h))}
+              />
+            </div>
+          )}
         </div>
-      </div>
+      )}
     </div>
   );
 }

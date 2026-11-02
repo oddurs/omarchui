@@ -208,3 +208,28 @@ describe("windows, as Omarchy's Hyprland handles them", () => {
     expect(rectsFor(swapped, 1).get(b!)).toEqual({ x: 0, y: 0, w: 0.5, h: 1 });
   });
 });
+
+describe("ending a session, as bin/omarchy-system does", () => {
+  it("says so on the OSD and closes every window before acting", () => {
+    const s = play(desktop(), { type: "open", app: "terminal", now }, { type: "session-exit", action: "logout" });
+    expect(s.osd).toMatchObject({ kind: "message", message: "Logging out" });
+    expect(s.windows).toHaveLength(0);
+    expect(s.closing).toHaveLength(1);
+    expect(s.phase).toBe("desktop");
+  });
+
+  it("logs out to SDDM's greeter; logging in fades a fresh session in", () => {
+    const greeter = play(desktop(), { type: "session-exit", action: "logout" }, { type: "session-end" });
+    expect(greeter.phase).toBe("greeter");
+    expect(greeter.osd).toBeNull();
+    const back = play(greeter, { type: "unlock" });
+    expect(back.phase).toBe("desktop");
+    expect(back.boots).toBe(2);
+    expect(back.toasts).toHaveLength(0);
+  });
+
+  it("reboots to the boot and shuts down to off", () => {
+    expect(play(desktop(), { type: "session-exit", action: "reboot" }, { type: "session-end" }).phase).toBe("boot");
+    expect(play(desktop(), { type: "session-exit", action: "shutdown" }, { type: "session-end" }).phase).toBe("off");
+  });
+});

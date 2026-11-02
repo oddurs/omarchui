@@ -32,12 +32,16 @@ export type Picker = { mode: "theme" | "background"; sel: number; q: string } | 
 /** The bar panels the demo draws; one is open at a time. research/omarchy/spec/panels.json. */
 export type PanelId = "clock" | "weather" | "audio" | "network" | "bluetooth" | "monitor" | "power";
 export type Profile = "power-saver" | "balanced" | "performance";
-export type Osd = { kind: "volume" | "brightness"; value: number; muted: boolean; key: number } | null;
+export type Osd = { kind: "volume" | "brightness" | "message"; value: number; muted: boolean; key: number; message?: string } | null;
+/** How a session ends, as bin/omarchy-system takes it. */
+export type Exit = "logout" | "reboot" | "shutdown";
 export type Metrics = { cores: number[]; mem: number; net: number[] };
 
 export type State = {
-  /** Omarchy's power states: off, the boot splash, the lock screen, the desktop. */
-  phase: "off" | "boot" | "lock" | "desktop";
+  /** Omarchy's power states: off, the boot (Limine and Plymouth), SDDM's greeter after a logout, the lock screen, the desktop. */
+  phase: "off" | "boot" | "greeter" | "lock" | "desktop";
+  /** A session ending: the OSD says so and the windows close before it acts. */
+  exiting: Exit | null;
   /** Completed boots; each one fades the desktop in from black. */
   boots: number;
   view: View;
@@ -79,6 +83,9 @@ export type Action =
   | { type: "unlock" }
   | { type: "lock" }
   | { type: "power-on" }
+  | { type: "session-exit"; action: Exit }
+  | { type: "session-end" }
+  | { type: "logout" }
   | { type: "shutdown" }
   | { type: "restart"; theme: ThemeSlug }
   | { type: "view"; view: View }
@@ -133,6 +140,7 @@ export function initialMetrics(): Metrics {
 export function initialState(theme: ThemeSlug): State {
   return {
     phase: "boot",
+    exiting: null,
     boots: 0,
     view: "tuned",
     split: 0.5,
@@ -259,6 +267,8 @@ export function reducer(s: State, a: Action): State {
     case "unlock":
       if (s.phase === "desktop" || s.phase === "off") return s;
       if (s.phase === "lock") return { ...s, phase: "desktop" };
+      // Logging in at the greeter starts a session; the desktop fades in from black as after a boot.
+      if (s.phase === "greeter") return { ...s, phase: "desktop", boots: s.boots + 1 };
       return s.boots > 0
         ? { ...s, phase: "desktop", boots: s.boots + 1 }
         : toast(
@@ -279,6 +289,38 @@ export function reducer(s: State, a: Action): State {
       return { ...reducer(s, { type: "restart", theme: s.theme }), phase: "off" };
     case "power-on":
       return s.phase === "off" ? { ...s, phase: "boot" } : s;
+    // Logging out ends the session (uwsm stop); autologin applies only at boot, so SDDM's greeter waits.
+    case "logout":
+      return { ...reducer(s, { type: "restart", theme: s.theme }), phase: "greeter" };
+    // omarchy-system: an OSD naming the action for 5s, every window closed, then the action.
+    // bin/omarchy-system:28-55.
+    case "session-exit": {
+      if (s.phase !== "desktop" || s.exiting) return s;
+      const message = { logout: "Logging out", reboot: "Rebooting", shutdown: "Shutting down" }[a.action];
+      const closing = s.windows.map((win) => ({ win, rect: rectsFor(s, win.ws).get(win.id) ?? null }));
+      return {
+        ...s,
+        exiting: a.action,
+        overlay: null,
+        picker: null,
+        panel: null,
+        windows: [],
+        trees: {},
+        focus: {},
+        fullscreen: {},
+        closing: [...s.closing, ...closing],
+        osd: { kind: "message", value: 0, muted: false, message, key: s.seq },
+        seq: s.seq + 1,
+      };
+    }
+    case "session-end": {
+      const how = s.exiting;
+      if (!how) return s;
+      const done = { ...s, exiting: null, osd: null };
+      if (how === "logout") return reducer(done, { type: "logout" });
+      if (how === "shutdown") return reducer(done, { type: "shutdown" });
+      return reducer(done, { type: "restart", theme: s.theme });
+    }
     case "view":
       return { ...s, view: a.view };
     case "view-cycle":
@@ -543,10 +585,13 @@ function applyShellCommands(s: State, cmds: ReturnType<typeof run>["commands"], 
         return reducer(acc, { type: "toggle", what: c.what });
       case "bg-next":
       case "screenshot":
-      case "shutdown":
         return reducer(acc, { type: c.type });
+      case "shutdown":
+        return reducer(acc, { type: "session-exit", action: "shutdown" });
       case "restart":
-        return reducer(acc, { type: "restart", theme: acc.theme });
+        return reducer(acc, { type: "session-exit", action: "reboot" });
+      case "logout":
+        return reducer(acc, { type: "session-exit", action: "logout" });
       case "theme":
         return reducer(acc, { type: "theme", slug: c.slug });
       case "view":
