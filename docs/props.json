@@ -884,6 +884,12 @@
         "doc": ""
       },
       {
+        "name": "beside",
+        "type": "{ before: BarModule[]; after: BarModule[]; }",
+        "required": false,
+        "doc": "Modules on either side of the clock: Omarchy's indicators before it, world clock and weather after."
+      },
+      {
         "name": "framed",
         "type": "boolean",
         "required": false,
@@ -1063,7 +1069,7 @@
     "props": [
       {
         "name": "icon",
-        "type": "'search' | 'wifi' | 'volume' | 'mute' | 'battery' | 'bluetooth' | 'cpu' | 'sun' | 'moon' | 'bell' | 'bellOff' | 'expand' | 'exit' | 'chevron' | 'dwindle'",
+        "type": "'search' | 'wifi' | 'volume' | 'mute' | 'battery' | 'bluetooth' | 'cpu' | 'sun' | 'moon' | 'bell' | 'bellOff' | 'expand' | 'exit' | 'chevron' | 'dwindle' | 'globe' | 'cloud' | 'monitor' | 'agents' | 'coffee'",
         "required": true,
         "doc": ""
       },
@@ -1125,15 +1131,27 @@
     "props": [
       {
         "name": "name",
-        "type": "'search' | 'wifi' | 'volume' | 'mute' | 'battery' | 'bluetooth' | 'cpu' | 'sun' | 'moon' | 'bell' | 'bellOff' | 'expand' | 'exit' | 'chevron' | 'dwindle'",
+        "type": "'search' | 'wifi' | 'volume' | 'mute' | 'battery' | 'bluetooth' | 'cpu' | 'sun' | 'moon' | 'bell' | 'bellOff' | 'expand' | 'exit' | 'chevron' | 'dwindle' | 'globe' | 'cloud' | 'monitor' | 'agents' | 'coffee'",
         "required": true,
         "doc": ""
+      },
+      {
+        "name": "bar",
+        "type": "boolean",
+        "required": false,
+        "doc": "Sized by the bar's icon token: 12px of ink in the stock view."
       },
       {
         "name": "large",
         "type": "boolean",
         "required": false,
-        "doc": ""
+        "doc": "16px instead of 14px, for icons that stand alone."
+      },
+      {
+        "name": "osd",
+        "type": "boolean",
+        "required": false,
+        "doc": "Sized by the OSD's icon token: Omarchy's 28px glyph in the stock view."
       }
     ],
     "inherits": []

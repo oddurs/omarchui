@@ -1,7 +1,7 @@
 "use client";
 
 import * as stylex from "@stylexjs/stylex";
-import { useEffect, useRef, type Dispatch } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type Dispatch, type ReactNode } from "react";
 import { face, typo } from "@/design/primitives/typography";
 import { Bar, type BarModule } from "@/design/shell/Bar";
 import { Osd } from "@/design/shell/Osd";
@@ -91,13 +91,13 @@ const s = stylex.create({
   emptyNum: { color: color["--line-2"] },
   toasts: {
     position: "absolute",
-    top: chrome.gapOut,
-    right: chrome.gapOut,
+    top: chrome.toastInset,
+    right: chrome.toastInset,
     zIndex: layer.toast,
     width: `min(${chrome.toastWidth}, calc(100% - 24px))`,
     display: "flex",
-    flexDirection: "column",
-    gap: "8px",
+    flexDirection: chrome.toastFlow,
+    gap: chrome.toastStack,
   },
   osd: {
     position: "absolute",
@@ -116,10 +116,10 @@ const s = stylex.create({
     zIndex: layer.overlay,
     display: "flex",
     justifyContent: "center",
-    alignItems: "flex-start",
-    paddingTop: "9vh",
+    alignItems: chrome.menuAlign,
+    paddingTop: chrome.menuTop,
     paddingInline: "16px",
-    backgroundColor: color["--scrim"],
+    backgroundColor: chrome.scrim,
   },
   night: {
     position: "absolute",
@@ -151,6 +151,7 @@ const pos = stylex.create({
     height: `${h * 100}%`,
   }),
   shift: (n: number) => ({ transform: `translateX(${n * 100}%)` }),
+  frozen: (top: number) => ({ alignItems: "flex-start", paddingTop: `${top}px` }),
 });
 
 const WALLPAPER = [s.wp0, s.wp1, s.wp2, s.wp3];
@@ -163,6 +164,37 @@ type Props = {
   interactive: boolean;
   id: string;
 };
+
+/**
+ * The menu's full-screen layer. Omarchy centres the card when it opens, then freezes its top
+ * edge at the first keystroke or submenu so the card grows and shrinks downward
+ * (research/omarchy/spec/menu.json, menu.card.position.y). The layer remounts on every open.
+ */
+function MenuLayer({ moved, onScrim, children }: { moved: boolean; onScrim?: () => void; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const settled = useRef<number | null>(null);
+  const [top, setTop] = useState<number | null>(null);
+  useLayoutEffect(() => {
+    if (top !== null) return;
+    const layer = ref.current;
+    const card = layer?.firstElementChild;
+    if (!layer || !card) return;
+    const y = card.getBoundingClientRect().top - layer.getBoundingClientRect().top;
+    if (!moved) settled.current = y;
+    else setTop(settled.current ?? y);
+  }, [top, moved]);
+  return (
+    <div
+      ref={ref}
+      {...stylex.props(s.overlay, top !== null && pos.frozen(top))}
+      onPointerDown={(e) => {
+        if (e.target === e.currentTarget) onScrim?.();
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 function App(p: AppProps) {
   switch (p.win.data.kind) {
@@ -211,12 +243,27 @@ export function Screen({ state, dispatch, exec, mode, interactive, id }: Props) 
       case "omarchy.audio":
         return [{ id, icon: state.muted ? "mute" : "volume", label: "Audio", onPress: interactive ? () => dispatch({ type: "mute" }) : undefined }];
       case "omarchy.monitor":
-        return [{ id, icon: "sun", label: "Display" }];
+        return [{ id, icon: "monitor", label: "Display" }];
+      case "omarchy.agents":
+        return [{ id, icon: "agents", label: "Agents" }];
+      // The battery icon is never tinted, research/omarchy/spec/bar.json omarchy.power.
       case "omarchy.power":
-        return [{ id, icon: "battery", label: "Power", value: "82", tone: "ok" }];
+        return [{ id, icon: "battery", label: "Power", value: "82" }];
       default:
         return [];
     }
+  });
+  // centerBegin: an indicator per active state, in Indicators.qml's order (NightLight, Dnd, StayAwake).
+  const stockBefore: BarModule[] = [
+    ...(state.night ? [{ id: "night", icon: "moon", label: "Night light on", status: true } as const] : []),
+    ...(state.dnd ? [{ id: "dnd", icon: "bellOff", label: "Notifications silenced", status: true } as const] : []),
+    ...(!state.idle ? [{ id: "awake", icon: "coffee", label: "Staying awake", status: true } as const] : []),
+  ];
+  // centerEnd: the world clock and the weather, each in a 21px status slot.
+  const stockAfter: BarModule[] = REF_BAR.centerEnd.flatMap((id): BarModule[] => {
+    if (id === "omarchy.elsewhen") return [{ id, icon: "globe", label: "World clock", status: true }];
+    if (id === "omarchy.weather") return [{ id, icon: "cloud", label: "Weather", status: true }];
+    return [];
   });
 
   const tunedModules: BarModule[] = [
@@ -279,6 +326,7 @@ export function Screen({ state, dispatch, exec, mode, interactive, id }: Props) 
         workspaces={Array.from({ length: shown }, (_, i) => ({ n: i + 1, busy: busy.has(i + 1), active: i + 1 === state.ws }))}
         clock={{ day: clock.day, time: clock.time }}
         modules={mode === "stock" ? stockModules : tunedModules}
+        beside={mode === "stock" ? { before: stockBefore, after: stockAfter } : undefined}
         onWorkspace={interactive ? (n) => exec({ type: "workspace", n }) : undefined}
         onMark={interactive ? () => exec({ type: "menu" }) : undefined}
       />
@@ -321,31 +369,30 @@ export function Screen({ state, dispatch, exec, mode, interactive, id }: Props) 
         {state.osd && (
           <div {...stylex.props(s.osd)}>
             <Osd
-              icon={state.osd.kind === "volume" ? (state.osd.muted ? "mute" : "volume") : "sun"}
+              // Omarchy's brightness glyph is a monitor (U+F0379), OsdModel.js:18.
+              icon={state.osd.kind === "volume" ? (state.osd.muted ? "mute" : "volume") : mode === "stock" ? "monitor" : "sun"}
               value={state.osd.value}
               muted={state.osd.muted}
               label={state.osd.kind === "volume" ? "Volume" : "Brightness"}
             />
           </div>
         )}
-
-        {state.overlay && state.phase === "desktop" && (
-          <div
-            {...stylex.props(s.overlay)}
-            onPointerDown={(e) => {
-              if (interactive && e.target === e.currentTarget) dispatch({ type: "overlay", overlay: null });
-            }}
-          >
-            <MenuOverlay overlay={state.overlay} state={state} interactive={interactive} listId={`${id}-menu`} dispatch={dispatch} exec={exec} />
-          </div>
-        )}
       </div>
 
+      {/* Omarchy's menu is a full-screen overlay layer: its scrim covers the bar too, Menu.qml:1278-1299. */}
+      {state.overlay && state.phase === "desktop" && (
+        <MenuLayer
+          moved={state.overlay.q !== "" || state.overlay.path.length > 0}
+          onScrim={interactive ? () => dispatch({ type: "overlay", overlay: null }) : undefined}
+        >
+          <MenuOverlay overlay={state.overlay} state={state} interactive={interactive} mode={mode} listId={`${id}-menu`} dispatch={dispatch} exec={exec} />
+        </MenuLayer>
+      )}
       {state.night && <div aria-hidden {...stylex.props(s.night)} />}
       {state.flash > 0 && <div key={state.flash} aria-hidden {...stylex.props(s.flash)} />}
       {state.phase === "lock" && (
         <div {...stylex.props(s.lock)}>
-          <LockScreen interactive={interactive} onUnlock={() => dispatch({ type: "unlock" })} />
+          <LockScreen interactive={interactive} mode={mode} onUnlock={() => dispatch({ type: "unlock" })} />
         </div>
       )}
     </div>

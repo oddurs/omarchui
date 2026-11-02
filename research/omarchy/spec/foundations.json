@@ -1,0 +1,2040 @@
+{
+  "commit": "175e63b62dc3201866722e45ee9a60714cde16fa",
+  "part": "foundations",
+  "defaults": {
+    "fontBaseSize": 12,
+    "spacingScale": 1.0,
+    "spacingScaleWithFont": true,
+    "barScaleWithFont": true,
+    "hyprRounding": 0,
+    "hyprGapsOut": 10,
+    "hyprGapsIn": 5,
+    "hyprBorderSize": 2
+  },
+  "items": [
+    {
+      "id": "style.font.baseSize",
+      "what": "Typographic rem root; shell.toml [font] base-size",
+      "value": "12",
+      "unit": "px",
+      "expr": "property int fontBaseSize: 12  (shell.toml [font] base-size = 12)",
+      "source": "shell/Commons/Style.qml:281; default/themed/shell.toml.tpl:106; shell/Commons/Style.qml:413,427,460"
+    },
+    {
+      "id": "style.font.scale",
+      "what": "fontScale = max(1/12, base/12)",
+      "value": "1.0",
+      "unit": "ratio",
+      "expr": "Math.max(1 / 12, fontBaseSize / 12)",
+      "source": "shell/Commons/Style.qml:286"
+    },
+    {
+      "id": "style.spacing.scale",
+      "what": "Effective spacing multiplier = [spacing] scale x (scale-with-font ? fontScale : 1)",
+      "value": "1.0",
+      "unit": "ratio",
+      "expr": "spacingScale * (spacingScaleWithFont ? fontScale : 1)  = 1.0 * 1.0",
+      "source": "shell/Commons/Style.qml:210-213; default/themed/shell.toml.tpl:73-74"
+    },
+    {
+      "id": "style.bar.scaleWithFont",
+      "what": "Bar tokens multiply by fontScale",
+      "value": "true",
+      "unit": "bool",
+      "expr": "barScaleWithFont (shell.toml [bar] scale-with-font = true)",
+      "source": "shell/Commons/Style.qml:285,302; default/themed/shell.toml.tpl:15"
+    },
+    {
+      "id": "style.fn.space",
+      "what": "Style.space(px): integer spacing",
+      "value": "max(1, round(px * 1.0)); 0 for px<=0",
+      "unit": "px",
+      "expr": "n = px * effectiveSpacingScale; n <= 0 ? 0 : Math.max(1, Math.round(n))",
+      "source": "shell/Commons/Style.qml:215-225"
+    },
+    {
+      "id": "style.fn.spaceReal",
+      "what": "Style.spaceReal(px): fractional spacing, not rounded",
+      "value": "px * 1.0",
+      "unit": "px",
+      "expr": "n * effectiveSpacingScale (0 for non-finite or <= 0)",
+      "source": "shell/Commons/Style.qml:215-219"
+    },
+    {
+      "id": "style.fn.spacingToken",
+      "what": "Named spacing token: a [spacing] override is used verbatim (rounded, NOT scaled); else space(fallback)",
+      "value": "space(fallback)",
+      "unit": "px",
+      "expr": "(isFinite(n) && n >= 0) ? Math.round(n) : space(fallback)",
+      "source": "shell/Commons/Style.qml:227-231"
+    },
+    {
+      "id": "style.fn.fontPx",
+      "what": "Type-scale step",
+      "value": "max(1, round(12 * mult))",
+      "unit": "px",
+      "expr": "Math.max(1, Math.round(fontBaseSize * mult))",
+      "source": "shell/Commons/Style.qml:288-290"
+    },
+    {
+      "id": "style.fn.fontToken",
+      "what": "Font token: [font] override (rounded, > 0) else fontPx(mult)",
+      "value": "fontPx(mult)",
+      "unit": "px",
+      "expr": "(isFinite(n) && n > 0) ? Math.round(n) : fallback",
+      "source": "shell/Commons/Style.qml:292-296"
+    },
+    {
+      "id": "style.fn.barToken",
+      "what": "Bar token: (override or fallback) * fontScale, rounded, min 1",
+      "value": "max(1, round(base * 1.0))",
+      "unit": "px",
+      "expr": "base = override||fallback; if (barScaleWithFont) base *= fontScale; Math.max(1, Math.round(base))",
+      "source": "shell/Commons/Style.qml:298-304"
+    },
+    {
+      "id": "style.fn.duration",
+      "what": "Every shell animation duration; 0 when Hyprland animations:enabled is false",
+      "value": "ms",
+      "unit": "ms",
+      "expr": "reduceMotion ? 0 : ms",
+      "source": "shell/Commons/Style.qml:363-367,477-490"
+    },
+    {
+      "id": "style.spacing.hairline",
+      "what": "Style.spacing.hairline",
+      "value": "1",
+      "unit": "px",
+      "expr": "root.space(1)",
+      "source": "shell/Commons/Style.qml:236"
+    },
+    {
+      "id": "style.spacing.xxs",
+      "what": "Style.spacing.xxs ([spacing] xxs)",
+      "value": "2",
+      "unit": "px",
+      "expr": "root.spacingToken(\"xxs\", 2)",
+      "source": "shell/Commons/Style.qml:237"
+    },
+    {
+      "id": "style.spacing.xs",
+      "what": "Style.spacing.xs ([spacing] xs)",
+      "value": "3",
+      "unit": "px",
+      "expr": "root.spacingToken(\"xs\", 3)",
+      "source": "shell/Commons/Style.qml:238"
+    },
+    {
+      "id": "style.spacing.sm",
+      "what": "Style.spacing.sm ([spacing] sm)",
+      "value": "4",
+      "unit": "px",
+      "expr": "root.spacingToken(\"sm\", 4)",
+      "source": "shell/Commons/Style.qml:239"
+    },
+    {
+      "id": "style.spacing.md",
+      "what": "Style.spacing.md ([spacing] md)",
+      "value": "6",
+      "unit": "px",
+      "expr": "root.spacingToken(\"md\", 6)",
+      "source": "shell/Commons/Style.qml:240"
+    },
+    {
+      "id": "style.spacing.lg",
+      "what": "Style.spacing.lg ([spacing] lg)",
+      "value": "8",
+      "unit": "px",
+      "expr": "root.spacingToken(\"lg\", 8)",
+      "source": "shell/Commons/Style.qml:241"
+    },
+    {
+      "id": "style.spacing.xl",
+      "what": "Style.spacing.xl ([spacing] xl)",
+      "value": "10",
+      "unit": "px",
+      "expr": "root.spacingToken(\"xl\", 10)",
+      "source": "shell/Commons/Style.qml:242"
+    },
+    {
+      "id": "style.spacing.xxl",
+      "what": "Style.spacing.xxl ([spacing] xxl)",
+      "value": "12",
+      "unit": "px",
+      "expr": "root.spacingToken(\"xxl\", 12)",
+      "source": "shell/Commons/Style.qml:243"
+    },
+    {
+      "id": "style.spacing.xxxl",
+      "what": "Style.spacing.xxxl ([spacing] xxxl)",
+      "value": "14",
+      "unit": "px",
+      "expr": "root.spacingToken(\"xxxl\", 14)",
+      "source": "shell/Commons/Style.qml:244"
+    },
+    {
+      "id": "style.spacing.huge",
+      "what": "Style.spacing.huge ([spacing] huge)",
+      "value": "18",
+      "unit": "px",
+      "expr": "root.spacingToken(\"huge\", 18)",
+      "source": "shell/Commons/Style.qml:245"
+    },
+    {
+      "id": "style.spacing.controlGap",
+      "what": "Style.spacing.controlGap ([spacing] control-gap)",
+      "value": "8",
+      "unit": "px",
+      "expr": "root.spacingToken(\"control-gap\", 8)",
+      "source": "shell/Commons/Style.qml:247"
+    },
+    {
+      "id": "style.spacing.controlPaddingX",
+      "what": "Style.spacing.controlPaddingX ([spacing] control-padding-x)",
+      "value": "10",
+      "unit": "px",
+      "expr": "root.spacingToken(\"control-padding-x\", 10)",
+      "source": "shell/Commons/Style.qml:248"
+    },
+    {
+      "id": "style.spacing.controlPaddingY",
+      "what": "Style.spacing.controlPaddingY ([spacing] control-padding-y)",
+      "value": "6",
+      "unit": "px",
+      "expr": "root.spacingToken(\"control-padding-y\", 6)",
+      "source": "shell/Commons/Style.qml:249"
+    },
+    {
+      "id": "style.spacing.inputPaddingY",
+      "what": "Style.spacing.inputPaddingY ([spacing] input-padding-y)",
+      "value": "7",
+      "unit": "px",
+      "expr": "root.spacingToken(\"input-padding-y\", 7)",
+      "source": "shell/Commons/Style.qml:250"
+    },
+    {
+      "id": "style.spacing.controlHeight",
+      "what": "Style.spacing.controlHeight ([spacing] control-height)",
+      "value": "28",
+      "unit": "px",
+      "expr": "root.spacingToken(\"control-height\", 28)",
+      "source": "shell/Commons/Style.qml:251"
+    },
+    {
+      "id": "style.spacing.popupRowHeight",
+      "what": "Style.spacing.popupRowHeight ([spacing] popup-row-height)",
+      "value": "28",
+      "unit": "px",
+      "expr": "root.spacingToken(\"popup-row-height\", 28)",
+      "source": "shell/Commons/Style.qml:252"
+    },
+    {
+      "id": "style.spacing.dropdownWidth",
+      "what": "Style.spacing.dropdownWidth ([spacing] dropdown-width)",
+      "value": "240",
+      "unit": "px",
+      "expr": "root.spacingToken(\"dropdown-width\", 240)",
+      "source": "shell/Commons/Style.qml:253"
+    },
+    {
+      "id": "style.spacing.searchableDropdownWidth",
+      "what": "Style.spacing.searchableDropdownWidth ([spacing] searchable-dropdown-width)",
+      "value": "260",
+      "unit": "px",
+      "expr": "root.spacingToken(\"searchable-dropdown-width\", 260)",
+      "source": "shell/Commons/Style.qml:254"
+    },
+    {
+      "id": "style.spacing.numberFieldWidth",
+      "what": "Style.spacing.numberFieldWidth ([spacing] number-field-width)",
+      "value": "120",
+      "unit": "px",
+      "expr": "root.spacingToken(\"number-field-width\", 120)",
+      "source": "shell/Commons/Style.qml:255"
+    },
+    {
+      "id": "style.spacing.searchablePopupMinHeight",
+      "what": "Style.spacing.searchablePopupMinHeight ([spacing] searchable-popup-min-height)",
+      "value": "220",
+      "unit": "px",
+      "expr": "root.spacingToken(\"searchable-popup-min-height\", 220)",
+      "source": "shell/Commons/Style.qml:256"
+    },
+    {
+      "id": "style.spacing.rowGap",
+      "what": "Style.spacing.rowGap ([spacing] row-gap)",
+      "value": "8",
+      "unit": "px",
+      "expr": "root.spacingToken(\"row-gap\", 8)",
+      "source": "shell/Commons/Style.qml:257"
+    },
+    {
+      "id": "style.spacing.rowPaddingX",
+      "what": "Style.spacing.rowPaddingX ([spacing] row-padding-x)",
+      "value": "12",
+      "unit": "px",
+      "expr": "root.spacingToken(\"row-padding-x\", 12)",
+      "source": "shell/Commons/Style.qml:258"
+    },
+    {
+      "id": "style.spacing.labelGap",
+      "what": "Style.spacing.labelGap ([spacing] label-gap)",
+      "value": "4",
+      "unit": "px",
+      "expr": "root.spacingToken(\"label-gap\", 4)",
+      "source": "shell/Commons/Style.qml:259"
+    },
+    {
+      "id": "style.spacing.panelGap",
+      "what": "Style.spacing.panelGap ([spacing] panel-gap)",
+      "value": "14",
+      "unit": "px",
+      "expr": "root.spacingToken(\"panel-gap\", 14)",
+      "source": "shell/Commons/Style.qml:260"
+    },
+    {
+      "id": "style.spacing.panelPadding",
+      "what": "Style.spacing.panelPadding ([spacing] panel-padding)",
+      "value": "18",
+      "unit": "px",
+      "expr": "root.spacingToken(\"panel-padding\", 18)",
+      "source": "shell/Commons/Style.qml:261"
+    },
+    {
+      "id": "style.spacing.popupPadding",
+      "what": "Style.spacing.popupPadding ([spacing] popup-padding)",
+      "value": "14",
+      "unit": "px",
+      "expr": "root.spacingToken(\"popup-padding\", 14)",
+      "source": "shell/Commons/Style.qml:262"
+    },
+    {
+      "id": "style.font.caption",
+      "what": "Style.font.caption = round(12 x 0.833) = round(9.996)",
+      "value": "10",
+      "unit": "px",
+      "expr": "root.fontToken(\"caption\", root.fontPx(0.833))",
+      "source": "shell/Commons/Style.qml:329"
+    },
+    {
+      "id": "style.font.bodySmall",
+      "what": "Style.font.bodySmall = round(12 x 0.917) = round(11.004)",
+      "value": "11",
+      "unit": "px",
+      "expr": "root.fontToken(\"body-small\", root.fontPx(0.917))",
+      "source": "shell/Commons/Style.qml:330"
+    },
+    {
+      "id": "style.font.body",
+      "what": "Style.font.body = round(12 x 1.0) = round(12.000)",
+      "value": "12",
+      "unit": "px",
+      "expr": "root.fontToken(\"body\", root.fontPx(1.0))",
+      "source": "shell/Commons/Style.qml:331"
+    },
+    {
+      "id": "style.font.subtitle",
+      "what": "Style.font.subtitle = round(12 x 1.083) = round(12.996)",
+      "value": "13",
+      "unit": "px",
+      "expr": "root.fontToken(\"subtitle\", root.fontPx(1.083))",
+      "source": "shell/Commons/Style.qml:332"
+    },
+    {
+      "id": "style.font.title",
+      "what": "Style.font.title = round(12 x 1.167) = round(14.004)",
+      "value": "14",
+      "unit": "px",
+      "expr": "root.fontToken(\"title\", root.fontPx(1.167))",
+      "source": "shell/Commons/Style.qml:333"
+    },
+    {
+      "id": "style.font.heading",
+      "what": "Style.font.heading = round(12 x 1.333) = round(15.996)",
+      "value": "16",
+      "unit": "px",
+      "expr": "root.fontToken(\"heading\", root.fontPx(1.333))",
+      "source": "shell/Commons/Style.qml:334"
+    },
+    {
+      "id": "style.font.display",
+      "what": "Style.font.display = round(12 x 2.0) = round(24.000)",
+      "value": "24",
+      "unit": "px",
+      "expr": "root.fontToken(\"display\", root.fontPx(2.0))",
+      "source": "shell/Commons/Style.qml:335"
+    },
+    {
+      "id": "style.font.displayLarge",
+      "what": "Style.font.displayLarge = round(12 x 2.333) = round(27.996)",
+      "value": "28",
+      "unit": "px",
+      "expr": "root.fontToken(\"display-large\", root.fontPx(2.333))",
+      "source": "shell/Commons/Style.qml:336"
+    },
+    {
+      "id": "style.font.iconSmall",
+      "what": "Style.font.iconSmall (defaults to bodySmall)",
+      "value": "11",
+      "unit": "px",
+      "expr": "root.fontToken(\"icon-small\", bodySmall)",
+      "source": "shell/Commons/Style.qml:338"
+    },
+    {
+      "id": "style.font.icon",
+      "what": "Style.font.icon (defaults to title)",
+      "value": "14",
+      "unit": "px",
+      "expr": "root.fontToken(\"icon\", title)",
+      "source": "shell/Commons/Style.qml:339"
+    },
+    {
+      "id": "style.font.iconLarge",
+      "what": "Style.font.iconLarge = round(12 x 1.5)",
+      "value": "18",
+      "unit": "px",
+      "expr": "root.fontToken(\"icon-large\", root.fontPx(1.5))",
+      "source": "shell/Commons/Style.qml:340"
+    },
+    {
+      "id": "style.font.family",
+      "what": "Font family requested by every shell Text: the fontconfig alias 'monospace'",
+      "value": "monospace",
+      "unit": "family",
+      "expr": "property string fontFamily: \"monospace\"",
+      "source": "shell/Commons/Style.qml:271,324"
+    },
+    {
+      "id": "style.font.resolvedFamily",
+      "what": "What 'monospace' resolves to on a stock install (fontconfig strong assign)",
+      "value": "JetBrainsMono Nerd Font",
+      "unit": "family",
+      "expr": "fc-match -f '%{family[0]}' monospace; 50-omarchy.conf assigns monospace -> JetBrainsMono Nerd Font",
+      "source": "shell/Commons/Style.qml:277,517-527; default/fontconfig/conf.avail/50-omarchy.conf:330-337; install/omarchy-base.packages:149"
+    },
+    {
+      "id": "style.font.weight",
+      "what": "No shell-wide weight token; Text items use Qt's default (Normal, 400) unless a component sets one",
+      "value": "400",
+      "unit": "weight",
+      "expr": "(no font.weight in Style.qml)",
+      "source": "shell/Commons/Style.qml:323-341"
+    },
+    {
+      "id": "style.font.menuFamily",
+      "what": "Menu/polkit/emoji/clipboard family: $OMARCHY_MENU_FONT if set, else fontFamily",
+      "value": "monospace",
+      "unit": "family",
+      "expr": "Quickshell.env(\"OMARCHY_MENU_FONT\") || fontFamily",
+      "source": "shell/Commons/Style.qml:318-321"
+    },
+    {
+      "id": "style.bar.sizeHorizontal",
+      "what": "Height of a top/bottom bar",
+      "value": "26",
+      "unit": "px",
+      "expr": "root.barToken(\"size-horizontal\", 26)",
+      "source": "shell/Commons/Style.qml:344"
+    },
+    {
+      "id": "style.bar.sizeVertical",
+      "what": "Width of a left/right bar",
+      "value": "28",
+      "unit": "px",
+      "expr": "root.barToken(\"size-vertical\", 28)",
+      "source": "shell/Commons/Style.qml:345"
+    },
+    {
+      "id": "style.bar.iconSlot",
+      "what": "Main-axis slot an icon-only bar button occupies",
+      "value": "27",
+      "unit": "px",
+      "expr": "root.barToken(\"icon-slot\", 27)",
+      "source": "shell/Commons/Style.qml:353"
+    },
+    {
+      "id": "style.bar.iconCanvas",
+      "what": "Square canvas the bar icon glyph is laid out in",
+      "value": "16",
+      "unit": "px",
+      "expr": "root.barToken(\"icon-canvas\", 16)",
+      "source": "shell/Commons/Style.qml:354"
+    },
+    {
+      "id": "style.bar.iconFont",
+      "what": "Pixel size the bar icon glyph is rendered at before optical scaling",
+      "value": "13",
+      "unit": "px",
+      "expr": "root.barToken(\"icon-font\", 13)",
+      "source": "shell/Commons/Style.qml:355"
+    },
+    {
+      "id": "style.bar.statusSlot",
+      "what": "Slot for bar status indicators",
+      "value": "21",
+      "unit": "px",
+      "expr": "root.barToken(\"status-slot\", 21)",
+      "source": "shell/Commons/Style.qml:357"
+    },
+    {
+      "id": "style.bar.iconSize",
+      "what": "Painted (ink) size bar icons are optically scaled to: min(iconCanvas, 12)",
+      "value": "12",
+      "unit": "px",
+      "expr": "Math.min(iconCanvas, root.barToken(\"icon-size\", 12))",
+      "source": "shell/Commons/Style.qml:356"
+    },
+    {
+      "id": "style.bar.notchHeight",
+      "what": "Notch cutout height override; 0 = derive at runtime",
+      "value": "0",
+      "unit": "px",
+      "expr": "barOverrides[\"notch-height\"] > 0 ? round : 0",
+      "source": "shell/Commons/Style.qml:349-352"
+    },
+    {
+      "id": "style.cornerRadius",
+      "what": "Corner radius of every shell surface (popups, buttons, toasts) = Hyprland decoration:rounding",
+      "value": "0",
+      "unit": "px",
+      "expr": "property int cornerRadius: 0; refreshed from hyprctl getoption decoration:rounding",
+      "source": "shell/Commons/Style.qml:33,383-391,468-475; default/hypr/looknfeel.lua:25"
+    },
+    {
+      "id": "style.gapsOut",
+      "what": "Shell distance from surfaces to screen edge / bar = round(Hyprland general:gaps_out / 2)",
+      "value": "5",
+      "unit": "px",
+      "expr": "Math.max(0, Math.round(10 / 2))",
+      "source": "shell/Commons/Style.qml:34,393-403,501-508; default/hypr/looknfeel.lua:9"
+    },
+    {
+      "id": "style.state.normalBorderWidth",
+      "what": "Style.normalBorderWidth",
+      "value": "1",
+      "unit": "px",
+      "expr": "max(0, round(styleNum(\"normal-border-width\", 1)))",
+      "source": "shell/Commons/Style.qml:79; default/themed/shell.toml.tpl:37"
+    },
+    {
+      "id": "style.state.hoverBorderWidth",
+      "what": "Style.hoverBorderWidth",
+      "value": "1",
+      "unit": "px",
+      "expr": "styleNum(\"hover-cursor-border-width\", normalBorderWidth)",
+      "source": "shell/Commons/Style.qml:80; default/themed/shell.toml.tpl:44"
+    },
+    {
+      "id": "style.state.selectedBorderWidth",
+      "what": "Style.selectedBorderWidth",
+      "value": "0",
+      "unit": "px",
+      "expr": "styleNum(\"selected-border-width\", 0)",
+      "source": "shell/Commons/Style.qml:81; default/themed/shell.toml.tpl:60"
+    },
+    {
+      "id": "style.state.focusBorderWidth",
+      "what": "Style.focusBorderWidth",
+      "value": "1",
+      "unit": "px",
+      "expr": "styleNum(\"focus-border-width\", hoverBorderWidth)",
+      "source": "shell/Commons/Style.qml:82; default/themed/shell.toml.tpl:53"
+    },
+    {
+      "id": "style.state.normalFillAlpha",
+      "what": "Style.normalFillAlpha",
+      "value": "0.04",
+      "unit": "alpha",
+      "expr": "styleAlpha(\"normal-fill-alpha\", 0.04)",
+      "source": "shell/Commons/Style.qml:84; default/themed/shell.toml.tpl:35"
+    },
+    {
+      "id": "style.state.hoverFillAlpha",
+      "what": "Style.hoverFillAlpha",
+      "value": "0.08",
+      "unit": "alpha",
+      "expr": "styleAlpha(\"hover-cursor-fill-alpha\", 0.08)",
+      "source": "shell/Commons/Style.qml:85; default/themed/shell.toml.tpl:42"
+    },
+    {
+      "id": "style.state.selectedFillAlpha",
+      "what": "Style.selectedFillAlpha",
+      "value": "0.18",
+      "unit": "alpha",
+      "expr": "styleAlpha(\"selected-fill-alpha\", 0.18)",
+      "source": "shell/Commons/Style.qml:86; default/themed/shell.toml.tpl:58"
+    },
+    {
+      "id": "style.state.pressedFillAlpha",
+      "what": "Style.pressedFillAlpha",
+      "value": "0.22",
+      "unit": "alpha",
+      "expr": "styleAlpha(\"pressed-fill-alpha\", 0.22)",
+      "source": "shell/Commons/Style.qml:87; default/themed/shell.toml.tpl:64"
+    },
+    {
+      "id": "style.state.focusFillAlpha",
+      "what": "Style.focusFillAlpha",
+      "value": "0.08",
+      "unit": "alpha",
+      "expr": "styleAlpha(\"focus-fill-alpha\", hoverFillAlpha)",
+      "source": "shell/Commons/Style.qml:88; default/themed/shell.toml.tpl:51"
+    },
+    {
+      "id": "style.state.selectionFillAlpha",
+      "what": "Style.selectionFillAlpha",
+      "value": "0.35",
+      "unit": "alpha",
+      "expr": "styleAlpha(\"selection-fill-alpha\", 0.35)",
+      "source": "shell/Commons/Style.qml:89; default/themed/shell.toml.tpl:65"
+    },
+    {
+      "id": "style.state.normalBorderAlpha",
+      "what": "Style.normalBorderAlpha",
+      "value": "0.4",
+      "unit": "alpha",
+      "expr": "styleAlpha(\"normal-border-alpha\", 0.4)",
+      "source": "shell/Commons/Style.qml:91; default/themed/shell.toml.tpl:38"
+    },
+    {
+      "id": "style.state.hoverBorderAlpha",
+      "what": "Style.hoverBorderAlpha",
+      "value": "0.25",
+      "unit": "alpha",
+      "expr": "styleAlpha(\"hover-cursor-border-alpha\", 0.25)",
+      "source": "shell/Commons/Style.qml:92; default/themed/shell.toml.tpl:45"
+    },
+    {
+      "id": "style.state.selectedBorderAlpha",
+      "what": "Style.selectedBorderAlpha",
+      "value": "1.0",
+      "unit": "alpha",
+      "expr": "styleAlpha(\"selected-border-alpha\", 1.0)",
+      "source": "shell/Commons/Style.qml:93; default/themed/shell.toml.tpl:61"
+    },
+    {
+      "id": "style.state.focusBorderAlpha",
+      "what": "Style.focusBorderAlpha",
+      "value": "0.25",
+      "unit": "alpha",
+      "expr": "styleAlpha(\"focus-border-alpha\", hoverBorderAlpha)",
+      "source": "shell/Commons/Style.qml:94; default/themed/shell.toml.tpl:54"
+    },
+    {
+      "id": "style.border.popupCard",
+      "what": "PopupCard / OSD / KeyboardPanel / Toast / Menu / Clipboard / Emojis / Polkit card border width",
+      "value": "2",
+      "unit": "px",
+      "expr": "Math.max(1, Style.space(2))",
+      "source": "shell/Ui/PopupCard.qml:18; shell/Ui/KeyboardPanel.qml:69; shell/plugins/osd/Osd.qml:144; shell/plugins/notifications/Toast.qml:228-229; shell/plugins/menu/Menu.qml:117; shell/plugins/polkit/PolkitAgent.qml:21"
+    },
+    {
+      "id": "style.border.dropdownPopup",
+      "what": "Dropdown / MultiSelect / SearchableDropdown / dock popups / tooltip panel border width",
+      "value": "1",
+      "unit": "px",
+      "expr": "Style.normalBorderWidth",
+      "source": "shell/Ui/Dropdown.qml:30; shell/Ui/MultiSelect.qml:41; shell/Ui/SearchableDropdown.qml:33; shell/Ui/PanelToolTip.qml:28"
+    },
+    {
+      "id": "style.border.barTooltip",
+      "what": "Bar tooltip border width",
+      "value": "1",
+      "unit": "px",
+      "expr": "Border.surfaceSpec(\"tooltip\", \"border\", ..., 1)",
+      "source": "shell/plugins/bar/Bar.qml:1912"
+    },
+    {
+      "id": "style.border.menuSelected",
+      "what": "Menu selected-row border width (so the selected-border colour is invisible by default)",
+      "value": "0",
+      "unit": "px",
+      "expr": "Border.surfaceSpec(\"menu\", \"selected-border\", selectedBorder, 0)",
+      "source": "shell/plugins/menu/Menu.qml:122"
+    },
+    {
+      "id": "style.border.lockOutline",
+      "what": "Lock screen input outline thickness",
+      "value": "3",
+      "unit": "px",
+      "expr": "readonly property int outlineThickness: 3",
+      "source": "shell/plugins/lock/LockView.qml:26,41-42"
+    },
+    {
+      "id": "ui.popupCard.margin",
+      "what": "Gap between bar and popup card / screen-edge clamp",
+      "value": "5",
+      "unit": "px",
+      "expr": "property int margin: Style.gapsOut",
+      "source": "shell/Ui/PopupCard.qml:13,112,152"
+    },
+    {
+      "id": "ui.popupCard.padding",
+      "what": "Inner padding of a popup card (inside its border)",
+      "value": "14",
+      "unit": "px",
+      "expr": "Style.spacing.popupPadding",
+      "source": "shell/Ui/PopupCard.qml:14,167,194-197; shell/Ui/BorderSurface.qml:21-24"
+    },
+    {
+      "id": "ui.popupCard.defaultSize",
+      "what": "Default popup content size",
+      "value": "280x200",
+      "unit": "px",
+      "expr": "Style.space(280) x Style.space(200)",
+      "source": "shell/Ui/PopupCard.qml:15-16"
+    },
+    {
+      "id": "ui.popupCard.radius",
+      "what": "Popup card radius",
+      "value": "0",
+      "unit": "px",
+      "expr": "radius: Style.cornerRadius",
+      "source": "shell/Ui/PopupCard.qml:168"
+    },
+    {
+      "id": "ui.popupCard.closedScale",
+      "what": "Card scale when hidden (grows to 1.0 as it fades in); origin = bar edge",
+      "value": "0.97",
+      "unit": "scale",
+      "expr": "scale: 0.97 + 0.03 * shown; transformOrigin Top for a top bar",
+      "source": "shell/Ui/PopupCard.qml:181-185"
+    },
+    {
+      "id": "ui.widgetButton.horizontalMargin",
+      "what": "Text bar button: label + 2 x 8.5 (fractional, via spaceReal)",
+      "value": "8.5",
+      "unit": "px",
+      "expr": "Style.spaceReal(horizontalMargin = 8.5); width = max(12, label.implicitWidth + 17)",
+      "source": "shell/Ui/WidgetButton.qml:15,68,95-96"
+    },
+    {
+      "id": "ui.widgetButton.verticalPadding",
+      "what": "Vertical-bar text button padding",
+      "value": "6",
+      "unit": "px",
+      "expr": "Style.spaceReal(6)",
+      "source": "shell/Ui/WidgetButton.qml:16,69,97-98"
+    },
+    {
+      "id": "ui.widgetButton.fontSize",
+      "what": "Bar text label size",
+      "value": "12",
+      "unit": "px",
+      "expr": "Style.font.body",
+      "source": "shell/Ui/WidgetButton.qml:11,131"
+    },
+    {
+      "id": "ui.widgetButton.dimmedOpacity",
+      "what": "Opacity of a dimmed bar button",
+      "value": "0.45",
+      "unit": "opacity",
+      "expr": "dimmed ? 0.45 : 1",
+      "source": "shell/Ui/WidgetButton.qml:94"
+    },
+    {
+      "id": "ui.widgetButton.pressScale",
+      "what": "Label/glyph scale while held",
+      "value": "0.9",
+      "unit": "scale",
+      "expr": "pressScale ... ? 0.9 : 1",
+      "source": "shell/Ui/WidgetButton.qml:108"
+    },
+    {
+      "id": "ui.widgetButton.figureCentering",
+      "what": "Bar labels are vertically centred on digit height, not line box",
+      "value": "(descent - ascent + tightBoundingRect('0').height) / 2",
+      "unit": "px",
+      "expr": "anchors.verticalCenterOffset",
+      "source": "shell/Ui/WidgetButton.qml:122-127"
+    },
+    {
+      "id": "ui.barIconButton.fontSize",
+      "what": "Bar icon glyph point size before optical fit",
+      "value": "13",
+      "unit": "px",
+      "expr": "fontSize: Style.bar.iconFont",
+      "source": "shell/Ui/BarIconButton.qml:32"
+    },
+    {
+      "id": "ui.barIconButton.slot",
+      "what": "Bar icon button main-axis size",
+      "value": "27",
+      "unit": "px",
+      "expr": "fixedWidth: slotSize = Style.bar.iconSlot",
+      "source": "shell/Ui/BarIconButton.qml:9,33-34"
+    },
+    {
+      "id": "ui.barIconButton.labelGap",
+      "what": "Gap between optional label and icon",
+      "value": "4",
+      "unit": "px",
+      "expr": "Style.space(4)",
+      "source": "shell/Ui/BarIconButton.qml:44,67"
+    },
+    {
+      "id": "ui.opticalGlyph.fit",
+      "what": "Icon glyph scaled so max(ink width, ink height) == 12px and ink centred in the 16px canvas",
+      "value": "scale = min(12, w, h) / max(inkW, inkH)",
+      "unit": "px",
+      "expr": "paintedScale = Math.min(paintedSize, width, height) / Math.max(tightWidth, tightHeight)",
+      "source": "shell/Ui/OpticalGlyph.qml:26-28,47-50"
+    },
+    {
+      "id": "ui.button.radius",
+      "what": "Shell Button radius",
+      "value": "0",
+      "unit": "px",
+      "expr": "radius: Style.cornerRadius",
+      "source": "shell/Ui/Button.qml:78"
+    },
+    {
+      "id": "ui.button.padding",
+      "what": "Shell Button padding (x, y)",
+      "value": "10, 6",
+      "unit": "px",
+      "expr": "Style.spacing.controlPaddingX / controlPaddingY",
+      "source": "shell/Ui/Button.qml:46-53"
+    },
+    {
+      "id": "ui.button.font",
+      "what": "Shell Button text / icon size",
+      "value": "12 / 14",
+      "unit": "px",
+      "expr": "Style.font.body / Style.font.icon",
+      "source": "shell/Ui/Button.qml:42-43"
+    },
+    {
+      "id": "ui.button.pressScale",
+      "what": "Shell Button scale while pressed",
+      "value": "0.97",
+      "unit": "scale",
+      "expr": "mouseArea.pressed ? 0.97 : 1",
+      "source": "shell/Ui/Button.qml:142"
+    },
+    {
+      "id": "ui.button.tooltip",
+      "what": "Button tooltip: bodySmall text, padding controlPadding + border, 400ms delay",
+      "value": "11px; 10/6 + 1; 400ms",
+      "unit": "mixed",
+      "expr": "font.pixelSize: Style.font.bodySmall; leftPadding: Border.left(spec) + controlPaddingX",
+      "source": "shell/Ui/Button.qml:151-170"
+    },
+    {
+      "id": "hypr.gapsIn",
+      "what": "Gap between tiled windows (each side)",
+      "value": "5",
+      "unit": "px",
+      "expr": "gaps_in = 5",
+      "source": "default/hypr/looknfeel.lua:8"
+    },
+    {
+      "id": "hypr.gapsOut",
+      "what": "Gap between windows and monitor edge (bar is reserved separately)",
+      "value": "10",
+      "unit": "px",
+      "expr": "gaps_out = 10",
+      "source": "default/hypr/looknfeel.lua:9"
+    },
+    {
+      "id": "hypr.borderSize",
+      "what": "Window border width",
+      "value": "2",
+      "unit": "px",
+      "expr": "border_size = 2",
+      "source": "default/hypr/looknfeel.lua:10"
+    },
+    {
+      "id": "hypr.rounding",
+      "what": "Window corner rounding (sharp by default; corners-rounded toggle sets 6 with rounding_power 3)",
+      "value": "0",
+      "unit": "px",
+      "expr": "decoration.rounding = 0",
+      "source": "default/hypr/looknfeel.lua:25; default/hypr/toggles/corners-rounded.lua:4-5"
+    },
+    {
+      "id": "hypr.shadow",
+      "what": "Window shadow",
+      "value": "disabled",
+      "unit": "bool",
+      "expr": "decoration.shadow.enabled = false",
+      "source": "default/hypr/looknfeel.lua:27-29"
+    },
+    {
+      "id": "hypr.blur",
+      "what": "Window blur",
+      "value": "disabled",
+      "unit": "bool",
+      "expr": "decoration.blur.enabled = false",
+      "source": "default/hypr/looknfeel.lua:31-33"
+    },
+    {
+      "id": "hypr.activeBorder.default",
+      "what": "Built-in active border before the theme override (replaced by theme hyprland.lua)",
+      "value": "rgba(33ccffee) rgba(00ff99ee) 45deg",
+      "unit": "gradient",
+      "expr": "{ colors = { \"rgba(33ccffee)\", \"rgba(00ff99ee)\" }, angle = 45 }",
+      "source": "default/hypr/looknfeel.lua:3,13"
+    },
+    {
+      "id": "hypr.activeBorder.theme",
+      "what": "Active window border from theme template: colors.toml hyprland_active_border, else accent. Tokyo Night #7aa2f7, Catppuccin Latte #1e66f5 (neither defines hyprland_active_border)",
+      "value": "accent",
+      "unit": "color",
+      "expr": "{{ hypr_gradient hyprland_active_border accent }}",
+      "source": "default/themed/hyprland.lua.tpl:1,7; bin/omarchy-theme-set-templates:102-123; default/hypr/omarchy.lua:32"
+    },
+    {
+      "id": "hypr.inactiveBorder",
+      "what": "Inactive window border",
+      "value": "#595959aa",
+      "unit": "color",
+      "expr": "{{ hypr_gradient hyprland_inactive_border rgba(595959aa) }}",
+      "source": "default/themed/hyprland.lua.tpl:2,8; default/hypr/looknfeel.lua:4"
+    },
+    {
+      "id": "hypr.groupbar.height",
+      "what": "Group tab bar height",
+      "value": "22",
+      "unit": "px",
+      "expr": "groupbar.height = 22",
+      "source": "default/hypr/looknfeel.lua:49"
+    },
+    {
+      "id": "hypr.groupbar.fontSize",
+      "what": "Group tab font size (family monospace; active ultraheavy, inactive normal)",
+      "value": "12",
+      "unit": "px",
+      "expr": "font_size = 12",
+      "source": "default/hypr/looknfeel.lua:43-46"
+    },
+    {
+      "id": "hypr.groupbar.colors",
+      "what": "Group tab fills / text",
+      "value": "active #00000040, inactive #00000020, text #ffffff, inactive text #ffffff90",
+      "unit": "color",
+      "expr": "col.active/inactive, text_color, text_color_inactive",
+      "source": "default/hypr/looknfeel.lua:52-56"
+    },
+    {
+      "id": "hypr.groupbar.indicator",
+      "what": "Group indicator height / gap",
+      "value": "1 / 5",
+      "unit": "px",
+      "expr": "indicator_height = 1, indicator_gap = 5",
+      "source": "default/hypr/looknfeel.lua:47-48"
+    },
+    {
+      "id": "hypr.misc.backgroundColor",
+      "what": "Compositor background behind wallpaper",
+      "value": "#000000",
+      "unit": "color",
+      "expr": "background_color = \"rgb(000000)\"",
+      "source": "default/hypr/looknfeel.lua:111"
+    },
+    {
+      "id": "hypr.monitor.scale",
+      "what": "Monitor scale on a stock install: Hyprland picks; every shell px above is a logical px",
+      "value": "auto",
+      "unit": "scale",
+      "expr": "scale = \"auto\"",
+      "source": "default/hypr/monitors.lua:5"
+    }
+  ],
+  "colors": [
+    {
+      "id": "color.palette.background",
+      "section": "colors.toml",
+      "key": "background",
+      "expr": "background",
+      "alpha": 1.0,
+      "tokyoNight": "#1a1b26",
+      "tokyoNightCss": "#1a1b26",
+      "catppuccinLatte": "#eff1f5",
+      "catppuccinLatteCss": "#eff1f5",
+      "source": "shell/Commons/Color.qml:20,153; themes/tokyo-night/colors.toml:7; themes/catppuccin-latte/colors.toml:7"
+    },
+    {
+      "id": "color.palette.foreground",
+      "section": "colors.toml",
+      "key": "foreground",
+      "expr": "foreground",
+      "alpha": 1.0,
+      "tokyoNight": "#a9b1d6",
+      "tokyoNightCss": "#a9b1d6",
+      "catppuccinLatte": "#4c4f69",
+      "catppuccinLatteCss": "#4c4f69",
+      "source": "shell/Commons/Color.qml:19,152; themes/tokyo-night/colors.toml:12; themes/catppuccin-latte/colors.toml:12"
+    },
+    {
+      "id": "color.palette.accent",
+      "section": "colors.toml",
+      "key": "accent",
+      "expr": "accent",
+      "alpha": 1.0,
+      "tokyoNight": "#7aa2f7",
+      "tokyoNightCss": "#7aa2f7",
+      "catppuccinLatte": "#1e66f5",
+      "catppuccinLatteCss": "#1e66f5",
+      "source": "shell/Commons/Color.qml:21,157; themes/tokyo-night/colors.toml:3; themes/catppuccin-latte/colors.toml:3"
+    },
+    {
+      "id": "color.palette.urgent",
+      "section": "colors.toml",
+      "key": "red",
+      "expr": "red (Color.urgent)",
+      "alpha": 1.0,
+      "tokyoNight": "#f7768e",
+      "tokyoNightCss": "#f7768e",
+      "catppuccinLatte": "#d20f39",
+      "catppuccinLatteCss": "#d20f39",
+      "source": "shell/Commons/Color.qml:22,163; themes/tokyo-night/colors.toml:17; themes/catppuccin-latte/colors.toml:17"
+    },
+    {
+      "id": "color.palette.muted",
+      "section": "colors.toml",
+      "key": "muted",
+      "expr": "muted",
+      "alpha": 1.0,
+      "tokyoNight": "#414868",
+      "tokyoNightCss": "#414868",
+      "catppuccinLatte": "#acb0be",
+      "catppuccinLatteCss": "#acb0be",
+      "source": "shell/Commons/Color.qml:23,158; themes/tokyo-night/colors.toml:5; themes/catppuccin-latte/colors.toml:5"
+    },
+    {
+      "id": "color.bar.background",
+      "section": "[bar]",
+      "key": "background",
+      "expr": "background @ 1.0",
+      "alpha": 1.0,
+      "tokyoNight": "#1a1b26",
+      "tokyoNightCss": "#1a1b26",
+      "catppuccinLatte": "#eff1f5",
+      "catppuccinLatteCss": "#eff1f5",
+      "source": "default/themed/shell.toml.tpl:7-8; shell/Commons/Color.qml:80"
+    },
+    {
+      "id": "color.bar.text",
+      "section": "[bar]",
+      "key": "text",
+      "expr": "foreground",
+      "alpha": 1.0,
+      "tokyoNight": "#a9b1d6",
+      "tokyoNightCss": "#a9b1d6",
+      "catppuccinLatte": "#4c4f69",
+      "catppuccinLatteCss": "#4c4f69",
+      "source": "default/themed/shell.toml.tpl:9; shell/Commons/Color.qml:81"
+    },
+    {
+      "id": "color.bar.active",
+      "section": "[bar]",
+      "key": "active",
+      "expr": "red",
+      "alpha": 1.0,
+      "tokyoNight": "#f7768e",
+      "tokyoNightCss": "#f7768e",
+      "catppuccinLatte": "#d20f39",
+      "catppuccinLatteCss": "#d20f39",
+      "source": "default/themed/shell.toml.tpl:11; shell/Commons/Color.qml:82"
+    },
+    {
+      "id": "color.hyprland.activeBorder",
+      "section": "[hyprland]",
+      "key": "active-border",
+      "expr": "shell_gradient(hyprland_active_border ?? accent) -> accent (single stop)",
+      "alpha": 1.0,
+      "tokyoNight": "#7aa2f7",
+      "tokyoNightCss": "#7aa2f7",
+      "catppuccinLatte": "#1e66f5",
+      "catppuccinLatteCss": "#1e66f5",
+      "source": "default/themed/shell.toml.tpl:23; bin/omarchy-theme-set-templates:139-158"
+    },
+    {
+      "id": "color.hyprland.activeBorderForeground",
+      "section": "[hyprland]",
+      "key": "active-border-foreground",
+      "expr": "shell_gradient(hyprland_active_border ?? foreground) -> foreground",
+      "alpha": 1.0,
+      "tokyoNight": "#a9b1d6",
+      "tokyoNightCss": "#a9b1d6",
+      "catppuccinLatte": "#4c4f69",
+      "catppuccinLatteCss": "#4c4f69",
+      "source": "default/themed/shell.toml.tpl:24; bin/omarchy-theme-set-templates:139-158",
+      "note": "Template passes 'foreground' as the fallback, but the first argument is still hyprland_active_border: a theme that defines hyprland_active_border gets that gradient here too."
+    },
+    {
+      "id": "color.controls.normalFill",
+      "section": "[controls]",
+      "key": "normal-fill-alpha",
+      "expr": "foreground @ 0.04",
+      "alpha": 0.04,
+      "tokyoNight": "#a9b1d60a",
+      "tokyoNightCss": "rgba(169, 177, 214, 0.04)",
+      "catppuccinLatte": "#4c4f690a",
+      "catppuccinLatteCss": "rgba(76, 79, 105, 0.04)",
+      "source": "shell/Commons/Style.qml:84,156,191; default/themed/shell.toml.tpl:34-35"
+    },
+    {
+      "id": "color.controls.hoverFill",
+      "section": "[controls]",
+      "key": "hover-cursor-fill-alpha",
+      "expr": "foreground @ 0.08",
+      "alpha": 0.08,
+      "tokyoNight": "#a9b1d614",
+      "tokyoNightCss": "rgba(169, 177, 214, 0.08)",
+      "catppuccinLatte": "#4c4f6914",
+      "catppuccinLatteCss": "rgba(76, 79, 105, 0.08)",
+      "source": "shell/Commons/Style.qml:85,157,192; default/themed/shell.toml.tpl:41-42"
+    },
+    {
+      "id": "color.controls.focusFill",
+      "section": "[controls]",
+      "key": "focus-fill-alpha",
+      "expr": "foreground @ 0.08",
+      "alpha": 0.08,
+      "tokyoNight": "#a9b1d614",
+      "tokyoNightCss": "rgba(169, 177, 214, 0.08)",
+      "catppuccinLatte": "#4c4f6914",
+      "catppuccinLatteCss": "rgba(76, 79, 105, 0.08)",
+      "source": "shell/Commons/Style.qml:88,160,195; default/themed/shell.toml.tpl:50-51"
+    },
+    {
+      "id": "color.controls.selectedFill",
+      "section": "[controls]",
+      "key": "selected-fill-alpha",
+      "expr": "foreground @ 0.18",
+      "alpha": 0.18,
+      "tokyoNight": "#a9b1d62e",
+      "tokyoNightCss": "rgba(169, 177, 214, 0.18)",
+      "catppuccinLatte": "#4c4f692e",
+      "catppuccinLatteCss": "rgba(76, 79, 105, 0.18)",
+      "source": "shell/Commons/Style.qml:86,158,193; default/themed/shell.toml.tpl:57-58"
+    },
+    {
+      "id": "color.controls.pressedFill",
+      "section": "[controls]",
+      "key": "pressed-fill-alpha",
+      "expr": "foreground @ 0.22",
+      "alpha": 0.22,
+      "tokyoNight": "#a9b1d638",
+      "tokyoNightCss": "rgba(169, 177, 214, 0.22)",
+      "catppuccinLatte": "#4c4f6938",
+      "catppuccinLatteCss": "rgba(76, 79, 105, 0.22)",
+      "source": "shell/Commons/Style.qml:87,159,194; default/themed/shell.toml.tpl:64"
+    },
+    {
+      "id": "color.controls.selectionFill",
+      "section": "[controls]",
+      "key": "selection-fill-alpha",
+      "expr": "foreground @ 0.35",
+      "alpha": 0.35,
+      "tokyoNight": "#a9b1d659",
+      "tokyoNightCss": "rgba(169, 177, 214, 0.35)",
+      "catppuccinLatte": "#4c4f6959",
+      "catppuccinLatteCss": "rgba(76, 79, 105, 0.35)",
+      "source": "shell/Commons/Style.qml:89,161,201; default/themed/shell.toml.tpl:65"
+    },
+    {
+      "id": "color.controls.normalBorder",
+      "section": "[controls]",
+      "key": "normal-border",
+      "expr": "foreground @ 0.4",
+      "alpha": 0.4,
+      "tokyoNight": "#a9b1d666",
+      "tokyoNightCss": "rgba(169, 177, 214, 0.4)",
+      "catppuccinLatte": "#4c4f6966",
+      "catppuccinLatteCss": "rgba(76, 79, 105, 0.4)",
+      "source": "shell/Commons/Style.qml:91,163,196; default/themed/shell.toml.tpl:36-38; shell/Commons/Border.qml:217-227"
+    },
+    {
+      "id": "color.controls.hoverBorder",
+      "section": "[controls]",
+      "key": "hover-cursor-border",
+      "expr": "foreground @ 0.25",
+      "alpha": 0.25,
+      "tokyoNight": "#a9b1d640",
+      "tokyoNightCss": "rgba(169, 177, 214, 0.25)",
+      "catppuccinLatte": "#4c4f6940",
+      "catppuccinLatteCss": "rgba(76, 79, 105, 0.25)",
+      "source": "shell/Commons/Style.qml:92,164,197; default/themed/shell.toml.tpl:43-45"
+    },
+    {
+      "id": "color.controls.focusBorder",
+      "section": "[controls]",
+      "key": "focus-border",
+      "expr": "foreground @ 0.25",
+      "alpha": 0.25,
+      "tokyoNight": "#a9b1d640",
+      "tokyoNightCss": "rgba(169, 177, 214, 0.25)",
+      "catppuccinLatte": "#4c4f6940",
+      "catppuccinLatteCss": "rgba(76, 79, 105, 0.25)",
+      "source": "shell/Commons/Style.qml:94,166,199; default/themed/shell.toml.tpl:52-54"
+    },
+    {
+      "id": "color.controls.selectedBorder",
+      "section": "[controls]",
+      "key": "selected-border",
+      "expr": "foreground @ 1.0 (width 0, so not drawn by default)",
+      "alpha": 1.0,
+      "tokyoNight": "#a9b1d6",
+      "tokyoNightCss": "#a9b1d6",
+      "catppuccinLatte": "#4c4f69",
+      "catppuccinLatteCss": "#4c4f69",
+      "source": "shell/Commons/Style.qml:93,165,198; default/themed/shell.toml.tpl:59-61"
+    },
+    {
+      "id": "color.controls.selectedAccentFill",
+      "section": "(Style)",
+      "key": "selectedAccentFill",
+      "expr": "accent @ 0.18",
+      "alpha": 0.18,
+      "tokyoNight": "#7aa2f72e",
+      "tokyoNightCss": "rgba(122, 162, 247, 0.18)",
+      "catppuccinLatte": "#1e66f52e",
+      "catppuccinLatteCss": "rgba(30, 102, 245, 0.18)",
+      "source": "shell/Commons/Style.qml:200"
+    },
+    {
+      "id": "color.popups.background",
+      "section": "[popups]",
+      "key": "background",
+      "expr": "background @ 1.0",
+      "alpha": 1.0,
+      "tokyoNight": "#1a1b26",
+      "tokyoNightCss": "#1a1b26",
+      "catppuccinLatte": "#eff1f5",
+      "catppuccinLatteCss": "#eff1f5",
+      "source": "default/themed/shell.toml.tpl:127-128; shell/Commons/Color.qml:85"
+    },
+    {
+      "id": "color.popups.text",
+      "section": "[popups]",
+      "key": "text",
+      "expr": "foreground",
+      "alpha": 1.0,
+      "tokyoNight": "#a9b1d6",
+      "tokyoNightCss": "#a9b1d6",
+      "catppuccinLatte": "#4c4f69",
+      "catppuccinLatteCss": "#4c4f69",
+      "source": "default/themed/shell.toml.tpl:129; shell/Commons/Color.qml:86"
+    },
+    {
+      "id": "color.popups.border",
+      "section": "[popups]",
+      "key": "border",
+      "expr": "hyprland.active-border -> accent @ 1.0",
+      "alpha": 1.0,
+      "tokyoNight": "#7aa2f7",
+      "tokyoNightCss": "#7aa2f7",
+      "catppuccinLatte": "#1e66f5",
+      "catppuccinLatteCss": "#1e66f5",
+      "source": "default/themed/shell.toml.tpl:130-131; shell/Commons/Color.qml:87; shell/Commons/Border.qml:38-48,141-151"
+    },
+    {
+      "id": "color.tooltip.background",
+      "section": "[tooltip]",
+      "key": "background",
+      "expr": "background @ 0.97",
+      "alpha": 0.97,
+      "tokyoNight": "#1a1b26f7",
+      "tokyoNightCss": "rgba(26, 27, 38, 0.97)",
+      "catppuccinLatte": "#eff1f5f7",
+      "catppuccinLatteCss": "rgba(239, 241, 245, 0.97)",
+      "source": "default/themed/shell.toml.tpl:137-138; shell/Commons/Color.qml:90"
+    },
+    {
+      "id": "color.tooltip.text",
+      "section": "[tooltip]",
+      "key": "text",
+      "expr": "foreground",
+      "alpha": 1.0,
+      "tokyoNight": "#a9b1d6",
+      "tokyoNightCss": "#a9b1d6",
+      "catppuccinLatte": "#4c4f69",
+      "catppuccinLatteCss": "#4c4f69",
+      "source": "default/themed/shell.toml.tpl:139; shell/Commons/Color.qml:91"
+    },
+    {
+      "id": "color.tooltip.border",
+      "section": "[tooltip]",
+      "key": "border",
+      "expr": "hyprland.active-border-foreground -> foreground @ 1.0",
+      "alpha": 1.0,
+      "tokyoNight": "#a9b1d6",
+      "tokyoNightCss": "#a9b1d6",
+      "catppuccinLatte": "#4c4f69",
+      "catppuccinLatteCss": "#4c4f69",
+      "source": "default/themed/shell.toml.tpl:140-141; shell/Commons/Color.qml:92"
+    },
+    {
+      "id": "color.notifications.background",
+      "section": "[notifications]",
+      "key": "background",
+      "expr": "background @ 1.0",
+      "alpha": 1.0,
+      "tokyoNight": "#1a1b26",
+      "tokyoNightCss": "#1a1b26",
+      "catppuccinLatte": "#eff1f5",
+      "catppuccinLatteCss": "#eff1f5",
+      "source": "default/themed/shell.toml.tpl:144-145; shell/Commons/Color.qml:95"
+    },
+    {
+      "id": "color.notifications.text",
+      "section": "[notifications]",
+      "key": "text",
+      "expr": "foreground",
+      "alpha": 1.0,
+      "tokyoNight": "#a9b1d6",
+      "tokyoNightCss": "#a9b1d6",
+      "catppuccinLatte": "#4c4f69",
+      "catppuccinLatteCss": "#4c4f69",
+      "source": "default/themed/shell.toml.tpl:146; shell/Commons/Color.qml:96"
+    },
+    {
+      "id": "color.notifications.border",
+      "section": "[notifications]",
+      "key": "border",
+      "expr": "hyprland.active-border -> accent @ 1.0",
+      "alpha": 1.0,
+      "tokyoNight": "#7aa2f7",
+      "tokyoNightCss": "#7aa2f7",
+      "catppuccinLatte": "#1e66f5",
+      "catppuccinLatteCss": "#1e66f5",
+      "source": "default/themed/shell.toml.tpl:149-150; shell/Commons/Color.qml:97"
+    },
+    {
+      "id": "color.notifications.countdown",
+      "section": "[notifications]",
+      "key": "countdown",
+      "expr": "accent",
+      "alpha": 1.0,
+      "tokyoNight": "#7aa2f7",
+      "tokyoNightCss": "#7aa2f7",
+      "catppuccinLatte": "#1e66f5",
+      "catppuccinLatteCss": "#1e66f5",
+      "source": "default/themed/shell.toml.tpl:152; shell/Commons/Color.qml:98"
+    },
+    {
+      "id": "color.menu.background",
+      "section": "[menu]",
+      "key": "background",
+      "expr": "background @ 1.0",
+      "alpha": 1.0,
+      "tokyoNight": "#1a1b26",
+      "tokyoNightCss": "#1a1b26",
+      "catppuccinLatte": "#eff1f5",
+      "catppuccinLatteCss": "#eff1f5",
+      "source": "default/themed/shell.toml.tpl:176-177; shell/Commons/Color.qml:101"
+    },
+    {
+      "id": "color.menu.text",
+      "section": "[menu]",
+      "key": "text",
+      "expr": "foreground",
+      "alpha": 1.0,
+      "tokyoNight": "#a9b1d6",
+      "tokyoNightCss": "#a9b1d6",
+      "catppuccinLatte": "#4c4f69",
+      "catppuccinLatteCss": "#4c4f69",
+      "source": "default/themed/shell.toml.tpl:178; shell/Commons/Color.qml:102"
+    },
+    {
+      "id": "color.menu.border",
+      "section": "[menu]",
+      "key": "border",
+      "expr": "hyprland.active-border-foreground -> foreground @ 1.0",
+      "alpha": 1.0,
+      "tokyoNight": "#a9b1d6",
+      "tokyoNightCss": "#a9b1d6",
+      "catppuccinLatte": "#4c4f69",
+      "catppuccinLatteCss": "#4c4f69",
+      "source": "default/themed/shell.toml.tpl:179-180; shell/Commons/Color.qml:103"
+    },
+    {
+      "id": "color.menu.scrim",
+      "section": "[menu]",
+      "key": "scrim",
+      "expr": "background @ 0.5",
+      "alpha": 0.5,
+      "tokyoNight": "#1a1b2680",
+      "tokyoNightCss": "rgba(26, 27, 38, 0.5)",
+      "catppuccinLatte": "#eff1f580",
+      "catppuccinLatteCss": "rgba(239, 241, 245, 0.5)",
+      "source": "default/themed/shell.toml.tpl:181-182; shell/Commons/Color.qml:104"
+    },
+    {
+      "id": "color.menu.selectedBackground",
+      "section": "[menu]",
+      "key": "selected-background",
+      "expr": "foreground @ 0.08",
+      "alpha": 0.08,
+      "tokyoNight": "#a9b1d614",
+      "tokyoNightCss": "rgba(169, 177, 214, 0.08)",
+      "catppuccinLatte": "#4c4f6914",
+      "catppuccinLatteCss": "rgba(76, 79, 105, 0.08)",
+      "source": "default/themed/shell.toml.tpl:183-184; shell/Commons/Color.qml:105"
+    },
+    {
+      "id": "color.menu.selectedText",
+      "section": "[menu]",
+      "key": "selected-text",
+      "expr": "accent",
+      "alpha": 1.0,
+      "tokyoNight": "#7aa2f7",
+      "tokyoNightCss": "#7aa2f7",
+      "catppuccinLatte": "#1e66f5",
+      "catppuccinLatteCss": "#1e66f5",
+      "source": "default/themed/shell.toml.tpl:185; shell/Commons/Color.qml:106"
+    },
+    {
+      "id": "color.menu.selectedBorder",
+      "section": "[menu]",
+      "key": "selected-border",
+      "expr": "hyprland.active-border-foreground -> foreground @ 0.25 (drawn at width 0 by default)",
+      "alpha": 0.25,
+      "tokyoNight": "#a9b1d640",
+      "tokyoNightCss": "rgba(169, 177, 214, 0.25)",
+      "catppuccinLatte": "#4c4f6940",
+      "catppuccinLatteCss": "rgba(76, 79, 105, 0.25)",
+      "source": "default/themed/shell.toml.tpl:186-187; shell/Commons/Color.qml:107; shell/plugins/menu/Menu.qml:122"
+    },
+    {
+      "id": "color.launcher.background",
+      "section": "[launcher]",
+      "key": "background",
+      "expr": "background @ 0.95 (NOT READ by the shell at this commit)",
+      "alpha": 0.95,
+      "tokyoNight": "#1a1b26f2",
+      "tokyoNightCss": "rgba(26, 27, 38, 0.95)",
+      "catppuccinLatte": "#eff1f5f2",
+      "catppuccinLatteCss": "rgba(239, 241, 245, 0.95)",
+      "source": "default/themed/shell.toml.tpl:159-160",
+      "note": "No QML reads any launcher.* key (Color.qml has no launcher object; grep finds no consumer). The menu uses [menu]."
+    },
+    {
+      "id": "color.launcher.scrim",
+      "section": "[launcher]",
+      "key": "scrim",
+      "expr": "background @ 0.5 (NOT READ)",
+      "alpha": 0.5,
+      "tokyoNight": "#1a1b2680",
+      "tokyoNightCss": "rgba(26, 27, 38, 0.5)",
+      "catppuccinLatte": "#eff1f580",
+      "catppuccinLatteCss": "rgba(239, 241, 245, 0.5)",
+      "source": "default/themed/shell.toml.tpl:164-165"
+    },
+    {
+      "id": "color.launcher.selectedBackground",
+      "section": "[launcher]",
+      "key": "selected-background",
+      "expr": "foreground @ 0.08 (NOT READ)",
+      "alpha": 0.08,
+      "tokyoNight": "#a9b1d614",
+      "tokyoNightCss": "rgba(169, 177, 214, 0.08)",
+      "catppuccinLatte": "#4c4f6914",
+      "catppuccinLatteCss": "rgba(76, 79, 105, 0.08)",
+      "source": "default/themed/shell.toml.tpl:166-167"
+    },
+    {
+      "id": "color.launcher.selectedText",
+      "section": "[launcher]",
+      "key": "selected-text",
+      "expr": "accent (NOT READ)",
+      "alpha": 1.0,
+      "tokyoNight": "#7aa2f7",
+      "tokyoNightCss": "#7aa2f7",
+      "catppuccinLatte": "#1e66f5",
+      "catppuccinLatteCss": "#1e66f5",
+      "source": "default/themed/shell.toml.tpl:168"
+    },
+    {
+      "id": "color.launcher.border",
+      "section": "[launcher]",
+      "key": "border",
+      "expr": "foreground @ 1.0 (NOT READ)",
+      "alpha": 1.0,
+      "tokyoNight": "#a9b1d6",
+      "tokyoNightCss": "#a9b1d6",
+      "catppuccinLatte": "#4c4f69",
+      "catppuccinLatteCss": "#4c4f69",
+      "source": "default/themed/shell.toml.tpl:162-163"
+    },
+    {
+      "id": "color.launcher.selectedBorder",
+      "section": "[launcher]",
+      "key": "selected-border",
+      "expr": "foreground @ 0.25 (NOT READ)",
+      "alpha": 0.25,
+      "tokyoNight": "#a9b1d640",
+      "tokyoNightCss": "rgba(169, 177, 214, 0.25)",
+      "catppuccinLatte": "#4c4f6940",
+      "catppuccinLatteCss": "rgba(76, 79, 105, 0.25)",
+      "source": "default/themed/shell.toml.tpl:169-170"
+    },
+    {
+      "id": "color.polkit.background",
+      "section": "[polkit]",
+      "key": "background",
+      "expr": "background @ 1.0",
+      "alpha": 1.0,
+      "tokyoNight": "#1a1b26",
+      "tokyoNightCss": "#1a1b26",
+      "catppuccinLatte": "#eff1f5",
+      "catppuccinLatteCss": "#eff1f5",
+      "source": "default/themed/shell.toml.tpl:195-196; shell/Commons/Color.qml:113"
+    },
+    {
+      "id": "color.polkit.text",
+      "section": "[polkit]",
+      "key": "text",
+      "expr": "foreground",
+      "alpha": 1.0,
+      "tokyoNight": "#a9b1d6",
+      "tokyoNightCss": "#a9b1d6",
+      "catppuccinLatte": "#4c4f69",
+      "catppuccinLatteCss": "#4c4f69",
+      "source": "default/themed/shell.toml.tpl:197; shell/Commons/Color.qml:114"
+    },
+    {
+      "id": "color.polkit.textError",
+      "section": "[polkit]",
+      "key": "text-error",
+      "expr": "red",
+      "alpha": 1.0,
+      "tokyoNight": "#f7768e",
+      "tokyoNightCss": "#f7768e",
+      "catppuccinLatte": "#d20f39",
+      "catppuccinLatteCss": "#d20f39",
+      "source": "default/themed/shell.toml.tpl:198; shell/Commons/Color.qml:115"
+    },
+    {
+      "id": "color.polkit.border",
+      "section": "[polkit]",
+      "key": "border",
+      "expr": "hyprland.active-border -> accent @ 1.0",
+      "alpha": 1.0,
+      "tokyoNight": "#7aa2f7",
+      "tokyoNightCss": "#7aa2f7",
+      "catppuccinLatte": "#1e66f5",
+      "catppuccinLatteCss": "#1e66f5",
+      "source": "default/themed/shell.toml.tpl:199,201; shell/Commons/Color.qml:116"
+    },
+    {
+      "id": "color.polkit.borderError",
+      "section": "[polkit]",
+      "key": "border-error",
+      "expr": "red @ 1.0",
+      "alpha": 1.0,
+      "tokyoNight": "#f7768e",
+      "tokyoNightCss": "#f7768e",
+      "catppuccinLatte": "#d20f39",
+      "catppuccinLatteCss": "#d20f39",
+      "source": "default/themed/shell.toml.tpl:200-201; shell/Commons/Color.qml:117"
+    },
+    {
+      "id": "color.polkit.scrim",
+      "section": "[polkit]",
+      "key": "scrim",
+      "expr": "background @ 0.5",
+      "alpha": 0.5,
+      "tokyoNight": "#1a1b2680",
+      "tokyoNightCss": "rgba(26, 27, 38, 0.5)",
+      "catppuccinLatte": "#eff1f580",
+      "catppuccinLatteCss": "rgba(239, 241, 245, 0.5)",
+      "source": "default/themed/shell.toml.tpl:202-203; shell/Commons/Color.qml:119"
+    },
+    {
+      "id": "color.polkit.accent",
+      "section": "[polkit]",
+      "key": "accent",
+      "expr": "accent",
+      "alpha": 1.0,
+      "tokyoNight": "#7aa2f7",
+      "tokyoNightCss": "#7aa2f7",
+      "catppuccinLatte": "#1e66f5",
+      "catppuccinLatteCss": "#1e66f5",
+      "source": "default/themed/shell.toml.tpl:205; shell/Commons/Color.qml:118"
+    },
+    {
+      "id": "color.lock.background",
+      "section": "[lock]",
+      "key": "background",
+      "expr": "background @ 0.8 (Tokyo Night: key removed by override; Color.qml fallback is also background @ 0.8)",
+      "alpha": 0.8,
+      "tokyoNight": "#1a1b26cc",
+      "tokyoNightCss": "rgba(26, 27, 38, 0.8)",
+      "catppuccinLatte": "#eff1f5cc",
+      "catppuccinLatteCss": "rgba(239, 241, 245, 0.8)",
+      "source": "default/themed/shell.toml.tpl:213-214; shell/Commons/Color.qml:122; themes/tokyo-night/shell.lock.toml:1-6",
+      "note": "Tokyo Night ships themes/tokyo-night/shell.lock.toml, which replaces the entire [lock] section (bin/omarchy-theme-set-templates:255-314), so keys it omits fall back to Color.qml defaults."
+    },
+    {
+      "id": "color.lock.text",
+      "section": "[lock]",
+      "key": "text",
+      "expr": "foreground (Tokyo Night override: #a9b1d6, equal to its foreground)",
+      "alpha": 1.0,
+      "tokyoNight": "#a9b1d6",
+      "tokyoNightCss": "#a9b1d6",
+      "catppuccinLatte": "#4c4f69",
+      "catppuccinLatteCss": "#4c4f69",
+      "source": "default/themed/shell.toml.tpl:215; shell/Commons/Color.qml:123; themes/tokyo-night/shell.lock.toml:1"
+    },
+    {
+      "id": "color.lock.placeholder",
+      "section": "[lock]",
+      "key": "placeholder",
+      "expr": "mix(foreground, background, 34%) = fg*0.66 + bg*0.34, rounded per channel (Tokyo Night override: #a9b1d6)",
+      "alpha": 1.0,
+      "tokyoNight": "#a9b1d6",
+      "tokyoNightCss": "#a9b1d6",
+      "catppuccinLatte": "#838699",
+      "catppuccinLatteCss": "#838699",
+      "source": "default/themed/shell.toml.tpl:216; shell/Commons/Color.qml:124; bin/omarchy-theme-set-templates:345-372; themes/tokyo-night/shell.lock.toml:2",
+      "note": "Without the Tokyo Night override the template would give mix(#a9b1d6, #1a1b26, 34%) = #787e9a."
+    },
+    {
+      "id": "color.lock.textError",
+      "section": "[lock]",
+      "key": "text-error",
+      "expr": "red (Tokyo Night override: #a9b1d6)",
+      "alpha": 1.0,
+      "tokyoNight": "#a9b1d6",
+      "tokyoNightCss": "#a9b1d6",
+      "catppuccinLatte": "#d20f39",
+      "catppuccinLatteCss": "#d20f39",
+      "source": "default/themed/shell.toml.tpl:217; shell/Commons/Color.qml:125; themes/tokyo-night/shell.lock.toml:3"
+    },
+    {
+      "id": "color.lock.border",
+      "section": "[lock]",
+      "key": "border",
+      "expr": "hyprland.active-border -> accent @ 1.0 (Tokyo Night override: #a9b1d6)",
+      "alpha": 1.0,
+      "tokyoNight": "#a9b1d6",
+      "tokyoNightCss": "#a9b1d6",
+      "catppuccinLatte": "#1e66f5",
+      "catppuccinLatteCss": "#1e66f5",
+      "source": "default/themed/shell.toml.tpl:218,221; shell/Commons/Color.qml:126; themes/tokyo-night/shell.lock.toml:4"
+    },
+    {
+      "id": "color.lock.borderActive",
+      "section": "[lock]",
+      "key": "border-active",
+      "expr": "hyprland.active-border -> accent @ 1.0 (Tokyo Night override: #a9b1d6)",
+      "alpha": 1.0,
+      "tokyoNight": "#a9b1d6",
+      "tokyoNightCss": "#a9b1d6",
+      "catppuccinLatte": "#1e66f5",
+      "catppuccinLatteCss": "#1e66f5",
+      "source": "default/themed/shell.toml.tpl:219,221; shell/Commons/Color.qml:127; themes/tokyo-night/shell.lock.toml:5"
+    },
+    {
+      "id": "color.lock.borderError",
+      "section": "[lock]",
+      "key": "border-error",
+      "expr": "red @ 1.0 (Tokyo Night override: #a9b1d6)",
+      "alpha": 1.0,
+      "tokyoNight": "#a9b1d6",
+      "tokyoNightCss": "#a9b1d6",
+      "catppuccinLatte": "#d20f39",
+      "catppuccinLatteCss": "#d20f39",
+      "source": "default/themed/shell.toml.tpl:220-221; shell/Commons/Color.qml:128; themes/tokyo-night/shell.lock.toml:6"
+    },
+    {
+      "id": "color.lock.selection",
+      "section": "[lock]",
+      "key": "selection",
+      "expr": "accent @ 0.45 (Tokyo Night: key removed; Color.qml fallback is also accent @ 0.45)",
+      "alpha": 0.45,
+      "tokyoNight": "#7aa2f773",
+      "tokyoNightCss": "rgba(122, 162, 247, 0.45)",
+      "catppuccinLatte": "#1e66f573",
+      "catppuccinLatteCss": "rgba(30, 102, 245, 0.45)",
+      "source": "default/themed/shell.toml.tpl:223-224; shell/Commons/Color.qml:129"
+    },
+    {
+      "id": "color.imagePicker.text",
+      "section": "[image-picker]",
+      "key": "text",
+      "expr": "foreground",
+      "alpha": 1.0,
+      "tokyoNight": "#a9b1d6",
+      "tokyoNightCss": "#a9b1d6",
+      "catppuccinLatte": "#4c4f69",
+      "catppuccinLatteCss": "#4c4f69",
+      "source": "default/themed/shell.toml.tpl:231; shell/Commons/Color.qml:134"
+    },
+    {
+      "id": "color.imagePicker.selectedBorder",
+      "section": "[image-picker]",
+      "key": "selected-border",
+      "expr": "accent @ 1.0",
+      "alpha": 1.0,
+      "tokyoNight": "#7aa2f7",
+      "tokyoNightCss": "#7aa2f7",
+      "catppuccinLatte": "#1e66f5",
+      "catppuccinLatteCss": "#1e66f5",
+      "source": "default/themed/shell.toml.tpl:232-233; shell/Commons/Color.qml:135"
+    },
+    {
+      "id": "color.imagePicker.unselectedBorder",
+      "section": "[image-picker]",
+      "key": "unselected-border",
+      "expr": "foreground @ 0.28",
+      "alpha": 0.28,
+      "tokyoNight": "#a9b1d647",
+      "tokyoNightCss": "rgba(169, 177, 214, 0.28)",
+      "catppuccinLatte": "#4c4f6947",
+      "catppuccinLatteCss": "rgba(76, 79, 105, 0.28)",
+      "source": "default/themed/shell.toml.tpl:234-235; shell/Commons/Color.qml:136"
+    },
+    {
+      "id": "color.hypr.activeBorder",
+      "section": "hyprland.lua",
+      "key": "general.col.active_border",
+      "expr": "hyprland_active_border ?? accent",
+      "alpha": 1.0,
+      "tokyoNight": "#7aa2f7",
+      "tokyoNightCss": "#7aa2f7",
+      "catppuccinLatte": "#1e66f5",
+      "catppuccinLatteCss": "#1e66f5",
+      "source": "default/themed/hyprland.lua.tpl:1,7,14"
+    },
+    {
+      "id": "color.hypr.inactiveBorder",
+      "section": "hyprland.lua",
+      "key": "general.col.inactive_border",
+      "expr": "rgba(595959aa) (theme-independent)",
+      "alpha": 0.6666666666666666,
+      "tokyoNight": "#595959aa",
+      "tokyoNightCss": "rgba(89, 89, 89, 0.666667)",
+      "catppuccinLatte": "#595959aa",
+      "catppuccinLatteCss": "rgba(89, 89, 89, 0.666667)",
+      "source": "default/themed/hyprland.lua.tpl:2,8,15"
+    }
+  ],
+  "animations": [
+    {
+      "id": "hypr.anim.global",
+      "layer": "hyprland",
+      "leaf": "global",
+      "enabled": true,
+      "speed": 8,
+      "durationMs": 800,
+      "bezier": "default",
+      "source": "default/hypr/looknfeel.lua:78"
+    },
+    {
+      "id": "hypr.anim.border",
+      "layer": "hyprland",
+      "leaf": "border",
+      "enabled": true,
+      "speed": 4.31,
+      "durationMs": 431,
+      "bezier": "easeOutQuint",
+      "source": "default/hypr/looknfeel.lua:79"
+    },
+    {
+      "id": "hypr.anim.windows",
+      "layer": "hyprland",
+      "leaf": "windows",
+      "enabled": true,
+      "speed": 3.03,
+      "durationMs": 303,
+      "bezier": "easeOutQuint",
+      "source": "default/hypr/looknfeel.lua:80"
+    },
+    {
+      "id": "hypr.anim.windowsIn",
+      "layer": "hyprland",
+      "leaf": "windowsIn",
+      "enabled": true,
+      "speed": 3.28,
+      "durationMs": 328,
+      "bezier": "easeOutQuint",
+      "style": "popin 87%",
+      "source": "default/hypr/looknfeel.lua:81"
+    },
+    {
+      "id": "hypr.anim.windowsOut",
+      "layer": "hyprland",
+      "leaf": "windowsOut",
+      "enabled": true,
+      "speed": 1.19,
+      "durationMs": 119,
+      "bezier": "linear",
+      "style": "popin 87%",
+      "source": "default/hypr/looknfeel.lua:82"
+    },
+    {
+      "id": "hypr.anim.fadeIn",
+      "layer": "hyprland",
+      "leaf": "fadeIn",
+      "enabled": true,
+      "speed": 1.38,
+      "durationMs": 138,
+      "bezier": "almostLinear",
+      "source": "default/hypr/looknfeel.lua:83"
+    },
+    {
+      "id": "hypr.anim.fadeOut",
+      "layer": "hyprland",
+      "leaf": "fadeOut",
+      "enabled": true,
+      "speed": 1.17,
+      "durationMs": 117,
+      "bezier": "almostLinear",
+      "source": "default/hypr/looknfeel.lua:84"
+    },
+    {
+      "id": "hypr.anim.fade",
+      "layer": "hyprland",
+      "leaf": "fade",
+      "enabled": true,
+      "speed": 2.42,
+      "durationMs": 242,
+      "bezier": "quick",
+      "source": "default/hypr/looknfeel.lua:85"
+    },
+    {
+      "id": "hypr.anim.fadeSwitch",
+      "layer": "hyprland",
+      "leaf": "fadeSwitch",
+      "enabled": false,
+      "source": "default/hypr/looknfeel.lua:86"
+    },
+    {
+      "id": "hypr.anim.layers",
+      "layer": "hyprland",
+      "leaf": "layers",
+      "enabled": true,
+      "speed": 3.05,
+      "durationMs": 305,
+      "bezier": "easeOutQuint",
+      "source": "default/hypr/looknfeel.lua:87"
+    },
+    {
+      "id": "hypr.anim.layersIn",
+      "layer": "hyprland",
+      "leaf": "layersIn",
+      "enabled": true,
+      "speed": 3.2,
+      "durationMs": 320,
+      "bezier": "easeOutQuint",
+      "style": "fade",
+      "source": "default/hypr/looknfeel.lua:88"
+    },
+    {
+      "id": "hypr.anim.layersOut",
+      "layer": "hyprland",
+      "leaf": "layersOut",
+      "enabled": true,
+      "speed": 1.2,
+      "durationMs": 120,
+      "bezier": "linear",
+      "style": "fade",
+      "source": "default/hypr/looknfeel.lua:89"
+    },
+    {
+      "id": "hypr.anim.fadeLayersIn",
+      "layer": "hyprland",
+      "leaf": "fadeLayersIn",
+      "enabled": true,
+      "speed": 1.43,
+      "durationMs": 143,
+      "bezier": "almostLinear",
+      "source": "default/hypr/looknfeel.lua:90"
+    },
+    {
+      "id": "hypr.anim.fadeLayersOut",
+      "layer": "hyprland",
+      "leaf": "fadeLayersOut",
+      "enabled": true,
+      "speed": 1.11,
+      "durationMs": 111,
+      "bezier": "almostLinear",
+      "source": "default/hypr/looknfeel.lua:91"
+    },
+    {
+      "id": "hypr.anim.workspaces",
+      "layer": "hyprland",
+      "leaf": "workspaces",
+      "enabled": false,
+      "source": "default/hypr/looknfeel.lua:92"
+    },
+    {
+      "id": "hypr.bezier.easeOutQuint",
+      "layer": "hyprland",
+      "bezier": "easeOutQuint",
+      "cubicBezier": [
+        0.23,
+        1,
+        0.32,
+        1
+      ],
+      "css": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "source": "default/hypr/looknfeel.lua:70"
+    },
+    {
+      "id": "hypr.bezier.easeInOutCubic",
+      "layer": "hyprland",
+      "bezier": "easeInOutCubic",
+      "cubicBezier": [
+        0.65,
+        0.05,
+        0.36,
+        1
+      ],
+      "css": "cubic-bezier(0.65, 0.05, 0.36, 1)",
+      "source": "default/hypr/looknfeel.lua:71"
+    },
+    {
+      "id": "hypr.bezier.linear",
+      "layer": "hyprland",
+      "bezier": "linear",
+      "cubicBezier": [
+        0,
+        0,
+        1,
+        1
+      ],
+      "css": "cubic-bezier(0, 0, 1, 1)",
+      "source": "default/hypr/looknfeel.lua:72"
+    },
+    {
+      "id": "hypr.bezier.almostLinear",
+      "layer": "hyprland",
+      "bezier": "almostLinear",
+      "cubicBezier": [
+        0.5,
+        0.5,
+        0.75,
+        1.0
+      ],
+      "css": "cubic-bezier(0.5, 0.5, 0.75, 1)",
+      "source": "default/hypr/looknfeel.lua:73"
+    },
+    {
+      "id": "hypr.bezier.quick",
+      "layer": "hyprland",
+      "bezier": "quick",
+      "cubicBezier": [
+        0.15,
+        0,
+        0.1,
+        1
+      ],
+      "css": "cubic-bezier(0.15, 0, 0.1, 1)",
+      "source": "default/hypr/looknfeel.lua:74"
+    },
+    {
+      "id": "style.easeOut",
+      "layer": "shell",
+      "what": "Style.easeOut, the shell's standard ease-out (identical to Hyprland easeOutQuint)",
+      "cubicBezier": [
+        0.23,
+        1.0,
+        0.32,
+        1.0
+      ],
+      "css": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "expr": "[0.23, 1.0, 0.32, 1.0, 1.0, 1.0] (Qt bezierCurve: c1, c2, end point)",
+      "source": "shell/Commons/Style.qml:369-371"
+    },
+    {
+      "id": "shell.popupCard.open",
+      "layer": "shell",
+      "what": "Popup card open: opacity 0->1 and scale 0.97->1 (origin at the bar edge)",
+      "durationMs": 180,
+      "easing": "Bezier Style.easeOut",
+      "css": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "source": "shell/Ui/PopupCard.qml:172-185"
+    },
+    {
+      "id": "shell.popupCard.close",
+      "layer": "shell",
+      "what": "Popup card close: reverse of open",
+      "durationMs": 120,
+      "easing": "Bezier Style.easeOut",
+      "css": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "source": "shell/Ui/PopupCard.qml:172-185"
+    },
+    {
+      "id": "shell.widgetButton.opacity",
+      "layer": "shell",
+      "what": "Bar button fade (show/hide/dim)",
+      "durationMs": 140,
+      "easing": "Easing.OutCubic",
+      "css": "cubic-bezier(0.33, 1, 0.68, 1)",
+      "source": "shell/Ui/WidgetButton.qml:100-102"
+    },
+    {
+      "id": "shell.widgetButton.press",
+      "layer": "shell",
+      "what": "Bar button label/glyph press scale 1 -> 0.9",
+      "durationMs": 160,
+      "easing": "Bezier Style.easeOut",
+      "css": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "source": "shell/Ui/WidgetButton.qml:108-115"
+    },
+    {
+      "id": "shell.widgetButton.color",
+      "layer": "shell",
+      "what": "Bar label colour change (e.g. active/urgent)",
+      "durationMs": 160,
+      "easing": "Linear (ColorAnimation default)",
+      "css": "linear",
+      "source": "shell/Ui/WidgetButton.qml:138-141"
+    },
+    {
+      "id": "shell.button.color",
+      "layer": "shell",
+      "what": "Button fill change between states",
+      "durationMs": 120,
+      "easing": "Linear (ColorAnimation default)",
+      "css": "linear",
+      "source": "shell/Ui/Button.qml:139"
+    },
+    {
+      "id": "shell.button.press",
+      "layer": "shell",
+      "what": "Button press scale 1 -> 0.97",
+      "durationMs": 160,
+      "easing": "Bezier Style.easeOut",
+      "css": "cubic-bezier(0.23, 1, 0.32, 1)",
+      "source": "shell/Ui/Button.qml:142-149"
+    },
+    {
+      "id": "shell.bar.themeColors",
+      "layer": "shell",
+      "what": "Bar foreground/background cross-fade on theme change",
+      "durationMs": 250,
+      "easing": "Easing.OutCubic",
+      "css": "cubic-bezier(0.33, 1, 0.68, 1)",
+      "source": "shell/plugins/bar/Bar.qml:92-95"
+    }
+  ],
+  "notes": [
+    "All sizes are logical pixels at the defaults: [font] base-size 12 (fontScale 1.0), [spacing] scale 1.0 with scale-with-font true, [bar] scale-with-font true, Hyprland rounding 0 and gaps_out 10. The monitor scale is 'auto' (default/hypr/monitors.lua:5) and is applied by the compositor on top; a web replica should treat these as CSS px.",
+    "Every font token, bar token and Style.space() result is an integer produced by JS Math.round (half rounds up). The type scale's multipliers are chosen so 12 x mult lands within 0.004 of an integer (e.g. 0.833 x 12 = 9.996 -> 10). Style.spaceReal() is NOT rounded; WidgetButton uses it, so a text bar button is label.implicitWidth + 17 px wide (2 x 8.5), which can be fractional (shell/Ui/WidgetButton.qml:68,95-96).",
+    "Override precedence: theme shell.toml < ~/.config/omarchy/shell.toml (user keys win per key) (shell/Commons/Color.qml:208-214). [spacing] and [font] per-token overrides are absolute px and are not multiplied by scale (Style.qml:227-231, 292-296); [bar] overrides ARE multiplied by fontScale (Style.qml:298-304).",
+    "Alpha composition: every 'X @ a' is Util.alpha(color, a) = Qt.rgba(r, g, b, a), i.e. it REPLACES the colour's alpha, it does not multiply (shell/Commons/Util.qml:44-49). Surfaces are then source-over composited by Qt Quick on whatever is beneath (bar/wallpaper/window). Border specs use Border.cssColor, which DOES multiply an embedded alpha (#rrggbbaa or rgba(...aa)) by the -alpha key (shell/Commons/Border.qml:57-78, shell/Commons/BorderGeometry.js:52-56). The 8-bit hex alphas in 'colors' are round(a x 255); the *Css fields carry the exact float.",
+    "colors.toml is read twice, differently. The template renderer (bin/omarchy-theme-color) resolves aliases/derived shades for shell.toml; the shell's own Color.loadColors only reads foreground, background, accent, muted, red/color1 (-> urgent), and color0/4/7/8 fallbacks, and only #rrggbb values (shell/Commons/Color.qml:139-169). Built-in pre-load defaults are fg #cacccc, bg #101315, accent #cacccc, urgent #a55555, muted #707880 (Color.qml:19-23).",
+    "Gradient borders: a surface border token may hold 'c1 c2 ... Ndeg'. Uniform solid borders use Rectangle.border (drawn inside the rect); gradients or per-side widths use a Shape ring (WindingFill, CurveRenderer) whose LinearGradient runs through the centre at the given angle, half-length (|w cos| + |h sin|)/2, stops spaced evenly (BorderGeometry.js:345-373, shell/Ui/BorderOverlay.qml:26-52, shell/Ui/BorderSurface.qml:27-39). Angle is used as a plain math angle in item coordinates (0deg = left->right, 90deg = top->bottom since y points down); Hyprland's own angle convention may differ and was not verified. Neither Tokyo Night nor Catppuccin Latte defines hyprland_active_border, so all their borders are solid.",
+    "Border widths parse CSS-style: N, 'Y X', 'T X B', 'T R B L', plus -top/-right/-bottom/-left keys (BorderGeometry.js:76-110, Border.qml:111-121). The border is drawn INSIDE the surface; content insets are border + padding (shell/Ui/BorderSurface.qml:21-24).",
+    "Text rendering: bar text labels and Button labels use Text.NativeRendering (FreeType rasterisation, hinted per fontconfig) (shell/Ui/WidgetButton.qml:132, shell/Ui/BarIconButton.qml:57). Bar icon glyphs that are optically scaled use Text.QtRendering (distance-field) (shell/Ui/OpticalGlyph.qml:57-60); Text items inside custom bar icon components are switched to CurveRendering (shell/Ui/IconContentBounds.qml:100-101). The repo ships no fontconfig hinting/antialias/subpixel settings (default/fontconfig/conf.avail/50-omarchy.conf has none), so hinting is whatever the distro fontconfig defaults are: not determinable from source.",
+    "Font fallbacks (default/fontconfig/conf.avail/50-omarchy.conf): monospace -> JetBrainsMono Nerd Font (strong assign, 330-337); CJK appends Noto Sans Mono CJK {SC,TC,HK,JP,KR} by language, defaulting to JP (156-310, 407-419); emoji -> Noto Color Emoji (472-477); Arabic -> Noto Naskh Arabic (339-375). sans-serif -> Liberation Sans, serif -> Liberation Serif. Package: ttf-jetbrains-mono-nerd-basic (install/omarchy-base.packages:149). On the web use 'JetBrainsMono Nerd Font', 'JetBrains Mono', monospace; Nerd Font private-use glyphs (U+E000-F8FF etc.) are the bar icons (shell/Ui/WidgetButton.qml:82-91).",
+    "Bar icons are optically normalised: the glyph is rendered at 13px, its tight ink box measured at 100x size, then scaled so the larger ink dimension is exactly 12px and the ink centre sits at the centre of a 16px canvas inside a 27px slot (shell/Ui/OpticalGlyph.qml:15-50, shell/Ui/BarIconButton.qml:9-13,32). A replica that just sets font-size:13px on the glyph will be visibly off for most icons.",
+    "Text bar labels are vertically centred on digit height: offset = (descent - ascent + inkHeight('0')) / 2 relative to the line box centre (shell/Ui/WidgetButton.qml:122-127). Font metrics for JetBrainsMono Nerd Font at 12px are needed to reproduce this; they are not in the repo.",
+    "Style.cornerRadius and Style.gapsOut are not constants: the shell re-reads them from hyprctl on start, on every Hyprland 'configreloaded' event, and 200ms after the window-no-gaps toggle file changes (Style.qml:373-377, 494-499, 542-559). gapsOut takes the FIRST number of gaps_out's css form, halved and rounded. With the window-no-gaps toggle on, both are 0; with corners-rounded on, radius 6.",
+    "reduceMotion: when Hyprland animations:enabled is false (omarchy toggle animations) every Style.duration() returns 0 (Style.qml:360-367, 477-490). Hyprland speeds are tenths of a second (looknfeel.lua:76): durationMs = speed x 100.",
+    "Hyprland's built-in 'default' bezier (used by the 'global' leaf) is defined inside Hyprland, not in this repo: not resolvable from source. Leaves not set here (e.g. windowsMove, fadeDim, fadeShadow, fadeBorder, borderangle, fadePopups) inherit from their parent leaf in Hyprland's animation tree; that tree is Hyprland's, not Omarchy's, so it is not cited here.",
+    "Popup/notification/polkit/lock borders follow the Hyprland active border via the [hyprland] indirection: 'hyprland.active-border' is a reference that Border.resolveValueRef and Color.flatColor follow to the [hyprland] value (shell/Commons/Border.qml:38-48, shell/Commons/Color.qml:51-71). Tooltip and menu use the -foreground variant, i.e. foreground unless the theme defines hyprland_active_border.",
+    "The [launcher] section is rendered by the template but nothing in shell/ reads launcher.* at this commit (no Color.launcher object, no shellValues lookup). The Omarchy menu uses [menu], whose card is fully opaque (background-alpha 1.0), not 0.95.",
+    "Hyprland window border colours in the theme template use hypr_gradient: a single-colour value is emitted as a quoted string, e.g. \"#7aa2f7\" (bin/omarchy-theme-set-templates:102-123). Whether Hyprland's Lua config accepts '#rrggbb' versus 'rgb(rrggbb)' is Hyprland's behaviour and was not verified; the colour itself is unambiguous.",
+    "Not resolved here (runtime only): resolvedFontFamily (fc-match output), BarModel notch floor for screens with cutouts (shell/plugins/bar/Bar.qml:765-766), popup positions (depend on anchor geometry), and the bar's glass/transparent modes (Bar.qml:84-89).",
+    "Qt Easing.OutCubic is f(t) = 1 - (1 - t)^3; the css field cubic-bezier(0.33, 1, 0.68, 1) is the usual curve-fit, not an exact equivalent. ColorAnimation with no easing is Linear."
+  ]
+}

@@ -1,4 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
+import type { CSSProperties } from "react";
 import { Row, Rows } from "@/design/components/Rows";
 import { Swatch } from "@/design/components/Swatch";
 import { Tag } from "@/design/components/Tag";
@@ -19,6 +20,7 @@ import { stroke } from "@/design/tokens/size.stylex";
 import { space } from "@/design/tokens/space.stylex";
 import { contrast } from "@/lib/contrast";
 import { ROLES, SLUGS, THEMES } from "@/lib/themes";
+import { OMARCHY_PALETTES } from "@/lib/themes.generated";
 import { Motion } from "@/site/sections/Motion";
 import type { FoundationSlug } from "./registry";
 import { DocSection } from "./ui/Section";
@@ -449,6 +451,13 @@ function Sample() {
   );
 }
 
+// Tokyo Night's roles and raw palette as custom properties, the way theme-runtime paints <html>.
+const TOKYO_NIGHT = {
+  ...Object.fromEntries(ROLES.map((r) => [`--${r}`, THEMES["tokyo-night"][r]])),
+  ...OMARCHY_PALETTES["tokyo-night"],
+  colorScheme: "dark",
+} as CSSProperties;
+
 function ChromePage() {
   const rows = tokens.chrome();
   return (
@@ -463,11 +472,16 @@ function ChromePage() {
             <Inline gap="u2">
               <Tag>Stock</Tag>
             </Inline>
-            <div {...stylex.props(stock)}>
+            {/* Omarchy's own palette, pinned to its default theme so the sample reads the same in light and dark. */}
+            <div style={TOKYO_NIGHT} {...stylex.props(stock)}>
               <Box tone="wall" border="line" pad="u4">
                 <Sample />
               </Box>
             </div>
+            <Text variant="small" tone="muted">
+              Stock draws with Omarchy&apos;s colors.toml values as shipped, unadjusted. Shown in Tokyo Night, Omarchy&apos;s default. On Catppuccin Latte its
+              selected menu row is accent on foreground at 8%, which measures 3.86:1, below WCAG AA.
+            </Text>
           </Stack>
           <Stack gap="u2">
             <Inline gap="u2">

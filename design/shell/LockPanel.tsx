@@ -8,6 +8,8 @@ const s = stylex.create({
   root: { display: "grid", justifyItems: "center", gap: space.u2, width: "100%", textAlign: "center" },
   hint: { margin: 0 },
   date: { color: chrome.quiet },
+  // Omarchy's lock has no clock or date: the field is the only thing on screen. LockView.qml:105-263.
+  clock: { display: chrome.lockClock },
   field: { marginTop: space.u6, display: "grid", gap: space.u3, justifyItems: "stretch", width: `min(100%, ${chrome.lockFieldWidth})` },
 });
 
@@ -23,8 +25,8 @@ export type LockPanelProps = {
 export function LockPanel({ time, date, children, hint }: LockPanelProps) {
   return (
     <div {...stylex.props(s.root)}>
-      <div {...stylex.props(typo.display, numeric.tabular)}>{time}</div>
-      <div {...stylex.props(typo.body, face.ui, s.date)}>{date || " "}</div>
+      <div {...stylex.props(typo.display, numeric.tabular, s.clock)}>{time}</div>
+      <div {...stylex.props(typo.body, face.ui, s.date, s.clock)}>{date || " "}</div>
       <div data-ref="lock-field" {...stylex.props(s.field)}>
         {children}
         {hint && <p {...stylex.props(typo.caption, face.ui, ink.faint, s.hint)}>{hint}</p>}

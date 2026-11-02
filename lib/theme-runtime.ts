@@ -1,3 +1,4 @@
+import { OMARCHY_PALETTES } from "./themes.generated";
 import { DEFAULT_DARK, DEFAULT_LIGHT, isSlug, ROLES, THEMES, type ThemeSlug } from "./themes";
 
 export const STORAGE_KEY = "omarchui-theme";
@@ -23,9 +24,11 @@ export function paint(slug: ThemeSlug | null): void {
   if (slug) {
     const t = THEMES[slug];
     for (const r of ROLES) s.setProperty(`--${r}`, t[r]);
+    for (const [k, v] of Object.entries(OMARCHY_PALETTES[slug])) s.setProperty(k, v);
     s.colorScheme = t.mode;
   } else {
     for (const r of ROLES) s.removeProperty(`--${r}`);
+    for (const k of Object.keys(OMARCHY_PALETTES[DEFAULT_DARK])) s.removeProperty(k);
     s.removeProperty("color-scheme");
   }
 }
@@ -44,4 +47,4 @@ export function choose(slug: ThemeSlug | null): void {
 /** Runs before first paint so a chosen theme never flashes the default. */
 export const bootScript = `(()=>{try{var t=${JSON.stringify(
   Object.fromEntries(Object.entries(THEMES).map(([k, v]) => [k, [v.mode, ...ROLES.map((r) => v[r])]])),
-)},r=${JSON.stringify(ROLES)},v=localStorage.getItem(${JSON.stringify(STORAGE_KEY)}),p=t[v];if(!p)return;var s=document.documentElement.style;s.colorScheme=p[0];r.forEach(function(k,i){s.setProperty("--"+k,p[i+1])})}catch(e){}})()`;
+)},o=${JSON.stringify(OMARCHY_PALETTES)},r=${JSON.stringify(ROLES)},v=localStorage.getItem(${JSON.stringify(STORAGE_KEY)}),p=t[v];if(!p)return;var s=document.documentElement.style;s.colorScheme=p[0];r.forEach(function(k,i){s.setProperty("--"+k,p[i+1])});for(var k in o[v])s.setProperty(k,o[v][k])}catch(e){}})()`;

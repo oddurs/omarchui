@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { at, omarchyMenu, searchAll, type MenuItem } from "@/lib/menu";
+import { at, omarchyMenu, search, type MenuItem } from "@/lib/menu";
 import { REF_MENU } from "@/lib/reference.generated";
 
 const state = { night: false, dnd: false, idle: true };
@@ -32,11 +32,30 @@ describe("the demo's Omarchy menu", () => {
 
   it("finds entries anywhere in the tree from the root, with their path", () => {
     // Omarchy has two: capture a QR code, and share Wi-Fi as one.
-    const hits = searchAll(omarchyMenu(state), "qr code");
-    expect(hits.map((h) => [h.id, h.path])).toEqual([
-      ["trigger.capture.qr", ["trigger", "trigger.capture"]],
-      ["setup.network.qr", ["setup", "setup.network"]],
+    const hits = search(omarchyMenu(state), [], "qr code");
+    expect(hits.map((h) => [h.id, h.path, h.detail])).toEqual([
+      ["trigger.capture.qr", ["trigger", "trigger.capture"], "Trigger › Capture"],
+      ["setup.network.qr", ["setup", "setup.network"], "Setup › Network"],
     ]);
+  });
+
+  it("puts direct children before deeper matches, with a divider between, as Menu.qml:734-749 does", () => {
+    const hits = search(omarchyMenu(state), ["trigger"], "capture");
+    expect(hits[0]?.id).toBe("trigger.capture");
+    expect(hits[0]?.divider).toBeUndefined();
+    const split = hits.findIndex((h) => h.divider);
+    expect(split).toBeGreaterThan(0);
+    expect(hits.slice(split).every((h) => (h.path?.length ?? 0) > 1)).toBe(true);
+  });
+
+  it("searches inside a submenu and still shows the path from the top level", () => {
+    const hits = search(omarchyMenu(state), ["trigger"], "qr");
+    expect(hits.map((h) => h.detail)).toEqual(["Trigger › Capture"]);
+  });
+
+  it("ranks an exact label above a prefix above a substring", () => {
+    const hits = search(omarchyMenu(state), [], "theme");
+    expect(hits[0]?.name).toBe("Theme");
   });
 
   it("keeps every source citation", () => {
