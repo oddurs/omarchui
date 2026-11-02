@@ -598,9 +598,14 @@ export const ENTRIES: Entry[] = [
     instead: [],
     anatomy: [
       ["Icon", "14px, or 16px where it stands alone; the bar and overlay sizes follow their tokens. Inherits currentColor."],
+      ["In the bar", "sized by its ink, as Omarchy sizes its glyphs: the longer painted side is chrome.barIcon, centred, in one line weight."],
+      ["Battery", "upright, with its charge drawn in tenths from level."],
       ["Mark", "the dwindle layout itself: one focused tile, two waiting."],
     ],
-    dos: ["Pair an icon with text or an aria-label on its control."],
+    dos: [
+      "Pair an icon with text or an aria-label on its control.",
+      "After changing a path, measure its ink again: e2e/bar.spec.ts fails until icon-paths.ts agrees.",
+    ],
     donts: ["Don't use an icon as the only label of a button."],
     a11y: ["Icons are always aria-hidden; the control they sit in carries the name."],
     tokens: ["accent", "text-2"],

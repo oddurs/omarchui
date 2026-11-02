@@ -12,6 +12,7 @@ import {
   type ReactNode,
 } from "react";
 import { Bar, type BarModule } from "@/design/shell/Bar";
+import type { IconName } from "@/design/shell/Icon";
 import { Osd } from "@/design/shell/Osd";
 import { ToastDeck } from "@/design/shell/Toast";
 import { WindowFrame } from "@/design/shell/WindowFrame";
@@ -265,7 +266,8 @@ export function Screen({ state, dispatch, exec, mode, interactive, id, onToastsH
         return [
           {
             id,
-            icon: state.muted ? "mute" : "volume",
+            // Two waves from 67%, one from 34%, none above 0, the crossed speaker at 0 or muted. Audio BarWidget.
+            icon: state.muted || state.volume === 0 ? "mute" : state.volume >= 67 ? "volume" : state.volume >= 34 ? "volumeMid" : "volumeLow",
             label: state.muted ? "Audio, muted" : `Audio ${state.volume}%`,
             ...panel("audio"),
             onWheel: interactive ? (e) => dispatch({ type: "volume", delta: e.deltaY < 0 ? 5 : -5 }) : undefined,
@@ -275,21 +277,36 @@ export function Screen({ state, dispatch, exec, mode, interactive, id, onToastsH
         return [{ id, icon: "monitor", label: "Display", ...panel("monitor") }];
       // The battery icon is never tinted, research/omarchy/spec/bar.json omarchy.power.
       case "omarchy.power":
-        return [{ id, icon: "battery", label: "Power", value: "87%", ...panel("power") }];
+        return [{ id, icon: "battery", label: "Power", value: "87%", level: 0.87, ...panel("power") }];
       default:
         return [];
     }
   });
-  // centerBegin: an indicator per active state, in Indicators.qml's order (NightLight, Dnd, StayAwake).
+  // centerBegin: Omarchy's indicators in their default order. One that is on always shows; the
+  // rest appear, dimmed, only while the bar's peek is open. Each says what a press would do.
+  // shell/plugins/bar/indicators/*.qml; default/i18n/en/shell.json:144-160. The demo runs the
+  // last three; the first three have nothing to switch here, so they only show.
   const toggle = (what: "night" | "dnd" | "idle") => (interactive ? () => exec({ type: "toggle", what }) : undefined);
+  const indicator = (id: string, icon: IconName, on: boolean, label: string, tips: [string, string], press?: () => void): BarModule => ({
+    id,
+    icon,
+    label: on ? label : `${label}, off`,
+    status: true,
+    inactive: !on,
+    tip: on ? tips[0] : tips[1],
+    onPress: press,
+  });
   const before: BarModule[] = [
-    ...(state.night ? [{ id: "night", icon: "moon", label: "Night light on", status: true, onPress: toggle("night") } as const] : []),
-    ...(state.dnd ? [{ id: "dnd", icon: "bellOff", label: "Notifications silenced", status: true, onPress: toggle("dnd") } as const] : []),
-    ...(!state.idle ? [{ id: "awake", icon: "coffee", label: "Staying awake", status: true, onPress: toggle("idle") } as const] : []),
+    indicator("sudo", "key", false, "Passwordless sudo", ["Disable Passwordless Sudo", "Passwordless Sudo"]),
+    indicator("recording", "record", false, "Screen recording", ["Stop recording", "Screen Recording"]),
+    indicator("remote", "remote", false, "Remote session", ["Remote session", "Remote session"]),
+    indicator("night", "moon", state.night, "Night light", ["Day Light", "Night Light"], toggle("night")),
+    indicator("dnd", "bellOff", state.dnd, "Notifications silenced", ["Allow Notifications", "Silence Notifications"], toggle("dnd")),
+    indicator("awake", "coffee", !state.idle, "Staying awake", ["Allow Idle Lock & Screensaver", "Stay Awake"], toggle("idle")),
   ];
   // centerEnd: the world clock and the weather.
   const after: BarModule[] = REF_BAR.centerEnd.flatMap((id): BarModule[] => {
-    if (id === "omarchy.elsewhen") return [{ id, icon: "globe", label: "World clock", status: true }];
+    if (id === "omarchy.elsewhen") return [{ id, icon: "globe", label: "World clock", status: true, tip: "World clock" }];
     if (id === "omarchy.weather") return [{ id, icon: "cloud", label: "Weather", status: true, ...panel("weather") }];
     return [];
   });
@@ -411,7 +428,8 @@ export function Screen({ state, dispatch, exec, mode, interactive, id, onToastsH
       <div {...stylex.props(barHidden && s.noBar)}>
         <Bar
           workspaces={Array.from({ length: shown }, (_, i) => ({ n: i + 1, busy: busy.has(i + 1), active: i + 1 === state.ws }))}
-          clock={{ day: clock.day, time: clock.time }}
+          clock={{ day: clock.day, time: clock.time, alt: clock.alt }}
+          wallpaper={backgroundSrc(state.theme, backgroundIndex(state.theme, state.bg[state.theme]))}
           modules={right}
           beside={{ before, after }}
           clockPanel={{ open: state.panel === "clock", onPress: () => interactive && dispatch({ type: "panel", id: "clock" }) }}

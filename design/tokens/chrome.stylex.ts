@@ -104,14 +104,24 @@ export const chrome = stylex.defineVars({
   barWeight: "400",
   /** The ink box of a bar glyph: Style.bar.iconSize, which grows with base-size to 13. Style.qml:356. */
   barIcon: "13px",
+  /** Line weight of every bar glyph. Omarchy's MDI glyphs draw their lines 2 units in 24, 1px at 12. */
+  barStroke: "1.25px",
   /** Clock padding each side, and the gap between weekday and time. */
   clockPad: "8px",
   clockGap: "1ch",
   /** Width of a status icon slot (indicators, the world clock, weather): Omarchy's 21 is 23 at base 13, on the unit at 24. */
   statusSlot: "24px",
-  /** Workspace button width and the gap between buttons. */
+  /** Workspace button width, the gap between buttons, and the gap after the last. */
   wsWidth: "20px",
   wsGap: "0px",
+  wsTrail: "0px",
+  /** A bar glyph shrinks while held, and an indicator revealed by the peek fades in. */
+  barPress: { default: "160ms", [REDUCED]: "0ms" },
+  barFade: { default: "140ms", [REDUCED]: "0ms" },
+  /** The bar's tooltip: fill, ink and edge. Tuned draws it as every other card; stock as Omarchy's [tooltip]. */
+  tipBg: "var(--raised)",
+  tipInk: "var(--text)",
+  tipBorder: "var(--line-2)",
   /** Width of a bar widget's slot. */
   modSlot: "28px",
   /** Menu card fill, ink, padding, and the weight of row names. */
@@ -264,11 +274,18 @@ export const stock = stylex.createTheme(chrome, {
   clockInk: "var(--o-foreground)",
   barWeight: "400", // no widget sets a weight, WidgetButton.qml:117-136
   barIcon: "12px", // ink box of every bar glyph, Style.qml:356
+  barStroke: "1px", // MDI's 2-unit lines in a 24-unit glyph, at 12px
   clockPad: "8.75px", // WidgetButton.qml:15, clock BarWidget.qml:154-167
   clockGap: "1ch", // "dddd HH:mm", config/omarchy/shell.json:25-29
   statusSlot: "21px", // Style.qml:357, BarIndicator.qml:51
   wsWidth: "20px", // Workspaces.qml:252
   wsGap: "1px", // Workspaces.qml:275-277
+  wsTrail: "1.5px", // Style.spaceReal(1.5) after the last button, Workspaces.qml:242
+  barPress: { default: "160ms", [REDUCED]: "0ms" }, // WidgetButton.qml:108-111
+  barFade: { default: "140ms", [REDUCED]: "0ms" }, // WidgetButton.qml:100-101
+  tipBg: "color-mix(in srgb, var(--o-background) 97%, transparent)", // [tooltip] background-alpha 0.97, shell.toml.tpl:137-138
+  tipInk: "var(--o-foreground)", // shell.toml.tpl:139
+  tipBorder: "var(--o-foreground)", // hyprland.active-border-foreground, which is foreground; shell.toml.tpl:140
   modSlot: "27px", // Style.qml:353, BarIconButton.qml:9
   // research/omarchy/spec/menu.json
   menuBg: "var(--o-background)", // shell.toml.tpl:176-177

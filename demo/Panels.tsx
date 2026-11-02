@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type Dispatch, type React
 import { Icon } from "@/design/shell/Icon";
 import { PanelCard, PanelHero, PanelPills, PanelRow, PanelRule, PanelSection, PanelSlider, PanelSwitch } from "@/design/shell/Panel";
 import { chrome } from "@/design/tokens/chrome.stylex";
+import { isoWeek } from "@/lib/use-clock";
 import { shellspace } from "@/design/tokens/shellspace.stylex";
 import { layer } from "@/design/tokens/layer.stylex";
 import { shelltype } from "@/design/tokens/shelltype.stylex";
@@ -453,15 +454,6 @@ function Power({ state, dispatch }: PanelProps) {
 }
 
 // --- Calendar ---------------------------------------------------------------------------
-
-/** ISO week number, as the clock panel's week column shows it. clock.grid.weekNumber. */
-export function isoWeek(d: Date): number {
-  const t = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  const day = t.getUTCDay() || 7;
-  t.setUTCDate(t.getUTCDate() + 4 - day);
-  const start = new Date(Date.UTC(t.getUTCFullYear(), 0, 1));
-  return Math.ceil(((t.getTime() - start.getTime()) / 86_400_000 + 1) / 7);
-}
 
 /** Six weeks starting on the Sunday on or before the 1st (weeks start Sunday by default). clock.grid.weekStart. */
 export function monthWeeks(year: number, month: number): Date[][] {
