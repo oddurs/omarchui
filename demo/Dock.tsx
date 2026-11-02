@@ -3,7 +3,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/design/components/Button";
-import { ButtonLink } from "@/design/components/ButtonLink";
 import { Chord } from "@/design/components/Kbd";
 import { Segmented } from "@/design/components/Segmented";
 import { Icon } from "@/design/shell/Icon";
@@ -111,9 +110,6 @@ export function Dock({ view, onView, inspect, onInspect }: Props) {
           <Icon name="expand" /> Fullscreen
         </Button>
       </span>
-      <ButtonLink href="/" variant="ghost" size="small" aria-label="Leave">
-        <Icon name="exit" /> <span {...stylex.props(s.label)}>Leave</span>
-      </ButtonLink>
     </div>
   );
 }

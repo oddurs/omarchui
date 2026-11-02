@@ -238,7 +238,7 @@ export const EXAMPLES: Record<string, Example> = {
   "button-link": {
     Live: () => (
       <Inline gap="u2" wrap>
-        <ButtonLink href="/demo" variant="primary">
+        <ButtonLink href="/" variant="primary">
           Launch the demo
         </ButtonLink>
         <ButtonLink href="/">Read the exposition</ButtonLink>

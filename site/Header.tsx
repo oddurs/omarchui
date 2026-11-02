@@ -94,7 +94,7 @@ export function Header({ sections = true }: { sections?: boolean }) {
     <header {...stylex.props(s.bar)}>
       <div {...stylex.props(s.inner)}>
         <nav aria-label={sections ? "Sections" : "Site"} {...stylex.props(s.zone)}>
-          <Link href="/" aria-label="Omarchui home" {...stylex.props(s.home)}>
+          <Link href="/study" aria-label="Omarchui: the study" {...stylex.props(s.home)}>
             <Mark />
           </Link>
           {sections &&
@@ -121,16 +121,22 @@ export function Header({ sections = true }: { sections?: boolean }) {
           {c.time}
         </div>
         <div {...stylex.props(s.zone, s.right)}>
+          <Link href="/study" {...stylex.props(typo.small, s.link)}>
+            Study
+          </Link>
           <Link href="/omarchy" {...stylex.props(typo.small, s.link)}>
             Omarchy
           </Link>
           <Link href="/system" {...stylex.props(typo.small, s.link)}>
             System
           </Link>
+          <Link href="/contact" {...stylex.props(typo.small, s.link)}>
+            Contact
+          </Link>
           <ThemeMenu />
           <span {...stylex.props(s.launch)}>
-            <ButtonLink href="/demo" variant="primary" size="small">
-              Launch demo
+            <ButtonLink href="/" variant="primary" size="small">
+              Boot the desktop
             </ButtonLink>
           </span>
         </div>

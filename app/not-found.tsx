@@ -6,13 +6,13 @@ import { Notice } from "@/site/Notice";
 export default function NotFound() {
   return (
     <Notice code="404 · empty workspace" title="Nothing is open here">
-      <Text tone="muted">This address has no page. The exposition, the system reference and the demo are the three that exist.</Text>
+      <Text tone="muted">This address has no page. The desktop, the study and the system reference are where to go.</Text>
       <Inline gap="u2" wrap>
         <ButtonLink href="/" variant="primary">
-          Read the exposition
+          Boot the desktop
         </ButtonLink>
+        <ButtonLink href="/study">Read the study</ButtonLink>
         <ButtonLink href="/system">Open the system</ButtonLink>
-        <ButtonLink href="/demo">Launch the demo</ButtonLink>
       </Inline>
     </Notice>
   );

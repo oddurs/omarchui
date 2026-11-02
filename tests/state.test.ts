@@ -85,3 +85,39 @@ describe("desktop state", () => {
     expect(s.volume).toBe(100);
   });
 });
+
+describe("power states", () => {
+  it("starts at the boot splash", () => {
+    expect(initialState("tokyo-night").phase).toBe("boot");
+  });
+
+  it("counts each boot, and welcomes only the first", () => {
+    const first = desktop();
+    expect(first.boots).toBe(1);
+    const again = play(first, { type: "shutdown" }, { type: "power-on" }, { type: "unlock" });
+    expect(again.phase).toBe("desktop");
+    expect(again.boots).toBe(2);
+    expect(again.toasts).toHaveLength(0);
+  });
+
+  it("unlocking the lock screen is not a boot", () => {
+    const s = play(desktop(), { type: "lock" }, { type: "unlock" });
+    expect(s.phase).toBe("desktop");
+    expect(s.boots).toBe(1);
+  });
+
+  it("shutting down closes everything but keeps the theme, view and backgrounds", () => {
+    const s = play(desktop(), { type: "open", app: "terminal", now }, { type: "view", view: "stock" }, { type: "background", index: 2 }, { type: "shutdown" });
+    expect(s.phase).toBe("off");
+    expect(s.windows).toHaveLength(0);
+    expect(s.view).toBe("stock");
+    expect(s.bg["tokyo-night"]).toBe(2);
+  });
+
+  it("ignores unlock and lock while powered off", () => {
+    const off = play(desktop(), { type: "shutdown" });
+    expect(play(off, { type: "unlock" }).phase).toBe("off");
+    expect(play(off, { type: "lock" }).phase).toBe("off");
+    expect(play(off, { type: "power-on" }).phase).toBe("boot");
+  });
+});

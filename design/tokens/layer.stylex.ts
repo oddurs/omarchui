@@ -13,4 +13,8 @@ export const layer = stylex.defineVars({
   dock: "50",
   lock: "60",
   flash: "70",
+  /** The boot splash, the power-off screen and the black cover the desktop fades in from. */
+  boot: "80",
+  /** The site's own navigation, which floats over the whole machine. */
+  nav: "90",
 });

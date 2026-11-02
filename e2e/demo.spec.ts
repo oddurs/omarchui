@@ -2,12 +2,13 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { THEMES } from "../lib/themes";
 
+/** Boots the machine at the root: the splash's password, then the desktop. */
 async function unlock(page: Page) {
-  await page.goto("/demo");
-  const pw = page.getByLabel("Password").first();
+  await page.goto("/");
+  const pw = page.getByRole("dialog", { name: "Boot" }).getByLabel("Password");
   await pw.fill("anything");
   await pw.press("Enter");
-  await expect(page.getByRole("dialog", { name: "Lock screen" })).toHaveCount(0);
+  await expect(page.getByRole("dialog", { name: "Boot" })).toHaveCount(0, { timeout: 15_000 });
 }
 
 const accent = (page: Page) => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--accent").trim());
@@ -117,4 +118,18 @@ test("the Omarchy menu searches its whole tree", async ({ page }) => {
   await search.fill("qr code");
   await expect(page.getByRole("option")).toHaveCount(2);
   await expect(page.getByRole("option").first()).toContainText("Trigger › Capture");
+});
+
+test("shutdown powers off; any key boots again", async ({ page }) => {
+  await unlock(page);
+  await page.keyboard.press("Alt+Space");
+  await page.getByRole("combobox", { name: "Search the menu" }).fill("shutdown");
+  await page.keyboard.press("Enter");
+  const off = page.getByRole("button", { name: /Powered off/ });
+  await expect(off).toBeVisible();
+  // The Enter that chose Shutdown must not start the machine again by itself.
+  await page.waitForTimeout(600);
+  await expect(off).toBeVisible();
+  await page.keyboard.press("x");
+  await expect(page.getByRole("dialog", { name: "Boot" })).toBeVisible();
 });

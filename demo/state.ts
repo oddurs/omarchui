@@ -25,7 +25,10 @@ export type Osd = { kind: "volume" | "brightness"; value: number; muted: boolean
 export type Metrics = { cores: number[]; mem: number; net: number[] };
 
 export type State = {
-  phase: "lock" | "desktop";
+  /** Omarchy's power states: off, the boot splash, the lock screen, the desktop. */
+  phase: "off" | "boot" | "lock" | "desktop";
+  /** Completed boots; each one fades the desktop in from black. */
+  boots: number;
   view: View;
   split: number;
   theme: ThemeSlug;
@@ -55,6 +58,8 @@ export type State = {
 export type Action =
   | { type: "unlock" }
   | { type: "lock" }
+  | { type: "power-on" }
+  | { type: "shutdown" }
   | { type: "restart"; theme: ThemeSlug }
   | { type: "view"; view: View }
   | { type: "view-cycle" }
@@ -97,7 +102,8 @@ export function initialMetrics(): Metrics {
 
 export function initialState(theme: ThemeSlug): State {
   return {
-    phase: "lock",
+    phase: "boot",
+    boots: 0,
     view: "tuned",
     split: 0.5,
     theme,
@@ -205,10 +211,12 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
 export function reducer(s: State, a: Action): State {
   switch (a.type) {
     case "unlock":
-      return s.phase === "desktop"
-        ? s
+      if (s.phase === "desktop" || s.phase === "off") return s;
+      if (s.phase === "lock") return { ...s, phase: "desktop" };
+      return s.boots > 0
+        ? { ...s, phase: "desktop", boots: s.boots + 1 }
         : toast(
-            { ...s, phase: "desktop" },
+            { ...s, phase: "desktop", boots: 1 },
             {
               who: "Omarchui",
               title: "Welcome",
@@ -217,9 +225,14 @@ export function reducer(s: State, a: Action): State {
             },
           );
     case "lock":
-      return { ...s, phase: "lock", overlay: null, picker: null };
+      return s.phase === "desktop" ? { ...s, phase: "lock", overlay: null, picker: null } : s;
+    // A restart boots a fresh session: windows go, the theme, view and backgrounds stay.
     case "restart":
-      return { ...initialState(a.theme), view: s.view, split: s.split, aspect: s.aspect, bg: s.bg };
+      return { ...initialState(a.theme), view: s.view, split: s.split, aspect: s.aspect, bg: s.bg, boots: s.boots };
+    case "shutdown":
+      return { ...reducer(s, { type: "restart", theme: s.theme }), phase: "off" };
+    case "power-on":
+      return s.phase === "off" ? { ...s, phase: "boot" } : s;
     case "view":
       return { ...s, view: a.view };
     case "view-cycle":

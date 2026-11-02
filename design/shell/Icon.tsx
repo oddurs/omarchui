@@ -2,6 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import { chrome } from "../tokens/chrome.stylex";
 import { color } from "../tokens/color.stylex";
 import { size } from "../tokens/size.stylex";
+import { space } from "../tokens/space.stylex";
 
 const PATHS = {
   wifi: "M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01",
@@ -65,16 +66,22 @@ export function Icon({ name, large, bar, osd }: IconProps) {
 const m = stylex.create({
   mark: { width: size.iconLg, height: size.iconLg, flexShrink: 0 },
   large: { width: size.glyph, height: size.glyph },
+  display: { width: space.u16, height: space.u16 },
   fill: { fill: color["--accent"] },
   line: { fill: "none", stroke: color["--text-2"], strokeWidth: 1.5 },
 });
 
 /** The Omarchui mark: the dwindle layout itself, one focused tile and two waiting. */
-export type MarkProps = { /** 24px instead of 16px. */ large?: boolean };
+export type MarkProps = {
+  /** 24px instead of 16px. */
+  large?: boolean;
+  /** 64px, for the boot splash. */
+  display?: boolean;
+};
 
-export function Mark({ large }: MarkProps) {
+export function Mark({ large, display }: MarkProps) {
   return (
-    <svg viewBox="0 0 16 16" aria-hidden focusable="false" {...stylex.props(m.mark, large && m.large)}>
+    <svg viewBox="0 0 16 16" aria-hidden focusable="false" {...stylex.props(m.mark, large && m.large, display && m.display)}>
       <rect x="1" y="1" width="7" height="14" {...stylex.props(m.fill)} />
       <rect x="10.25" y="1.75" width="4.5" height="5.5" {...stylex.props(m.line)} />
       <rect x="10.25" y="9.25" width="4.5" height="5.5" {...stylex.props(m.line)} />

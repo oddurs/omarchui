@@ -1137,10 +1137,16 @@
     "type": "MarkProps",
     "props": [
       {
+        "name": "display",
+        "type": "boolean",
+        "required": false,
+        "doc": "64px, for the boot splash."
+      },
+      {
         "name": "large",
         "type": "boolean",
         "required": false,
-        "doc": ""
+        "doc": "24px instead of 16px."
       }
     ],
     "inherits": []

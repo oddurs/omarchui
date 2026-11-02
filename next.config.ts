@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
   cacheComponents: true,
   partialPrefetching: true,
+  // The site's own panel floats bottom left over the desktop; keep the dev badge out of its way.
+  devIndicators: { position: "bottom-right" },
+  // The desktop moved to the root when the site began to boot.
+  async redirects() {
+    return [{ source: "/demo", destination: "/", permanent: true }];
+  },
   images: {
     // Omarchy's theme images at the pinned commit (lib/backgrounds.ts), and nothing else.
     remotePatterns: [new URL(`https://raw.githubusercontent.com/basecamp/omarchy/${commit}/themes/**`)],
