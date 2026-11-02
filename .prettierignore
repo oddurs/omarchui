@@ -9,3 +9,4 @@ docs/props.json
 lib/themes.generated.ts
 research
 lib/reference.generated.ts
+design/tokens/omarchy.stylex.ts

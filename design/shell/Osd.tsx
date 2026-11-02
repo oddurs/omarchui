@@ -1,32 +1,30 @@
 import * as stylex from "@stylexjs/stylex";
 import { face, numeric, typo } from "../primitives/typography";
 import { chrome } from "../tokens/chrome.stylex";
-import { color } from "../tokens/color.stylex";
-import { size } from "../tokens/size.stylex";
-import { space } from "../tokens/space.stylex";
-import { weight } from "../tokens/type.stylex";
 import { Icon, type IconName } from "./Icon";
 
 const s = stylex.create({
   osd: {
     display: "grid",
-    gridTemplateColumns: `${size.iconLg} 1fr 2.6em`,
+    gridTemplateColumns: chrome.osdCols,
     alignItems: "center",
-    gap: space.u3,
-    width: "100%",
+    gap: chrome.osdGap,
+    width: chrome.osdWidth,
     maxWidth: "300px",
-    paddingBlock: space.u3,
-    paddingInline: space.u4,
-    backgroundColor: chrome.panelBg,
+    padding: chrome.osdPad,
+    backgroundColor: chrome.osdBg,
     borderWidth: chrome.panelBorderWidth,
     borderStyle: "solid",
     borderColor: chrome.panelBorderColor,
-    color: color["--text"],
+    color: chrome.osdInk,
   },
-  track: { position: "relative", height: chrome.osdTrack, backgroundColor: color["--sunken"] },
-  fill: { position: "absolute", top: 0, bottom: 0, left: 0, backgroundColor: color["--accent"] },
-  muted: { backgroundColor: color["--text-3"] },
-  value: { fontWeight: weight.semibold, textAlign: "right" },
+  icon: { display: "grid", placeItems: "center" },
+  track: { position: "relative", height: chrome.osdTrack, backgroundColor: chrome.osdTrackBg },
+  fill: { position: "absolute", top: 0, bottom: 0, left: 0, backgroundColor: chrome.osdFill },
+  muted: { backgroundColor: chrome.osdMutedFill },
+  value: { fontSize: chrome.osdValue, fontWeight: chrome.osdValueWeight, textAlign: "right", "::after": { content: chrome.osdUnit } },
+  num: { display: chrome.osdMuteNum },
+  dash: { display: chrome.osdMuteDash },
 });
 
 const dyn = stylex.create({ width: (pct: number) => ({ width: `${pct}%` }) });
@@ -37,11 +35,22 @@ export type OsdProps = { icon: IconName; value: number; muted?: boolean; label: 
 export function Osd({ icon, value, muted, label }: OsdProps) {
   return (
     <div role="status" data-ref="osd" aria-label={`${label} ${muted ? "muted" : value}`} {...stylex.props(s.osd)}>
-      <Icon name={icon} large />
+      <span {...stylex.props(s.icon)}>
+        <Icon name={icon} osd />
+      </span>
       <span {...stylex.props(s.track)}>
         <span {...stylex.props(s.fill, muted && s.muted, dyn.width(value))} />
       </span>
-      <span {...stylex.props(typo.caption, face.mono, numeric.tabular, s.value)}>{muted ? "—" : value}</span>
+      <span {...stylex.props(typo.caption, face.mono, numeric.tabular, s.value)}>
+        {muted ? (
+          <>
+            <span {...stylex.props(s.num)}>{value}</span>
+            <span {...stylex.props(s.dash)}>—</span>
+          </>
+        ) : (
+          value
+        )}
+      </span>
     </div>
   );
 }

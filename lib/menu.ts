@@ -12,8 +12,12 @@ export type MenuItem = {
   command?: Command;
   /** Where Omarchy defines this entry, as path:line. */
   src?: string;
-  /** Ids of this entry's ancestors, set on results of a search from the root. */
+  /** Ids of this entry's ancestors, set on search results. */
   path?: string[];
+  /** A search result's ancestors by name, from the top level down: Omarchy's detail line. */
+  detail?: string;
+  /** The first deeper match after the direct children: Omarchy draws a hairline above it. */
+  divider?: boolean;
 };
 
 /** What the demo needs to decide which of Omarchy's on/off pairs to show. */
@@ -177,17 +181,39 @@ export function filter(items: MenuItem[], q: string): MenuItem[] {
   return items.filter((i) => `${i.name} ${i.desc}`.toLowerCase().includes(s));
 }
 
-/** Search from the root covers every label in the tree, as Omarchy's does. */
-export function searchAll(root: MenuItem[], q: string): MenuItem[] {
-  const s = q.trim().toLowerCase();
-  if (!s) return root;
-  const out: MenuItem[] = [];
-  const walk = (items: MenuItem[], trail: string[], ids: string[]) => {
-    for (const i of items) {
-      if (i.name.toLowerCase().includes(s)) out.push({ ...i, path: ids, desc: trail.length ? `${trail.join(" › ")} · ${i.desc}` : i.desc });
-      if (i.children) walk(i.children, [...trail, i.name], [...ids, i.id]);
+/** How well one entry matches, lower first. Omarchy's tiers, MenuModel.js:367-389. */
+function score(i: MenuItem, q: string, terms: string[], top: boolean): number | null {
+  const label = i.name.toLowerCase();
+  // The last id segment counts as name text, with ._- read as spaces, MenuModel.js:325-345.
+  const name = `${label} ${(i.id.split(".").at(-1) ?? "").replace(/[._-]/g, " ")}`;
+  const words = i.desc.toLowerCase().split(/[^a-z0-9]+/);
+  if (!terms.every((t) => name.includes(t) || words.includes(t))) return null;
+  const tier =
+    label === q ? (top ? 2 : 0) : label.startsWith(q) ? 10 : label.includes(q) ? 30 : name.includes(q) ? 40 : terms.every((t) => words.includes(t)) ? 60 : 80;
+  return tier - (i.children ? 2 : 0);
+}
+
+/**
+ * Omarchy's menu search: every descendant of the open menu, direct children first, then
+ * deeper ones, each group by score, depth and definition order. Menu.qml:722-749.
+ */
+export function search(root: MenuItem[], path: readonly string[], q: string): MenuItem[] {
+  const query = q.trim().toLowerCase().replace(/\s+/g, " ");
+  const { items, trail } = at(root, path);
+  if (!query) return items;
+  const terms = query.split(" ");
+  const hits: { item: MenuItem; deep: boolean; key: number }[] = [];
+  let order = 0;
+  const walk = (list: MenuItem[], names: string[], ids: string[], depth: number) => {
+    for (const i of list) {
+      const n = order++;
+      const sc = score(i, query, terms, ids.length === 0);
+      if (sc !== null) hits.push({ item: { ...i, path: ids, detail: names.join(" › ") }, deep: depth > 0, key: sc * 1000 + depth * 25 + n });
+      if (i.children) walk(i.children, [...names, i.name], [...ids, i.id], depth + 1);
     }
   };
-  walk(root, [], []);
-  return out;
+  walk(items, trail, [...path], 0);
+  hits.sort((a, b) => Number(a.deep) - Number(b.deep) || a.key - b.key);
+  const split = hits.findIndex((h) => h.deep);
+  return hits.map((h, k) => (k === split && split > 0 ? { ...h.item, divider: true } : h.item));
 }

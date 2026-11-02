@@ -4,7 +4,7 @@ import * as stylex from "@stylexjs/stylex";
 import { useEffect, useRef, type Dispatch } from "react";
 import { MenuPanel, rowId } from "@/design/shell/MenuPanel";
 import { face, typo } from "@/design/primitives/typography";
-import { color } from "@/design/tokens/color.stylex";
+import { chrome } from "@/design/tokens/chrome.stylex";
 import type { Command } from "@/lib/commands";
 import { openAt, overlayItems, type MenuContext } from "./menu-state";
 import type { Action, Overlay } from "./state";
@@ -17,7 +17,9 @@ const s = stylex.create({
     borderWidth: 0,
     outline: "none",
     backgroundColor: "transparent",
-    color: color["--text"],
+    fontSize: chrome.menuLabel,
+    color: chrome.menuInk,
+    "::placeholder": { color: chrome.menuPlaceholder },
   },
 });
 
@@ -25,12 +27,14 @@ type Props = {
   overlay: NonNullable<Overlay>;
   state: MenuContext;
   interactive: boolean;
+  /** Stock follows Omarchy where the tuned menu differs: placeholder, empty text, going back. */
+  mode?: "stock" | "tuned";
   listId: string;
   dispatch: Dispatch<Action>;
   exec: (c: Command) => void;
 };
 
-export function MenuOverlay({ overlay, state, interactive, listId, dispatch, exec }: Props) {
+export function MenuOverlay({ overlay, state, interactive, mode = "tuned", listId, dispatch, exec }: Props) {
   const input = useRef<HTMLInputElement>(null);
   const { items, trail } = overlayItems(overlay, state);
   const sel = Math.min(overlay.sel, Math.max(0, items.length - 1));
@@ -57,6 +61,8 @@ export function MenuOverlay({ overlay, state, interactive, listId, dispatch, exe
     if (!overlay.path.length) return close();
     const parent = overlay.path.slice(0, -1);
     const o = openAt(overlay.root, parent, state);
+    // Omarchy puts the cursor on the first row, Menu.qml:845-858; tuned returns to where you were.
+    if (mode === "stock") return dispatch({ type: "overlay", overlay: { ...o, sel: 0 } });
     const { items: up } = overlayItems(o, state);
     dispatch({
       type: "overlay",
@@ -70,6 +76,9 @@ export function MenuOverlay({ overlay, state, interactive, listId, dispatch, exe
     });
   };
 
+  const here = trail.at(-1);
+  const placeholder = overlay.root === "launcher" ? "Launch an app" : mode === "stock" ? `${here ?? "Go"}…` : "Search the menu";
+
   return (
     <MenuPanel
       label={trail.at(-1) ?? "Omarchy menu"}
@@ -78,12 +87,22 @@ export function MenuOverlay({ overlay, state, interactive, listId, dispatch, exe
       sel={sel}
       onPick={pick}
       onHover={(i) => set({ sel: i })}
-      rows={items.map((it) => ({ key: it.id, glyph: it.glyph, name: it.name, desc: it.desc, hint: it.hint, more: Boolean(it.children) }))}
+      empty={mode === "stock" ? `No matches for “${overlay.q.trim()}”` : undefined}
+      rows={items.map((it) => ({
+        key: it.path ? [...it.path, it.id].join("/") : it.id,
+        glyph: it.glyph,
+        name: it.name,
+        desc: it.desc,
+        hint: it.hint,
+        more: Boolean(it.children),
+        detail: it.detail || undefined,
+        divider: it.divider,
+      }))}
       search={
         <input
           ref={input}
           aria-label="Search the menu"
-          placeholder={overlay.root === "launcher" ? "Launch an app" : "Search the menu"}
+          placeholder={placeholder}
           value={overlay.q}
           readOnly={!interactive}
           tabIndex={interactive ? 0 : -1}
@@ -97,20 +116,24 @@ export function MenuOverlay({ overlay, state, interactive, listId, dispatch, exe
           onKeyDown={(e) => {
             if (e.altKey || e.metaKey) return;
             switch (e.key) {
+              // Up and Down wrap at both ends; PageUp and PageDown move six, Menu.qml:807-818.
               case "ArrowDown":
-                e.preventDefault();
-                set({ sel: Math.min(sel + 1, items.length - 1) });
-                break;
               case "ArrowUp":
+              case "PageDown":
+              case "PageUp": {
                 e.preventDefault();
-                set({ sel: Math.max(sel - 1, 0) });
+                if (!items.length) break;
+                const step = { ArrowDown: 1, ArrowUp: -1, PageDown: 6, PageUp: -6 }[e.key];
+                set({ sel: (((sel + step) % items.length) + items.length) % items.length });
                 break;
+              }
               case "Enter":
                 e.preventDefault();
                 pick(sel);
                 break;
+              // Right activates any row, actions included, as Enter does.
               case "ArrowRight":
-                if (items[sel]?.children) {
+                if (items.length && e.currentTarget.selectionStart === overlay.q.length) {
                   e.preventDefault();
                   pick(sel);
                 }
@@ -122,9 +145,11 @@ export function MenuOverlay({ overlay, state, interactive, listId, dispatch, exe
                   back();
                 }
                 break;
+              // Escape clears a filter first, then closes from any depth.
               case "Escape":
                 e.preventDefault();
-                close();
+                if (overlay.q) set({ q: "", sel: 0 });
+                else close();
                 break;
             }
           }}

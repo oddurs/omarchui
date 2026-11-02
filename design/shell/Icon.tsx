@@ -1,4 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
+import { chrome } from "../tokens/chrome.stylex";
 import { color } from "../tokens/color.stylex";
 import { size } from "../tokens/size.stylex";
 
@@ -18,6 +19,11 @@ const PATHS = {
   exit: "M14 4h6v16h-6M10 8l-4 4 4 4M6 12h10",
   chevron: "M9 6l6 6-6 6",
   dwindle: "M3 4h8v16H3zM14 4h7v7h-7zM14 14h7v6h-7z",
+  globe: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18",
+  cloud: "M7 18h10a4 4 0 0 0 .5-8A6 6 0 0 0 6 9.5 4.3 4.3 0 0 0 7 18z",
+  monitor: "M3 4h18v12H3zM8 20h8M12 16v4",
+  agents: "M5 8h14v11H5zM12 4v4M9 13h.01M15 13h.01M2 12v3M22 12v3",
+  coffee: "M4 8h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM17 10h2a2 2 0 0 1 0 4h-2M8 3v2M12 3v2",
 } as const;
 
 export type IconName = keyof typeof PATHS;
@@ -33,14 +39,24 @@ const s = stylex.create({
     strokeLinecap: "square",
   },
   large: { width: size.iconLg, height: size.iconLg },
+  bar: { width: chrome.barIcon, height: chrome.barIcon },
+  osd: { width: chrome.osdIcon, height: chrome.osdIcon },
 });
 
 /** A 24-unit stroke icon at 14px, or 16px where it stands alone. Decorative: always aria-hidden. */
-export type IconProps = { name: IconName; /** 16px instead of 14px, for icons that stand alone. */ large?: boolean };
+export type IconProps = {
+  name: IconName;
+  /** 16px instead of 14px, for icons that stand alone. */
+  large?: boolean;
+  /** Sized by the bar's icon token: 12px of ink in the stock view. */
+  bar?: boolean;
+  /** Sized by the OSD's icon token: Omarchy's 28px glyph in the stock view. */
+  osd?: boolean;
+};
 
-export function Icon({ name, large }: IconProps) {
+export function Icon({ name, large, bar, osd }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden focusable="false" {...stylex.props(s.icon, large && s.large)}>
+    <svg viewBox="0 0 24 24" aria-hidden focusable="false" {...stylex.props(s.icon, large && s.large, bar && s.bar, osd && s.osd)}>
       <path d={PATHS[name]} />
     </svg>
   );

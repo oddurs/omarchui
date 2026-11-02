@@ -138,7 +138,7 @@ export function Desktop() {
   const osdKey = state.osd?.key;
   useEffect(() => {
     if (osdKey === undefined) return;
-    const id = window.setTimeout(() => dispatch({ type: "osd-done", key: osdKey }), 1300);
+    const id = window.setTimeout(() => dispatch({ type: "osd-done", key: osdKey }), 1200);
     return () => window.clearTimeout(id);
   }, [osdKey]);
 

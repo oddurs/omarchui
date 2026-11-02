@@ -1,0 +1,222 @@
+// Measures the stock view against research/omarchy/spec/*.json, Omarchy's values read from
+// source at a pinned commit. Each failure names the spec id and the path:line it came from.
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { expect, test, type Locator, type Page } from "@playwright/test";
+import { OMARCHY_PALETTES } from "../lib/themes.generated";
+
+type Item = { id: string; value: string | number; source?: string };
+type Spec = { items?: Item[]; [part: string]: unknown };
+
+const load = (file: string) => JSON.parse(readFileSync(path.join(process.cwd(), "research/omarchy/spec", `${file}.json`), "utf8")) as Spec;
+const SPECS = { bar: load("bar"), menu: load("menu"), services: load("services") };
+
+/** A numeric value from a spec file, with its citation for the failure message. */
+function spec(file: keyof typeof SPECS, id: string, part?: string): { n: number; why: string } {
+  const doc = part ? (SPECS[file][part] as Spec) : SPECS[file];
+  const it = doc.items?.find((i) => i.id === id);
+  if (!it) throw new Error(`no ${id} in research/omarchy/spec/${file}.json`);
+  return { n: Number(it.value), why: `${id} (${it.source ?? "no source"})` };
+}
+
+// Tokyo Night is Omarchy's default theme, and the one whose own shell.lock.toml changes the lock.
+const THEME = "tokyo-night";
+const O = OMARCHY_PALETTES[THEME];
+const rgb = (hex: string, alpha?: number) => {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  return alpha === undefined ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+const o = (k: string) => {
+  const v = O[k];
+  if (!v) throw new Error(`no ${k} in OMARCHY_PALETTES`);
+  return v;
+};
+
+async function stock(page: Page, locked = false) {
+  await page.addInitScript((slug) => window.localStorage.setItem("omarchui-theme", slug), THEME);
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto("/demo");
+  await page.getByRole("region", { name: "Demo controls" }).getByRole("radio", { name: "Stock" }).click();
+  const screen = page.locator("[data-mode=stock]");
+  await expect(screen).toHaveCount(1);
+  if (!locked) {
+    const pw = page.getByLabel("Password").first();
+    await pw.fill("anything");
+    await pw.press("Enter");
+    await expect(page.getByRole("dialog", { name: "Lock screen" })).toHaveCount(0);
+  }
+  return screen;
+}
+
+const box = async (l: Locator) => {
+  const b = await l.boundingBox();
+  if (!b) throw new Error("not rendered");
+  return b;
+};
+/** A computed style once the element's transitions and animations have finished. */
+const css = (l: Locator, prop: string, pseudo?: string) =>
+  l.evaluate(
+    async (e, [p, ps]) => {
+      await Promise.all(e.getAnimations().map((a) => a.finished.catch(() => undefined)));
+      return getComputedStyle(e, ps).getPropertyValue(p);
+    },
+    [prop, pseudo ?? null] as const,
+  );
+
+/** Computed colours come back as rgb(), rgba() or color(srgb ...) depending on how they were written. */
+function channels(c: string): number[] {
+  const srgb = /^color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)(?: \/ ([\d.]+))?\)$/.exec(c);
+  if (srgb) return [...srgb.slice(1, 4).map((v) => Number(v) * 255), Number(srgb[4] ?? 1)];
+  const m = /^rgba?\((\d+), (\d+), (\d+)(?:, ([\d.]+))?\)$/.exec(c);
+  if (!m) throw new Error(`unparsed colour ${c}`);
+  return [...m.slice(1, 4).map(Number), Number(m[4] ?? 1)];
+}
+async function expectColour(l: Locator, prop: string, want: string, why: string) {
+  const got = channels(await css(l, prop));
+  const exp = channels(want);
+  got.forEach((v, i) =>
+    expect(Math.abs(v - (exp[i] ?? 0)), `${why}: ${prop} is ${got.join(",")}, want ${exp.join(",")}`).toBeLessThanOrEqual(i === 3 ? 0.01 : 1),
+  );
+}
+
+test.describe("the stock view matches Omarchy's source", () => {
+  test("bar", async ({ page }) => {
+    const screen = await stock(page);
+    const bar = screen.locator("[data-ref=bar]");
+    const b = await box(bar);
+    const h = spec("bar", "bar.height");
+    expect(b.height, h.why).toBe(h.n);
+    await expectColour(bar, "background-color", rgb(o("--o-background")), "bar.background (shell/Commons/Color.qml:80)");
+    expect(await css(bar, "color"), "bar.text (shell/Commons/Color.qml:81)").toBe(rgb(o("--o-foreground")));
+
+    // The clock is centred on the full bar width, whatever sits beside it. Bar.qml:2360.
+    const clock = await box(screen.locator("[data-ref=clock]"));
+    expect(Math.abs(clock.x + clock.width / 2 - b.width / 2), spec("bar", "bar.center.x").why).toBeLessThanOrEqual(1);
+    expect(await css(screen.locator("[data-ref=clock]"), "font-size"), spec("bar", "font.body").why).toBe(`${spec("bar", "font.body").n}px`);
+    expect(await css(screen.locator("[data-ref=clock]"), "font-weight"), spec("bar", "font.weight").why).toBe(String(spec("bar", "font.weight").n));
+
+    // Menu button at the 8px inset, 27 wide; workspaces 20 wide, 1px apart. Workspaces.qml:252,275-277.
+    const ws = screen.locator("[data-ref=workspace]");
+    const [w1, w2] = [await box(ws.nth(0)), await box(ws.nth(1))];
+    const inset = spec("bar", "bar.edgePadding.left");
+    const slot = spec("bar", "slot.icon");
+    expect(w1.x, `${inset.why} + ${slot.why}`).toBe(inset.n + slot.n);
+    expect(w1.width, "workspace button width (Workspaces.qml:252)").toBe(20);
+    expect(w2.x - w1.x, "workspace spacing (Workspaces.qml:275-277)").toBe(21);
+    await expect(ws, "buttons 1-5 always show (Workspaces.qml:17)").toHaveCount(5);
+
+    // The right group ends 8px from the edge, each widget in a 27px slot with no gap.
+    const right = screen.getByRole("img", { name: /^Power/ });
+    const p = await box(right);
+    expect(b.width - (p.x + p.width), spec("bar", "bar.edgePadding.right").why).toBe(spec("bar", "bar.edgePadding.right").n);
+    expect(p.width, slot.why).toBe(slot.n);
+    expect(await css(right, "color"), "the battery is never tinted (bar.json omarchy.power)").toBe(rgb(o("--o-foreground")));
+  });
+
+  test("menu", async ({ page }) => {
+    const screen = await stock(page);
+    await page.keyboard.press("Alt+Space");
+    const card = screen.locator("[data-ref=menu]");
+    await expect(card).toBeVisible();
+    const c = await box(card);
+    expect(c.width, spec("menu", "menu.card.width").why).toBe(spec("menu", "menu.card.width").n);
+    expect(await css(card, "border-top-width"), spec("menu", "menu.card.border.width").why).toBe(`${spec("menu", "menu.card.border.width").n}px`);
+    expect(await css(card, "padding-top"), spec("menu", "menu.card.padding").why).toBe(`${spec("menu", "menu.card.padding").n}px`);
+    await expectColour(card, "background-color", rgb(o("--o-background")), "menu.card.background (shell.toml.tpl:176-177)");
+    // Centred on the whole screen, bar included. Menu.qml:1278-1312.
+    expect(Math.abs(c.x + c.width / 2 - 720), spec("menu", "menu.card.position.x").why).toBeLessThanOrEqual(1);
+    expect(Math.abs(c.y + c.height / 2 - 450), spec("menu", "menu.card.position.y").why).toBeLessThanOrEqual(1);
+
+    const input = screen.getByRole("combobox");
+    await expect(input, "placeholder 'Go…' (Menu.qml:1417-1428)").toHaveAttribute("placeholder", "Go…");
+
+    const rows = screen.getByRole("option");
+    await expect(rows, spec("menu", "menu.root.rows").why).toHaveCount(10);
+    const [r1, r2] = [await box(rows.nth(0)), await box(rows.nth(1))];
+    expect(r1.height, "row.height.base (Menu.qml:129)").toBe(50);
+    expect(r2.y - (r1.y + r1.height), "row.spacing (Menu.qml:134)").toBe(3);
+    const sel = rows.nth(0);
+    await expectColour(sel, "background-color", rgb(o("--o-foreground"), 0.08), "cursor fill: foreground at 0.08 (Menu.qml:1501-1502)");
+    expect(await css(sel, "box-shadow"), "selected border width resolves to 0 (Menu.qml:122)").toBe("none");
+    const label = sel.getByText("Apps", { exact: true });
+    expect(await css(label, "font-size"), "label 16px (Menu.qml:1562)").toBe("16px");
+    expect(await css(label, "font-weight"), "label Medium (Menu.qml:1562)").toBe("500");
+    expect(await css(label, "color"), "selected text is accent (shell.toml.tpl:185)").toBe(rgb(o("--o-accent")));
+
+    // Up on the first row wraps to the last. Menu.qml:807-818.
+    await page.keyboard.press("ArrowUp");
+    await expect(rows.nth(9), "key.up-down wraps (Menu.qml:807-818)").toHaveAttribute("aria-selected", "true");
+
+    // Search shows the path as an 11px detail line; rows grow to 58. Then Escape clears first.
+    await input.fill("qr code");
+    await expect(rows).toHaveCount(2);
+    expect((await box(rows.nth(0))).height, "row.height.detail (Menu.qml:130)").toBe(58);
+    const detail = rows.nth(0).getByText("Trigger › Capture", { exact: true });
+    expect(await css(detail, "font-size"), "detail 11px (Menu.qml:1575)").toBe("11px");
+    expect(Number(await css(detail, "opacity")), "detail opacity (Menu.qml:1576)").toBeCloseTo(0.52);
+    const frozen = (await box(card)).y;
+    expect(frozen, "the card's top freezes at the first keystroke (menu.card.position.y)").toBe(c.y);
+    await page.keyboard.press("Escape");
+    await expect(input, "key.escape clears the filter first (Menu.qml)").toHaveValue("");
+    await expect(card).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(card).toHaveCount(0);
+  });
+
+  test("notification", async ({ page }) => {
+    const screen = await stock(page);
+    const toast = screen.locator("[data-ref=toast]").first();
+    await expect(toast).toBeVisible();
+    await css(toast, "opacity"); // let the arrival animation land
+    const t = await box(toast);
+    const w = spec("services", "toast.width", "notifications");
+    expect(t.width, w.why).toBe(w.n);
+    const right = spec("services", "toast.offset.right", "notifications");
+    expect(1440 - (t.x + t.width), right.why).toBe(right.n);
+    const top = spec("services", "toast.offset.top", "notifications");
+    expect(t.y, top.why).toBe(top.n);
+    const bw = spec("services", "toast.border.width", "notifications");
+    expect(await css(toast, "border-top-width"), bw.why).toBe(`${bw.n}px`);
+    await expectColour(toast, "border-top-color", rgb(o("--o-active-border")), "toast.border: active border, else accent");
+  });
+
+  test("volume OSD", async ({ page }) => {
+    const screen = await stock(page);
+    await screen.getByRole("button", { name: /^Audio/ }).click();
+    const osd = screen.locator("[data-ref=osd]");
+    await expect(osd).toBeVisible();
+    const b = await box(osd);
+    const h = spec("services", "osd.height", "osd");
+    expect(b.height, h.why).toBe(h.n);
+    const bottom = spec("services", "osd.position.bottom", "osd");
+    expect(900 - (b.y + b.height), bottom.why).toBe(bottom.n);
+    expect(Math.abs(b.x + b.width / 2 - 720), "centred horizontally (Osd.qml:140-141)").toBeLessThanOrEqual(1);
+    const track = osd.locator("span").nth(1);
+    const tw = spec("services", "osd.track.width", "osd");
+    const th = spec("services", "osd.track.height", "osd");
+    const tb = await box(track);
+    expect(tb.width, tw.why).toBe(tw.n);
+    expect(tb.height, th.why).toBe(th.n);
+    // Muted, Omarchy still shows the stored level, followed by %. OsdModel.js:45.
+    await expect(osd.getByText("—"), "no dash for a muted value in Omarchy").toBeHidden();
+    expect(await css(osd.locator("span").last().locator(".."), "content", "::after"), "value reads N% (OsdModel.js:45)").toBe('"%"');
+  });
+
+  test("lock", async ({ page }) => {
+    const screen = await stock(page, true);
+    const field = screen.getByLabel("Password");
+    const f = await box(field);
+    const w = spec("services", "lock.field.width", "lock");
+    const h = spec("services", "lock.field.height", "lock");
+    const bw = spec("services", "lock.field.border.width", "lock");
+    expect(f.width, w.why).toBe(w.n);
+    expect(f.height, h.why).toBe(h.n);
+    expect(await css(field, "border-top-width"), bw.why).toBe(`${bw.n}px`);
+    await expect(field, "lock.placeholder.text (default/i18n/en/shell.json:316)").toHaveAttribute("placeholder", "Enter Password");
+    // Tokyo Night's shell.lock.toml sets the outline to its foreground.
+    await expectColour(field, "border-top-color", rgb(o("--o-lock-border")), "themes/tokyo-night/shell.lock.toml:5");
+    expect(o("--o-lock-border"), "themes/tokyo-night/shell.lock.toml:5").toBe("#a9b1d6");
+    expect(Math.abs(f.x + f.width / 2 - 720), "lock.field.position centre").toBeLessThanOrEqual(1);
+    await expect(screen.getByText(/^\d{1,2}:\d{2}/), "lock.clock absent (LockView.qml:105-263)").toBeHidden();
+  });
+});

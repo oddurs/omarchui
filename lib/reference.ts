@@ -104,7 +104,7 @@ export const PARTS: Record<PartId, Part> = {
     doc: "/system/shell/menu-panel",
     measures: [
       m("Height", spacing("Menu card", "padding / header / row / row+detail / row spacing / border", 2), "36px · chrome.row", "height"),
-      m("Label size", type("Menu", /rows (\d+)/), "13px · chrome.menuLabel", "fontSize", px, "span:nth-child(2)"),
+      m("Label size", type("Menu", /rows (\d+)/), "13px · chrome.menuLabel", "fontSize", px, "span:nth-child(2) > span:first-child"),
       m("Icon column", spacing("Menu row", "icon column / icon left inset"), "24px · size.glyph"),
     ],
   },

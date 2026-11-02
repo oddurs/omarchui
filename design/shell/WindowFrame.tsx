@@ -15,7 +15,7 @@ const s = stylex.create({
     minWidth: 0,
     minHeight: 0,
     overflow: "hidden",
-    backgroundColor: color["--surface"],
+    backgroundColor: chrome.winBg,
     borderWidth: chrome.border,
     borderStyle: "solid",
     borderColor: chrome.borderIdle,
@@ -25,7 +25,7 @@ const s = stylex.create({
     transitionDuration: motion.move,
     transitionTimingFunction: motion.ease,
   },
-  active: { borderColor: color["--accent"], boxShadow: chrome.halo },
+  active: { borderColor: chrome.winActive, boxShadow: chrome.halo },
   urgent: { borderColor: color["--err"] },
 });
 

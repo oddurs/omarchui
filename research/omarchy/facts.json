@@ -3064,6 +3064,15 @@
     },
     {
       "slug": "tokyo-night",
+      "lock": {
+        "text": "#a9b1d6",
+        "placeholder": "#a9b1d6",
+        "textError": "#a9b1d6",
+        "border": "#a9b1d6",
+        "borderActive": "#a9b1d6",
+        "borderError": "#a9b1d6",
+        "source": "themes/tokyo-night/shell.lock.toml:1-6"
+      },
       "name": "Tokyo Night",
       "mode": "dark",
       "colors": {

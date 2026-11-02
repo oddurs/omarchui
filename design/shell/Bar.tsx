@@ -21,6 +21,8 @@ export type BarModule = {
   label: string;
   value?: string;
   tone?: "ok" | "warn" | "err";
+  /** A status icon (indicator, world clock, weather): the narrower slot. */
+  status?: boolean;
   onPress?: () => void;
   onWheel?: (e: WheelEvent) => void;
 };
@@ -35,15 +37,23 @@ const s = stylex.create({
     gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
     alignItems: "center",
     paddingInline: space.u2,
-    backgroundColor: color["--wall"],
+    backgroundColor: chrome.barBg,
     borderBottomWidth: chrome.barRule,
     borderBottomStyle: "solid",
     borderBottomColor: color["--line"],
-    color: color["--text-2"],
+    color: chrome.barInk,
   },
   framed: { borderWidth: stroke.hair, borderStyle: "solid", borderColor: color["--line"] },
-  zone: { display: "flex", alignItems: "center", gap: "2px", minWidth: 0, overflow: "hidden" },
-  state: { justifyContent: "flex-end", gap: space.u1 },
+  zone: { display: "flex", alignItems: "center", minWidth: 0, overflow: "hidden" },
+  // Workspace buttons sit 1px apart in the stock view; the menu button touches the first. Workspaces.qml:275-277.
+  wsGroup: { display: "flex", alignItems: "center", gap: chrome.wsGap },
+  state: { justifyContent: "flex-end", gap: chrome.modGap },
+  // The clock is centred on the whole bar; Omarchy's centerBegin and centerEnd lists hang off
+  // its edges, so it never moves for them. Bar.qml:2338-2360.
+  center: { position: "relative", display: "flex", alignItems: "center", height: chrome.barHeight },
+  side: { position: "absolute", top: 0, display: "flex", alignItems: "center", gap: chrome.modGap },
+  before: { right: "100%" },
+  after: { left: "100%" },
   press: {
     display: "inline-grid",
     placeItems: "center",
@@ -55,11 +65,13 @@ const s = stylex.create({
     outline: "none",
     ":focus-visible": { boxShadow: focus.inset },
   },
-  markBtn: { paddingInline: space.u2, marginRight: space.u1 },
+  markBtn: { minWidth: chrome.modSlot, paddingInline: chrome.modPad, marginRight: chrome.markGap, color: chrome.barInk },
   ws: {
     position: "relative",
-    minWidth: space.u6,
-    paddingInline: space.u1,
+    minWidth: chrome.wsWidth,
+    paddingInline: chrome.modPad,
+    fontSize: chrome.barText,
+    fontWeight: chrome.barWeight,
     color: chrome.wsIdle,
     transitionProperty: "color",
     transitionDuration: motion.tick,
@@ -80,20 +92,30 @@ const s = stylex.create({
   // Omarchy 4 shows the workspace's layout instead of its number; the mark is the dwindle layout.
   activeGlyph: { display: chrome.wsActiveGlyph, placeItems: "center" },
   active: { color: chrome.wsActive, "::after": { height: chrome.wsMark } },
-  clock: { fontWeight: chrome.uiWeight, color: color["--text"], fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" },
-  day: { display: { default: "inline", [bp.phone]: "none" }, fontWeight: weight.regular, color: chrome.quiet, marginRight: space.u2 },
+  clock: {
+    paddingInline: chrome.clockPad,
+    fontSize: chrome.clockText,
+    fontWeight: chrome.uiWeight,
+    color: chrome.clockInk,
+    fontVariantNumeric: "tabular-nums",
+    whiteSpace: "nowrap",
+  },
+  day: { display: { default: "inline", [bp.phone]: "none" }, fontWeight: weight.regular, color: chrome.quiet, marginRight: chrome.clockGap },
   mod: {
     display: "inline-flex",
     alignItems: "center",
+    justifyContent: "center",
     gap: space.u1,
+    minWidth: chrome.modSlot,
     height: chrome.barHeight,
-    paddingInline: space.u1,
-    color: color["--text-2"],
+    paddingInline: chrome.modPad,
+    color: chrome.barInk,
     whiteSpace: "nowrap",
     textTransform: "none",
     letterSpacing: tracking.normal,
   },
-  hover: { ":hover": { color: color["--text"] } },
+  statusSlot: { minWidth: chrome.statusSlot },
+  hover: { ":hover": { color: chrome.barHover } },
   ok: { color: color["--ok"] },
   warn: { color: color["--warn"] },
   err: { color: color["--err"] },
@@ -113,6 +135,8 @@ export type BarProps = {
   workspaces: BarWorkspace[];
   clock: { day: string; time: string };
   modules: BarModule[];
+  /** Modules on either side of the clock: Omarchy's indicators before it, world clock and weather after. */
+  beside?: { before: BarModule[]; after: BarModule[] };
   onWorkspace?: (n: number) => void;
   onMark?: () => void;
   /** Draw a hairline frame, for showing the bar on its own. */
@@ -120,7 +144,7 @@ export type BarProps = {
 };
 
 /** The bar in three zones: where you are, when it is, what the machine is doing. */
-export function Bar({ workspaces, clock, modules, onWorkspace, onMark, framed }: BarProps) {
+export function Bar({ workspaces, clock, modules, beside, onWorkspace, onMark, framed }: BarProps) {
   const [first, ...rest] = modules;
   return (
     <div role="toolbar" aria-label="Bar" data-ref="bar" {...stylex.props(s.bar, framed && s.framed)}>
@@ -128,30 +152,48 @@ export function Bar({ workspaces, clock, modules, onWorkspace, onMark, framed }:
         <button type="button" aria-label="Omarchy menu" onClick={onMark} tabIndex={onMark ? 0 : -1} {...stylex.props(s.press, s.markBtn)}>
           <Mark />
         </button>
-        {workspaces.map((w) => (
-          <button
-            key={w.n}
-            type="button"
-            aria-label={`Workspace ${w.n}${w.busy ? "" : ", empty"}`}
-            aria-current={w.active || undefined}
-            tabIndex={onWorkspace ? 0 : -1}
-            onClick={() => onWorkspace?.(w.n)}
-            data-ref="workspace"
-            data-ref-key={`ws:${w.n}`}
-            {...stylex.props(s.press, typo.label, face.mono, s.mod, s.ws, w.busy && s.busy, w.active && s.active)}
-          >
-            <span {...stylex.props(w.active && s.activeNumber)}>{w.n}</span>
-            {w.active && (
-              <span aria-hidden {...stylex.props(s.activeGlyph)}>
-                <Icon name="dwindle" />
-              </span>
-            )}
-          </button>
-        ))}
+        <div {...stylex.props(s.wsGroup)}>
+          {workspaces.map((w) => (
+            <button
+              key={w.n}
+              type="button"
+              aria-label={`Workspace ${w.n}${w.busy ? "" : ", empty"}`}
+              aria-current={w.active || undefined}
+              tabIndex={onWorkspace ? 0 : -1}
+              onClick={() => onWorkspace?.(w.n)}
+              data-ref="workspace"
+              data-ref-key={`ws:${w.n}`}
+              {...stylex.props(s.press, typo.label, face.mono, s.mod, s.ws, w.busy && s.busy, w.active && s.active)}
+            >
+              <span {...stylex.props(w.active && s.activeNumber)}>{w.n}</span>
+              {w.active && (
+                <span aria-hidden {...stylex.props(s.activeGlyph)}>
+                  <Icon name="dwindle" bar />
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
-      <div data-ref="clock" {...stylex.props(typo.caption, face.ui, s.clock)}>
-        <span {...stylex.props(s.day)}>{clock.day}</span>
-        {clock.time}
+      <div {...stylex.props(s.center)}>
+        {beside && beside.before.length > 0 && (
+          <div {...stylex.props(s.side, s.before)}>
+            {beside.before.map((m) => (
+              <BarMod key={m.id} m={m} minor />
+            ))}
+          </div>
+        )}
+        <div data-ref="clock" {...stylex.props(typo.caption, face.ui, s.clock)}>
+          <span {...stylex.props(s.day)}>{clock.day}</span>
+          {clock.time}
+        </div>
+        {beside && beside.after.length > 0 && (
+          <div {...stylex.props(s.side, s.after)}>
+            {beside.after.map((m) => (
+              <BarMod key={m.id} m={m} minor />
+            ))}
+          </div>
+        )}
       </div>
       <div {...stylex.props(s.zone, s.state)}>
         {first && <BarMod m={first} minor={rest.length > 0} />}
@@ -169,11 +211,11 @@ function BarMod({ m, minor }: { m: BarModule; minor?: boolean }) {
   const label = `${m.label}${m.value ? ` ${m.value}` : ""}`;
   const inner = (
     <>
-      <Icon name={m.icon} />
+      <Icon name={m.icon} bar />
       {m.value && <span {...stylex.props(s.value)}>{m.value}</span>}
     </>
   );
-  const look = [typo.label, s.mod, toneStyle, minor && s.minor];
+  const look = [typo.label, s.mod, m.status && s.statusSlot, toneStyle, minor && s.minor];
   if (m.onPress) {
     return (
       <button type="button" aria-label={label} onClick={m.onPress} onWheel={m.onWheel} {...stylex.props(s.press, ...look, s.hover, toneStyle)}>

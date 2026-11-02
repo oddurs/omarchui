@@ -1,4 +1,4 @@
-import { at, filter, LAUNCHER, omarchyMenu, searchAll, type MenuItem, type MenuState } from "@/lib/menu";
+import { at, filter, LAUNCHER, omarchyMenu, search, type MenuItem, type MenuState } from "@/lib/menu";
 import type { Overlay, State } from "./state";
 
 export type MenuContext = Pick<State, "theme" | "view"> & MenuState;
@@ -6,9 +6,7 @@ export type MenuContext = Pick<State, "theme" | "view"> & MenuState;
 export function overlayItems(o: NonNullable<Overlay>, s: MenuContext): { items: MenuItem[]; trail: string[] } {
   if (o.root === "launcher") return { items: filter(LAUNCHER, o.q), trail: ["Apps"] };
   const root = omarchyMenu(s);
-  if (!o.path.length && o.q.trim()) return { items: searchAll(root, o.q), trail: ["Search"] };
-  const { items, trail } = at(root, o.path);
-  return { items: filter(items, o.q), trail };
+  return { items: search(root, o.path, o.q), trail: at(root, o.path).trail };
 }
 
 /** Opening a list of choices starts on the one already in effect. */
