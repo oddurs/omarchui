@@ -1,0 +1,9 @@
+* text=auto eol=lf
+*.png binary
+*.ico binary
+*.jpg binary
+research/omarchy/facts.json linguist-generated
+docs/props.json linguist-generated
+lib/themes.generated.ts linguist-generated
+pnpm-lock.yaml linguist-generated
+prototype/** linguist-documentation

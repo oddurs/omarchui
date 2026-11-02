@@ -1,0 +1,4 @@
+#!/bin/sh
+# Fast gate only: formatting. Lint and tests run in pre-push, where waiting is expected.
+set -eu
+exec scripts/task fmt:check

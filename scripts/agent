@@ -1,0 +1,174 @@
+#!/bin/sh
+# The workflow: one unit of work → one worktree → one branch → one pull request.
+# Worktrees live in ../.worktrees/<repo>/<branch>/. This script never cds for you.
+set -eu
+
+die() {
+  printf 'agent: %s\n' "$*" >&2
+  exit 1
+}
+say() { printf '→ %s\n' "$*"; }
+
+root=$(git rev-parse --show-toplevel 2>/dev/null) || die "not inside a git repository"
+common=$(cd "$(git rev-parse --git-common-dir)" && pwd)
+primary=$(dirname "$common")
+repo=$(basename "$primary")
+trees="$(dirname "$primary")/.worktrees/$repo"
+
+default_branch() {
+  b=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##') || true
+  if [ -z "${b:-}" ]; then
+    git remote set-head origin --auto >/dev/null 2>&1 || true
+    b=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##') || true
+  fi
+  printf '%s' "${b:-main}"
+}
+
+branch_ok() {
+  printf '%s' "$1" | grep -Eq '^(feat|fix|chore|docs|perf|refactor|test)/[a-z0-9][a-z0-9._-]*$'
+}
+
+current_branch() { git rev-parse --abbrev-ref HEAD; }
+
+cmd_doctor() {
+  problems=0
+  check() {
+    if eval "$2" >/dev/null 2>&1; then printf '  ok    %s\n' "$1"; else
+      printf '  FAIL  %s: %s\n' "$1" "$3"
+      problems=$((problems + 1))
+    fi
+  }
+  say "doctor for $repo"
+  check "git" "command -v git" "install git"
+  check "gh" "command -v gh" "install the GitHub CLI"
+  check "gh auth" "gh auth status" "run: gh auth login"
+  check "node" "command -v node" "install Node $(cat "$root/.node-version" 2>/dev/null)"
+  check "pnpm" "command -v pnpm" "run: corepack enable"
+  check "origin remote" "git remote get-url origin" "add an origin remote"
+  if [ "$(git config core.hooksPath || true)" != ".githooks" ]; then
+    git config core.hooksPath .githooks
+    printf '  fixed core.hooksPath → .githooks\n'
+  else
+    printf '  ok    hooks\n'
+  fi
+  check "clean tree" "test -z \"\$(git -C '$root' status --porcelain)\"" "commit or stash changes in $root"
+  [ "$problems" -eq 0 ] || die "$problems problem(s) above"
+  say "all good"
+}
+
+cmd_start() {
+  [ $# -eq 1 ] || die "usage: scripts/agent start <type>/<slug>"
+  branch=$1
+  branch_ok "$branch" || die "branch must match <feat|fix|chore|docs|perf|refactor|test>/<slug>, got '$branch'"
+  path="$trees/$branch"
+  git show-ref --verify --quiet "refs/heads/$branch" && die "branch $branch already exists"
+  [ -e "$path" ] && die "worktree path already exists: $path"
+  base=$(default_branch)
+  say "fetching origin"
+  git fetch --quiet origin
+  say "creating $branch from origin/$base at $path"
+  mkdir -p "$(dirname "$path")"
+  git worktree add -b "$branch" "$path" "origin/$base" >/dev/null
+  git -C "$path" branch --unset-upstream >/dev/null 2>&1 || true
+  say "ready. cd $path"
+}
+
+cmd_check() {
+  say "scripts/task check"
+  exec "$root/scripts/task" check
+}
+
+cmd_commit() {
+  [ $# -ge 1 ] || die "usage: scripts/agent commit \"<type>(scope): subject\" [body]"
+  [ "$(current_branch)" != "$(default_branch)" ] || die "you are on $(default_branch); run scripts/agent start first"
+  if [ -z "$(git diff --cached --name-only)" ]; then
+    say "nothing staged; staging all changes"
+    git add -A
+  fi
+  [ -n "$(git diff --cached --name-only)" ] || die "nothing to commit"
+  if [ $# -ge 2 ]; then git commit -m "$1" -m "$2"; else git commit -m "$1"; fi
+}
+
+cmd_pr() {
+  draft=""
+  auto=""
+  for a in "$@"; do
+    case "$a" in
+      --draft) draft="--draft" ;;
+      --auto) auto=1 ;;
+      *) die "usage: scripts/agent pr [--draft] [--auto]" ;;
+    esac
+  done
+  branch=$(current_branch)
+  [ "$branch" != "$(default_branch)" ] || die "cannot open a pull request from $(default_branch)"
+  [ -z "$(git status --porcelain)" ] || die "uncommitted changes; commit them first"
+  say "scripts/task check"
+  "$root/scripts/task" check
+  say "pushing $branch"
+  git push --quiet -u origin "$branch"
+  if ! gh pr view --json url >/dev/null 2>&1; then
+    body=$(mktemp)
+    if [ -f "$root/.github/PULL_REQUEST_TEMPLATE.md" ]; then cp "$root/.github/PULL_REQUEST_TEMPLATE.md" "$body"; fi
+    [ -n "${AGENT_PR_BODY:-}" ] && printf '%s\n' "$AGENT_PR_BODY" >"$body"
+    # Strip any tool attribution before it reaches GitHub.
+    sed -i.bak -E '/(Generated (with|by) |Co-[Aa]uthored-[Bb]y: .*(Claude|Anthropic|GPT|Copilot)|🤖)/d' "$body" && rm -f "$body.bak"
+    say "opening pull request"
+    gh pr create --title "$(git log -1 --format=%s)" --body-file "$body" $draft >/dev/null
+    rm -f "$body"
+  fi
+  if [ -n "$auto" ]; then
+    say "enabling auto-merge (squash) once checks pass"
+    gh pr merge --auto --squash --delete-branch >/dev/null
+  fi
+  gh pr view --json url --jq .url
+}
+
+cmd_sync() {
+  base=$(default_branch)
+  say "rebasing $(current_branch) onto origin/$base"
+  git fetch --quiet origin
+  git rebase "origin/$base"
+}
+
+cmd_done() {
+  branch=$(current_branch)
+  [ "$branch" != "$(default_branch)" ] || die "run this from the worktree of a merged branch"
+  state=$(gh pr view "$branch" --json state --jq .state 2>/dev/null || echo NONE)
+  [ "$state" = "MERGED" ] || die "pull request for $branch is $state, not MERGED"
+  here=$(pwd -P)
+  [ "$here" != "$(cd "$primary" && pwd -P)" ] || die "run this from the branch worktree, not the primary checkout"
+  say "removing worktree $root"
+  git -C "$primary" worktree remove "$root"
+  say "deleting local branch $branch"
+  git -C "$primary" branch -D "$branch" >/dev/null
+  git -C "$primary" worktree prune
+  git -C "$primary" fetch --quiet --prune origin
+  base=$(default_branch)
+  if [ "$(git -C "$primary" rev-parse --abbrev-ref HEAD)" = "$base" ]; then
+    say "fast-forwarding $base in the primary checkout"
+    git -C "$primary" merge --quiet --ff-only "origin/$base"
+  fi
+  say "done. cd $primary"
+}
+
+cmd_list() {
+  git worktree list --porcelain | awk '/^worktree /{p=$2} /^branch /{sub("refs/heads/","",$2); print p" "$2}' | while read -r p b; do
+    state=$(gh pr view "$b" --json state,url --jq '.state+" "+.url' 2>/dev/null || echo "no pr")
+    printf '%-40s %-40s %s\n' "$b" "$p" "$state"
+  done
+}
+
+sub=${1:-}
+[ -n "$sub" ] || die "usage: scripts/agent {doctor|start|check|commit|pr|sync|done|list}"
+shift
+case "$sub" in
+  doctor) cmd_doctor "$@" ;;
+  start) cmd_start "$@" ;;
+  check) cmd_check "$@" ;;
+  commit) cmd_commit "$@" ;;
+  pr) cmd_pr "$@" ;;
+  sync) cmd_sync "$@" ;;
+  done) cmd_done "$@" ;;
+  list) cmd_list "$@" ;;
+  *) die "unknown command '$sub'" ;;
+esac

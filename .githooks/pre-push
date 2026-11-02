@@ -1,0 +1,12 @@
+#!/bin/sh
+# Refuse pushes to the default branch; everything else must pass the full check.
+set -eu
+default=$(git symbolic-ref --quiet --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##')
+default=${default:-main}
+while read -r _local _sha remote_ref _remote_sha; do
+  if [ "$remote_ref" = "refs/heads/$default" ]; then
+    echo "pre-push: $default only advances through a merged pull request. Use scripts/agent start." >&2
+    exit 1
+  fi
+done
+exec scripts/task check

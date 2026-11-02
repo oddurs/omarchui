@@ -1,0 +1,9 @@
+#!/bin/sh
+# One-time setup for a fresh clone: hooks, then dependencies.
+set -eu
+cd "$(dirname "$0")/.."
+git config core.hooksPath .githooks
+echo "hooks: core.hooksPath = .githooks"
+pnpm install
+pnpm exec playwright install chromium
+echo "ready. Next: scripts/agent doctor"
