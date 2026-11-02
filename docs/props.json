@@ -1,0 +1,1142 @@
+{
+  "Box": {
+    "file": "design/primitives/Box.tsx",
+    "type": "BoxProps",
+    "props": [
+      {
+        "name": "aria-label",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "aria-labelledby",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "as",
+        "type": "ElementType",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "border",
+        "type": "'line' | 'line-2' | 'accent' | 'err'",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "clip",
+        "type": "boolean",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "focused",
+        "type": "boolean",
+        "required": false,
+        "doc": "Draw the focus halo, as the focused window or section does."
+      },
+      {
+        "name": "id",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "onPointerEnter",
+        "type": "((e: PointerEvent<HTMLElement>) => void)",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "pad",
+        "type": "'page' | 'u0' | 'u2' | 'u3' | 'u4' | 'u5' | 'u6' | 'u8' | 'u12'",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "role",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "tabIndex",
+        "type": "number",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "tone",
+        "type": "'wall' | 'sunken' | 'surface' | 'raised'",
+        "required": false,
+        "doc": "The ground this box sits on. Depth is tone, never shadow: wall < sunken < surface < raised."
+      }
+    ],
+    "inherits": []
+  },
+  "Stack": {
+    "file": "design/primitives/Stack.tsx",
+    "type": "StackProps",
+    "props": [
+      {
+        "name": "align",
+        "type": "'end' | 'start' | 'center' | 'baseline' | 'stretch'",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "aria-label",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "aria-labelledby",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "as",
+        "type": "ElementType",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "gap",
+        "type": "'u0' | 'u1' | 'u2' | 'u3' | 'u4' | 'u5' | 'u6' | 'u8' | 'u10' | 'u12' | 'u16'",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "grow",
+        "type": "boolean",
+        "required": false,
+        "doc": "Fill the remaining space in a parent flex row or column."
+      },
+      {
+        "name": "id",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "justify",
+        "type": "'end' | 'start' | 'center' | 'between'",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "role",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      }
+    ],
+    "inherits": []
+  },
+  "Inline": {
+    "file": "design/primitives/Stack.tsx",
+    "type": "InlineProps",
+    "props": [
+      {
+        "name": "align",
+        "type": "'end' | 'start' | 'center' | 'baseline' | 'stretch'",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "aria-label",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "aria-labelledby",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "as",
+        "type": "ElementType",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "gap",
+        "type": "'u0' | 'u1' | 'u2' | 'u3' | 'u4' | 'u5' | 'u6' | 'u8' | 'u10' | 'u12' | 'u16'",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "grow",
+        "type": "boolean",
+        "required": false,
+        "doc": "Fill the remaining space in a parent flex row or column."
+      },
+      {
+        "name": "id",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "justify",
+        "type": "'end' | 'start' | 'center' | 'between'",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "role",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "wrap",
+        "type": "boolean",
+        "required": false,
+        "doc": "Let items flow onto further lines when they run out of room."
+      }
+    ],
+    "inherits": []
+  },
+  "Grid": {
+    "file": "design/primitives/Grid.tsx",
+    "type": "GridProps",
+    "props": [
+      {
+        "name": "layout",
+        "type": "'aside' | 'fitSm' | 'fitMd' | 'fitLg' | 'one' | 'two' | 'three' | 'five' | 'six' | 'twelve' | 'split' | 'halves'",
+        "required": true,
+        "doc": "One of the named layouts; each defines its own phone behaviour."
+      },
+      {
+        "name": "align",
+        "type": "'end' | 'start' | 'baseline'",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "aria-label",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "as",
+        "type": "ElementType",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "gap",
+        "type": "'u0' | 'u1' | 'u2' | 'u3' | 'u4' | 'u5' | 'u6' | 'u8' | 'u10' | 'u12' | 'u16'",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "id",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "role",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      }
+    ],
+    "inherits": []
+  },
+  "Text": {
+    "file": "design/primitives/Text.tsx",
+    "type": "TextProps",
+    "props": [
+      {
+        "name": "aria-hidden",
+        "type": "boolean",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "aria-label",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "as",
+        "type": "ElementType",
+        "required": false,
+        "doc": "The element to render; the preset never decides semantics."
+      },
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "face",
+        "type": "'mono' | 'sans' | 'ui'",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "id",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "measure",
+        "type": "boolean",
+        "required": false,
+        "doc": "Cap the line length near 64 characters."
+      },
+      {
+        "name": "role",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "tabular",
+        "type": "boolean",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "tone",
+        "type": "'inherit' | 'text' | 'accent' | 'err' | 'muted' | 'faint' | 'onAccent' | 'ok' | 'warn'",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "truncate",
+        "type": "boolean",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "variant",
+        "type": "'display' | 'small' | 'body' | 'caption' | 'label' | 'title' | 'heading' | 'lede'",
+        "required": false,
+        "doc": "The type preset: size, line height, default face and weight together."
+      },
+      {
+        "name": "weight",
+        "type": "'medium' | 'regular' | 'semibold'",
+        "required": false,
+        "doc": ""
+      }
+    ],
+    "inherits": []
+  },
+  "Intro": {
+    "file": "design/patterns/Intro.tsx",
+    "type": "IntroProps",
+    "props": [
+      {
+        "name": "title",
+        "type": "ReactNode",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "as",
+        "type": "'h1' | 'h2' | 'h3'",
+        "required": false,
+        "doc": "h1 on a page's first block, h2 for sections, h3 inside them."
+      },
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": false,
+        "doc": "One or two sentences under the title, at reading measure."
+      },
+      {
+        "name": "id",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "size",
+        "type": "'page' | 'sub' | 'section'",
+        "required": false,
+        "doc": ""
+      }
+    ],
+    "inherits": []
+  },
+  "Button": {
+    "file": "design/components/Button.tsx",
+    "type": "ButtonProps",
+    "props": [
+      {
+        "name": "size",
+        "type": "'medium' | 'small' | 'large'",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "variant",
+        "type": "'primary' | 'secondary' | 'ghost'",
+        "required": false,
+        "doc": "primary: the one main action in a view. secondary: everything else. ghost: in toolbars and docks."
+      },
+      {
+        "name": "wide",
+        "type": "boolean",
+        "required": false,
+        "doc": "Stretch to the parent's width."
+      }
+    ],
+    "inherits": [
+      "@react-types/shared",
+      "react-aria",
+      "react-aria-components"
+    ]
+  },
+  "ButtonLink": {
+    "file": "design/components/ButtonLink.tsx",
+    "type": "ButtonLinkProps",
+    "props": [
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "href",
+        "type": "Route<RouteInferType>",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "aria-label",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "size",
+        "type": "'medium' | 'small' | 'large'",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "variant",
+        "type": "'primary' | 'secondary' | 'ghost'",
+        "required": false,
+        "doc": ""
+      }
+    ],
+    "inherits": []
+  },
+  "TextLink": {
+    "file": "design/components/TextLink.tsx",
+    "type": "TextLinkProps",
+    "props": [
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "href",
+        "type": "Route<RouteInferType>",
+        "required": true,
+        "doc": "A typed route inside the site, or a full URL with external."
+      },
+      {
+        "name": "external",
+        "type": "boolean",
+        "required": false,
+        "doc": "For links that leave the site."
+      },
+      {
+        "name": "quiet",
+        "type": "boolean",
+        "required": false,
+        "doc": "quiet: accent text, underline on hover; for \"Reference →\" style links in dense UI."
+      }
+    ],
+    "inherits": []
+  },
+  "Checkbox": {
+    "file": "design/components/Checkbox.tsx",
+    "type": "CheckboxProps",
+    "props": [
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": true,
+        "doc": ""
+      }
+    ],
+    "inherits": [
+      "@react-types/shared",
+      "react-aria",
+      "react-aria-components",
+      "react-stately"
+    ]
+  },
+  "Switch": {
+    "file": "design/components/Switch.tsx",
+    "type": "SwitchProps",
+    "props": [
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": true,
+        "doc": ""
+      }
+    ],
+    "inherits": [
+      "@react-types/shared",
+      "react-aria",
+      "react-aria-components",
+      "react-stately"
+    ]
+  },
+  "Segmented": {
+    "file": "design/components/Segmented.tsx",
+    "type": "SegmentedProps",
+    "props": [
+      {
+        "name": "label",
+        "type": "string",
+        "required": true,
+        "doc": "Names the group for assistive tech; it is not shown."
+      },
+      {
+        "name": "onChange",
+        "type": "(v: T) => void",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "options",
+        "type": "{ id: T; label: string; }[]",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "value",
+        "type": "T",
+        "required": true,
+        "doc": ""
+      }
+    ],
+    "inherits": []
+  },
+  "TextField": {
+    "file": "design/components/TextField.tsx",
+    "type": "TextFieldProps",
+    "props": [
+      {
+        "name": "label",
+        "type": "string",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "description",
+        "type": "string",
+        "required": false,
+        "doc": "Shown under the field, wired to it with aria-describedby."
+      },
+      {
+        "name": "errorMessage",
+        "type": "string",
+        "required": false,
+        "doc": "Overrides the browser's validation message."
+      },
+      {
+        "name": "mono",
+        "type": "boolean",
+        "required": false,
+        "doc": "Machine values (hostnames, paths, keys) are set in mono."
+      },
+      {
+        "name": "placeholder",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "size",
+        "type": "'medium' | 'large'",
+        "required": false,
+        "doc": ""
+      }
+    ],
+    "inherits": [
+      "@react-types/shared",
+      "react-aria",
+      "react-aria-components"
+    ]
+  },
+  "Menu": {
+    "file": "design/components/Menu.tsx",
+    "type": "MenuProps",
+    "props": [
+      {
+        "name": "label",
+        "type": "string",
+        "required": true,
+        "doc": "Names the menu for assistive tech."
+      },
+      {
+        "name": "onAction",
+        "type": "(id: string) => void",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "options",
+        "type": "MenuOption[]",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "trigger",
+        "type": "ReactNode",
+        "required": true,
+        "doc": "What the trigger button shows."
+      },
+      {
+        "name": "selected",
+        "type": "string",
+        "required": false,
+        "doc": "Set for a single-choice menu (a picker); leave out for a menu of actions."
+      },
+      {
+        "name": "triggerLabel",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      }
+    ],
+    "inherits": []
+  },
+  "Tooltip": {
+    "file": "design/components/Tooltip.tsx",
+    "type": "TooltipProps",
+    "props": [
+      {
+        "name": "children",
+        "type": "ReactElement<unknown, string | JSXElementConstructor<any>>",
+        "required": true,
+        "doc": "A focusable React Aria element, such as Button."
+      },
+      {
+        "name": "content",
+        "type": "ReactNode",
+        "required": true,
+        "doc": "A short label, never the only way to learn what a control does."
+      },
+      {
+        "name": "placement",
+        "type": "'bottom' | 'top'",
+        "required": false,
+        "doc": ""
+      }
+    ],
+    "inherits": []
+  },
+  "Kbd": {
+    "file": "design/components/Kbd.tsx",
+    "type": "KbdProps",
+    "props": [
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": true,
+        "doc": ""
+      }
+    ],
+    "inherits": []
+  },
+  "Chord": {
+    "file": "design/components/Kbd.tsx",
+    "type": "ChordProps",
+    "props": [
+      {
+        "name": "chord",
+        "type": "string",
+        "required": true,
+        "doc": "Keys joined with \"+\", e.g. \"Super+Shift+1\". Arrow and Escape names become symbols."
+      }
+    ],
+    "inherits": []
+  },
+  "Tag": {
+    "file": "design/components/Tag.tsx",
+    "type": "TagProps",
+    "props": [
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "variant",
+        "type": "'marked' | 'token'",
+        "required": false,
+        "doc": "marked: a fact with an accent dot. token: a design token name, bare."
+      }
+    ],
+    "inherits": []
+  },
+  "Swatch": {
+    "file": "design/components/Swatch.tsx",
+    "type": "SwatchProps",
+    "props": [
+      {
+        "name": "fill",
+        "type": "string",
+        "required": true,
+        "doc": "Any CSS colour; usually `var(--role)` so it follows the theme."
+      },
+      {
+        "name": "role",
+        "type": "string",
+        "required": true,
+        "doc": "The role, written without the leading dashes."
+      },
+      {
+        "name": "alias",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "hex",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "use",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      }
+    ],
+    "inherits": []
+  },
+  "CodeBlock": {
+    "file": "design/components/CodeBlock.tsx",
+    "type": "CodeBlockProps",
+    "props": [
+      {
+        "name": "copy",
+        "type": "string",
+        "required": true,
+        "doc": "The plain text the Copy button writes to the clipboard."
+      },
+      {
+        "name": "title",
+        "type": "string",
+        "required": true,
+        "doc": "A path or language shown in the bar."
+      },
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": false,
+        "doc": "Rendered code; defaults to `copy` as plain text. Pass coloured spans to highlight."
+      }
+    ],
+    "inherits": []
+  },
+  "Rows": {
+    "file": "design/components/Rows.tsx",
+    "type": "RowsProps",
+    "props": [
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "aria-label",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "as",
+        "type": "ElementType",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "role",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      }
+    ],
+    "inherits": []
+  },
+  "Row": {
+    "file": "design/components/Rows.tsx",
+    "type": "RowProps",
+    "props": [
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "as",
+        "type": "ElementType",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "density",
+        "type": "'normal' | 'tight'",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "desktopOnly",
+        "type": "boolean",
+        "required": false,
+        "doc": "Column headers that only make sense side by side."
+      },
+      {
+        "name": "layout",
+        "type": "'meter' | 'one' | 'keyed' | 'compare' | 'ledger'",
+        "required": false,
+        "doc": "Column layout: one, keyed (label + content), compare (label + two), meter, ledger."
+      },
+      {
+        "name": "role",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      }
+    ],
+    "inherits": []
+  },
+  "Bar": {
+    "file": "design/shell/Bar.tsx",
+    "type": "BarProps",
+    "props": [
+      {
+        "name": "clock",
+        "type": "{ day: string; time: string; }",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "modules",
+        "type": "BarModule[]",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "workspaces",
+        "type": "BarWorkspace[]",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "framed",
+        "type": "boolean",
+        "required": false,
+        "doc": "Draw a hairline frame, for showing the bar on its own."
+      },
+      {
+        "name": "onMark",
+        "type": "(() => void)",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "onWorkspace",
+        "type": "((n: number) => void)",
+        "required": false,
+        "doc": ""
+      }
+    ],
+    "inherits": []
+  },
+  "WindowFrame": {
+    "file": "design/shell/WindowFrame.tsx",
+    "type": "WindowFrameProps",
+    "props": [
+      {
+        "name": "label",
+        "type": "string",
+        "required": true,
+        "doc": "The window's name for assistive tech; there is no visible title bar."
+      },
+      {
+        "name": "active",
+        "type": "boolean",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "onPointerDown",
+        "type": "((e: PointerEvent<HTMLElement>) => void)",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "urgent",
+        "type": "boolean",
+        "required": false,
+        "doc": "The app asked for attention. Wins over nothing but focus."
+      }
+    ],
+    "inherits": []
+  },
+  "MenuPanel": {
+    "file": "design/shell/MenuPanel.tsx",
+    "type": "MenuPanelProps",
+    "props": [
+      {
+        "name": "label",
+        "type": "string",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "rows",
+        "type": "MenuRow[]",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "search",
+        "type": "ReactNode",
+        "required": true,
+        "doc": "The search input, or static text in a preview."
+      },
+      {
+        "name": "sel",
+        "type": "number",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "trail",
+        "type": "string[]",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "empty",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "listId",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "onHover",
+        "type": "((i: number) => void)",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "onPick",
+        "type": "((i: number) => void)",
+        "required": false,
+        "doc": ""
+      }
+    ],
+    "inherits": []
+  },
+  "Toast": {
+    "file": "design/shell/Toast.tsx",
+    "type": "ToastProps",
+    "props": [
+      {
+        "name": "title",
+        "type": "string",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "who",
+        "type": "string",
+        "required": true,
+        "doc": "The app or subsystem that sent it."
+      },
+      {
+        "name": "body",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      },
+      {
+        "name": "critical",
+        "type": "boolean",
+        "required": false,
+        "doc": "Battery, failures: draws in err and is announced assertively."
+      },
+      {
+        "name": "onDismiss",
+        "type": "(() => void)",
+        "required": false,
+        "doc": "Makes the whole toast a button that dismisses it."
+      },
+      {
+        "name": "time",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      }
+    ],
+    "inherits": []
+  },
+  "Osd": {
+    "file": "design/shell/Osd.tsx",
+    "type": "OsdProps",
+    "props": [
+      {
+        "name": "icon",
+        "type": "'search' | 'wifi' | 'volume' | 'mute' | 'battery' | 'bluetooth' | 'cpu' | 'sun' | 'moon' | 'bell' | 'bellOff' | 'expand' | 'exit' | 'chevron'",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "label",
+        "type": "string",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "value",
+        "type": "number",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "muted",
+        "type": "boolean",
+        "required": false,
+        "doc": ""
+      }
+    ],
+    "inherits": []
+  },
+  "LockPanel": {
+    "file": "design/shell/LockPanel.tsx",
+    "type": "LockPanelProps",
+    "props": [
+      {
+        "name": "children",
+        "type": "ReactNode",
+        "required": true,
+        "doc": "The password field; it should already have focus."
+      },
+      {
+        "name": "date",
+        "type": "string",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "time",
+        "type": "string",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "hint",
+        "type": "string",
+        "required": false,
+        "doc": ""
+      }
+    ],
+    "inherits": []
+  },
+  "Icon": {
+    "file": "design/shell/Icon.tsx",
+    "type": "IconProps",
+    "props": [
+      {
+        "name": "name",
+        "type": "'search' | 'wifi' | 'volume' | 'mute' | 'battery' | 'bluetooth' | 'cpu' | 'sun' | 'moon' | 'bell' | 'bellOff' | 'expand' | 'exit' | 'chevron'",
+        "required": true,
+        "doc": ""
+      },
+      {
+        "name": "large",
+        "type": "boolean",
+        "required": false,
+        "doc": ""
+      }
+    ],
+    "inherits": []
+  },
+  "Mark": {
+    "file": "design/shell/Icon.tsx",
+    "type": "MarkProps",
+    "props": [
+      {
+        "name": "large",
+        "type": "boolean",
+        "required": false,
+        "doc": ""
+      }
+    ],
+    "inherits": []
+  }
+}

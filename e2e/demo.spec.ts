@@ -1,0 +1,80 @@
+import AxeBuilder from "@axe-core/playwright";
+import { expect, test, type Page } from "@playwright/test";
+import { THEMES } from "../lib/themes";
+
+async function unlock(page: Page) {
+  await page.goto("/demo");
+  const pw = page.getByLabel("Password").first();
+  await pw.fill("anything");
+  await pw.press("Enter");
+  await expect(page.getByRole("dialog", { name: "Lock screen" })).toHaveCount(0);
+}
+
+const accent = (page: Page) => page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue("--accent").trim());
+
+test("unlock, open a terminal and change the theme from the shell", async ({ page }) => {
+  await unlock(page);
+  await page.keyboard.press("Alt+Enter");
+  const input = page.getByRole("textbox", { name: "Terminal input" });
+  await expect(input).toBeFocused();
+  await input.fill("omarchy-theme-set gruvbox");
+  await input.press("Enter");
+  await expect.poll(() => accent(page)).toBe(THEMES.gruvbox.accent);
+});
+
+test("tiling: three windows split the screen and Alt+W closes the focused one", async ({ page }) => {
+  await unlock(page);
+  for (let i = 0; i < 3; i++) await page.keyboard.press("Alt+Enter");
+  const windows = page.locator("main section[aria-label='Terminal']");
+  await expect(windows).toHaveCount(3);
+  const boxes = await windows.evaluateAll((els) => els.map((e) => e.getBoundingClientRect().width));
+  expect(boxes[0]).toBeGreaterThan(boxes[1]! * 0.9);
+  await page.keyboard.press("Alt+W");
+  await expect(windows).toHaveCount(2);
+});
+
+test("Super+Space opens the Omarchy menu; Super+Alt+Space lists apps", async ({ page }) => {
+  await unlock(page);
+  await page.keyboard.press("Alt+Space");
+  await expect(page.getByRole("listbox", { name: "Omarchy menu" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  // In the browser, Alt+Ctrl stands in for Super+Alt.
+  await page.keyboard.press("Alt+Control+Space");
+  const search = page.getByRole("combobox", { name: "Search the menu" });
+  await search.fill("btop");
+  await search.press("Enter");
+  await expect(page.locator("section[aria-label='btop']")).toHaveCount(1);
+});
+
+test("before/after: the dock and Alt+Ctrl+B cycle stock, split and tuned", async ({ page }) => {
+  await unlock(page);
+  const dock = page.getByRole("region", { name: "Demo controls" });
+  await dock
+    .getByRole("radio", { name: "Split" })
+    .or(dock.getByRole("button", { name: "Split" }))
+    .first()
+    .click();
+  const slider = page.getByRole("slider", { name: "Before and after divider" });
+  await expect(slider).toBeVisible();
+  await slider.focus();
+  await page.keyboard.press("ArrowLeft");
+  await expect(slider).toHaveAttribute("aria-valuenow", "48");
+  await page.keyboard.press("Alt+Control+b");
+  await expect(slider).toHaveCount(0);
+  await expect(page.locator("[data-mode=tuned]")).toHaveCount(1);
+  await page.keyboard.press("Alt+Control+b");
+  await expect(page.locator("[data-mode=stock]")).toHaveCount(1);
+});
+
+test("the Omarchy menu previews themes and the demo passes axe", async ({ page }) => {
+  await unlock(page);
+  const before = await accent(page);
+  await page.keyboard.press("Alt+Control+t");
+  await expect(page.getByRole("listbox", { name: "Theme" })).toBeVisible();
+  await page.keyboard.press("ArrowDown");
+  await expect.poll(() => accent(page)).not.toBe(before);
+  await page.keyboard.press("Escape");
+  await expect.poll(() => accent(page)).toBe(before);
+  const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
+  expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
+});

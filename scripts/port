@@ -1,0 +1,9 @@
+#!/bin/sh
+# A stable dev port for this project: derived from the directory name, so it is the same
+# on every run and different from other projects. Walks up if something else holds it.
+set -eu
+name=$(basename "$(cd "$(dirname "$0")/.." && pwd)")
+hash=$(printf '%s' "$name" | cksum | cut -d' ' -f1)
+port=$((3000 + hash % 5000))
+while lsof -i ":$port" -sTCP:LISTEN >/dev/null 2>&1; do port=$((port + 1)); done
+printf '%s' "$port"

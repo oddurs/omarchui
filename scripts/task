@@ -1,0 +1,37 @@
+#!/bin/sh
+# The seam: CI and git hooks call only these verbs.
+set -eu
+cd "$(dirname "$0")/.."
+
+case "${1:-}" in
+  fmt) pnpm exec prettier --write . ;;
+  fmt:check) pnpm exec prettier --check . ;;
+  lint)
+    pnpm exec next typegen >/dev/null
+    pnpm exec tsc --noEmit
+    pnpm exec eslint --max-warnings=0 .
+    node scripts/gen-props.mts --check
+    node scripts/gen-themes.mts --check
+    ;;
+  test)
+    pnpm exec vitest run
+    pnpm exec playwright test
+    ;;
+  test:unit) pnpm exec vitest run ;;
+  test:e2e) pnpm exec playwright test ;;
+  build) pnpm exec next build ;;
+  docs)
+    node scripts/gen-themes.mts
+    node scripts/gen-props.mts
+    ;;
+  check)
+    "$0" fmt:check
+    "$0" lint
+    "$0" build
+    "$0" test
+    ;;
+  *)
+    echo "usage: scripts/task {fmt|fmt:check|lint|test|test:unit|test:e2e|build|docs|check}" >&2
+    exit 2
+    ;;
+esac
