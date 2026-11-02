@@ -8,3 +8,4 @@ next-env.d.ts
 docs/props.json
 lib/themes.generated.ts
 research
+lib/reference.generated.ts

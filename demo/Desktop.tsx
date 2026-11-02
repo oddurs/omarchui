@@ -2,13 +2,14 @@
 
 import * as stylex from "@stylexjs/stylex";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useReducer, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
 import { color } from "@/design/tokens/color.stylex";
 import type { Command } from "@/lib/commands";
 import { match } from "@/lib/keymap";
 import { choose, paint, readChosen, systemSlug } from "@/lib/theme-runtime";
 import type { ThemeSlug } from "@/lib/themes";
 import { Dock } from "./Dock";
+import { Inspector } from "./Inspector";
 import { openAt, overlayItems } from "./menu-state";
 import { step } from "./metrics";
 import { Screen } from "./Screen";
@@ -26,6 +27,7 @@ const clip = stylex.create({ left: (v: number) => ({ clipPath: `inset(0 ${(1 - v
 export function Desktop() {
   const [state, dispatch] = useReducer(reducer, undefined, () => initialState(readChosen() ?? systemSlug()));
   const router = useRouter();
+  const [inspect, setInspect] = useState(false);
   const ref = useRef(state);
   useLayoutEffect(() => {
     ref.current = state;
@@ -93,6 +95,9 @@ export function Desktop() {
         case "link":
           window.open(c.href, "_blank", "noopener,noreferrer");
           break;
+        case "inspect":
+          setInspect((x) => !x);
+          return;
       }
       if (cur.overlay) dispatch({ type: "overlay", overlay: null });
     },
@@ -149,8 +154,8 @@ export function Desktop() {
 
   // The theme picker previews whichever row is highlighted.
   let preview: ThemeSlug | null = null;
-  if (state.overlay?.root === "omarchy" && state.overlay.path.at(-1) === "theme") {
-    const item = overlayItems(state.overlay).items[state.overlay.sel];
+  if (state.overlay?.root === "omarchy" && state.overlay.path.at(-1) === "appearance.theme") {
+    const item = overlayItems(state.overlay, state).items[state.overlay.sel];
     if (item?.command?.type === "theme") preview = item.command.slug;
   }
   useEffect(() => {
@@ -171,7 +176,8 @@ export function Desktop() {
         </div>
       )}
       {split && <Splitter value={state.split} onChange={(v) => dispatch({ type: "split", value: v })} />}
-      <Dock view={state.view} onView={(v) => dispatch({ type: "view", view: v })} />
+      <Inspector enabled={inspect} split={split ? state.split : null} />
+      <Dock view={state.view} onView={(v) => dispatch({ type: "view", view: v })} inspect={inspect} onInspect={() => setInspect((x) => !x)} />
     </main>
   );
 }

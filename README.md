@@ -8,12 +8,12 @@ and a working demo. It keeps the paradigm (keyboard first, tiling, square corner
 theme for everything) and tightens the structure: one 4px unit, one focus ring, a second
 face for human text, and eighteen colour roles derived from Omarchy's own palettes.
 
-| Route      | What                                                                                                                                                                                                        |
-| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/`        | The exposition: rules, colour, type, space, parts and keys, each with stock beside tuned.                                                                                                                   |
-| `/demo`    | A desktop in the browser: dwindle tiling, nine workspaces, a shell, an editor, btop, lazygit, the Omarchy menu, notifications, a lock screen and a before/after divider. Alt stands in for Super.           |
-| `/system`  | The design system reference: foundations, then a page per primitive, pattern, component and shell part, with live examples, generated props and accessibility notes.                                        |
-| `/omarchy` | How Omarchy is built: a cited map of its repository, theme system, Hyprland config, all 257 bindings, the bar, the 423-entry menu, shell services, type and spacing. Every fact links to its file and line. |
+| Route      | What                                                                                                                                                                                                                                                                                                         |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/`        | The exposition: rules, colour, type, space, parts and keys, each with stock beside tuned.                                                                                                                                                                                                                    |
+| `/demo`    | A desktop in the browser: dwindle tiling, nine workspaces, a shell, an editor, btop, lazygit, the Omarchy menu, notifications, a lock screen, a before/after divider and a reference mode that compares each part with Omarchy's source. The menu and bindings are Omarchy 4's own. Alt stands in for Super. |
+| `/system`  | The design system reference: foundations, then a page per primitive, pattern, component and shell part, with live examples, generated props and accessibility notes.                                                                                                                                         |
+| `/omarchy` | How Omarchy is built: a cited map of its repository, theme system, Hyprland config, all 257 bindings, the bar, the 423-entry menu, shell services, type and spacing. Every fact links to its file and line.                                                                                                  |
 
 ## Run it
 

@@ -78,3 +78,31 @@ test("the Omarchy menu previews themes and the demo passes axe", async ({ page }
   const { violations } = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa", "wcag21aa"]).analyze();
   expect(violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`)).toEqual([]);
 });
+
+test("reference mode compares each side of the divider with its source", async ({ page }) => {
+  await unlock(page);
+  const dock = page.getByRole("region", { name: "Demo controls" });
+  await dock.getByRole("radio", { name: "Split" }).click();
+  await dock.getByRole("button", { name: "Reference" }).click();
+  const vw = page.viewportSize()?.width ?? 1280;
+
+  // Left of the divider is stock: Omarchy's value, cited to the line that sets it.
+  await page.mouse.move(vw * 0.25, 14);
+  const stockCard = page.getByRole("dialog", { name: "Bar reference" });
+  await expect(stockCard).toContainText("Omarchy 4.0.0.alpha");
+  await expect(stockCard.locator('a[href*="shell/Commons/Style.qml#L344"]')).toBeVisible();
+  await expect(stockCard.getByRole("cell", { name: "26px" }).first()).toBeVisible();
+
+  // Right of it is tuned: the token instead of a source.
+  await page.mouse.move(vw * 0.75, 14);
+  await expect(page.getByRole("dialog", { name: "Bar reference" })).toContainText("chrome.barHeight");
+});
+
+test("the Omarchy menu searches its whole tree", async ({ page }) => {
+  await unlock(page);
+  await page.keyboard.press("Alt+Space");
+  const search = page.getByRole("combobox", { name: "Search the menu" });
+  await search.fill("qr code");
+  await expect(page.getByRole("option")).toHaveCount(2);
+  await expect(page.getByRole("option").first()).toContainText("Trigger › Capture");
+});

@@ -36,7 +36,9 @@ const s = stylex.create({
     alignItems: "center",
     paddingInline: space.u2,
     backgroundColor: color["--wall"],
-    borderBottom: chrome.barRule,
+    borderBottomWidth: chrome.barRule,
+    borderBottomStyle: "solid",
+    borderBottomColor: color["--line"],
     color: color["--text-2"],
   },
   framed: { borderWidth: stroke.hair, borderStyle: "solid", borderColor: color["--line"] },
@@ -74,6 +76,9 @@ const s = stylex.create({
     },
   },
   busy: { color: chrome.wsBusy },
+  activeNumber: { display: chrome.wsActiveNumber },
+  // Omarchy 4 shows the workspace's layout instead of its number; the mark is the dwindle layout.
+  activeGlyph: { display: chrome.wsActiveGlyph, placeItems: "center" },
   active: { color: chrome.wsActive, "::after": { height: chrome.wsMark } },
   clock: { fontWeight: chrome.uiWeight, color: color["--text"], fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" },
   day: { display: { default: "inline", [bp.phone]: "none" }, fontWeight: weight.regular, color: chrome.quiet, marginRight: space.u2 },
@@ -118,7 +123,7 @@ export type BarProps = {
 export function Bar({ workspaces, clock, modules, onWorkspace, onMark, framed }: BarProps) {
   const [first, ...rest] = modules;
   return (
-    <div role="toolbar" aria-label="Bar" {...stylex.props(s.bar, framed && s.framed)}>
+    <div role="toolbar" aria-label="Bar" data-ref="bar" {...stylex.props(s.bar, framed && s.framed)}>
       <div {...stylex.props(s.zone)}>
         <button type="button" aria-label="Omarchy menu" onClick={onMark} tabIndex={onMark ? 0 : -1} {...stylex.props(s.press, s.markBtn)}>
           <Mark />
@@ -131,13 +136,20 @@ export function Bar({ workspaces, clock, modules, onWorkspace, onMark, framed }:
             aria-current={w.active || undefined}
             tabIndex={onWorkspace ? 0 : -1}
             onClick={() => onWorkspace?.(w.n)}
+            data-ref="workspace"
+            data-ref-key={`ws:${w.n}`}
             {...stylex.props(s.press, typo.label, face.mono, s.mod, s.ws, w.busy && s.busy, w.active && s.active)}
           >
-            {w.n}
+            <span {...stylex.props(w.active && s.activeNumber)}>{w.n}</span>
+            {w.active && (
+              <span aria-hidden {...stylex.props(s.activeGlyph)}>
+                <Mark />
+              </span>
+            )}
           </button>
         ))}
       </div>
-      <div {...stylex.props(typo.caption, face.ui, s.clock)}>
+      <div data-ref="clock" {...stylex.props(typo.caption, face.ui, s.clock)}>
         <span {...stylex.props(s.day)}>{clock.day}</span>
         {clock.time}
       </div>

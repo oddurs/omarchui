@@ -11,9 +11,11 @@ import { chrome, stock } from "@/design/tokens/chrome.stylex";
 import { color } from "@/design/tokens/color.stylex";
 import { layer } from "@/design/tokens/layer.stylex";
 import { motion } from "@/design/tokens/motion.stylex";
+import { space } from "@/design/tokens/space.stylex";
 import { font } from "@/design/tokens/type.stylex";
 import type { Command } from "@/lib/commands";
 import { dwindle } from "@/lib/layout";
+import { REF_BAR } from "@/lib/reference.generated";
 import { formatClock, useNow } from "@/lib/use-clock";
 import { Editor } from "./apps/Editor";
 import { Git } from "./apps/Git";
@@ -32,6 +34,9 @@ const s = stylex.create({
   screen: {
     position: "absolute",
     inset: 0,
+    // Keep each copy's overlays inside it, so under the divider the stock copy covers all of
+    // the live one, menus and toasts included.
+    isolation: "isolate",
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
@@ -89,7 +94,7 @@ const s = stylex.create({
     top: chrome.gapOut,
     right: chrome.gapOut,
     zIndex: layer.toast,
-    width: "min(320px, calc(100% - 24px))",
+    width: `min(${chrome.toastWidth}, calc(100% - 24px))`,
     display: "flex",
     flexDirection: "column",
     gap: "8px",
@@ -98,12 +103,12 @@ const s = stylex.create({
     position: "absolute",
     left: 0,
     right: 0,
-    bottom: "72px",
+    bottom: chrome.osdBottom,
     display: "flex",
     justifyContent: "center",
     zIndex: layer.osd,
     pointerEvents: "none",
-    paddingInline: "16px",
+    paddingInline: space.u4,
   },
   overlay: {
     position: "absolute",
@@ -196,7 +201,25 @@ export function Screen({ state, dispatch, exec, mode, interactive, id }: Props) 
   const layers = Array.from({ length: WORKSPACES }, (_, i) => i + 1).filter((n) => n === state.ws || busy.has(n));
   const avg = Math.round(state.metrics.cores.reduce((a, b) => a + b, 0) / state.metrics.cores.length);
 
-  const modules: BarModule[] = [
+  // Stock draws Omarchy's right-hand widgets in shell.json's order; tuned draws its own set.
+  const stockModules: BarModule[] = REF_BAR.right.flatMap((id): BarModule[] => {
+    switch (id) {
+      case "omarchy.bluetooth":
+        return [{ id, icon: "bluetooth", label: "Bluetooth" }];
+      case "omarchy.network":
+        return [{ id, icon: "wifi", label: "Network" }];
+      case "omarchy.audio":
+        return [{ id, icon: state.muted ? "mute" : "volume", label: "Audio", onPress: interactive ? () => dispatch({ type: "mute" }) : undefined }];
+      case "omarchy.monitor":
+        return [{ id, icon: "sun", label: "Display" }];
+      case "omarchy.power":
+        return [{ id, icon: "battery", label: "Power", value: "82", tone: "ok" }];
+      default:
+        return [];
+    }
+  });
+
+  const tunedModules: BarModule[] = [
     { id: "cpu", icon: "cpu", label: "CPU", value: `${avg}%`, onPress: interactive ? () => exec({ type: "open", app: "monitor" }) : undefined },
     ...(state.dnd
       ? [
@@ -238,7 +261,12 @@ export function Screen({ state, dispatch, exec, mode, interactive, id }: Props) 
     const live = interactive && state.phase === "desktop" && !state.overlay && active && w.ws === state.ws;
     return (
       <div key={w.id} {...stylex.props(s.slot, pos.rect(r.x, r.y, r.w, r.h), s.pop, full === w.id && s.slotFull, full !== null && full !== w.id && s.hidden)}>
-        <WindowFrame label={windowTitle(w)} active={active} onPointerDown={interactive ? () => dispatch({ type: "focus", id: w.id }) : undefined}>
+        <WindowFrame
+          label={windowTitle(w)}
+          refKey={`win:${w.id}`}
+          active={active}
+          onPointerDown={interactive ? () => dispatch({ type: "focus", id: w.id }) : undefined}
+        >
           <App win={w} live={live} interactive={interactive} dispatch={dispatch} exec={exec} metrics={state.metrics} />
         </WindowFrame>
       </div>
@@ -246,11 +274,11 @@ export function Screen({ state, dispatch, exec, mode, interactive, id }: Props) 
   };
 
   return (
-    <div {...stylex.props(s.screen, WALLPAPER[state.wallpaper], mode === "stock" && stock)} data-mode={mode}>
+    <div {...stylex.props(s.screen, WALLPAPER[state.wallpaper], mode === "stock" && stock)} data-mode={mode} data-screen={id}>
       <Bar
         workspaces={Array.from({ length: shown }, (_, i) => ({ n: i + 1, busy: busy.has(i + 1), active: i + 1 === state.ws }))}
         clock={{ day: clock.day, time: clock.time }}
-        modules={modules}
+        modules={mode === "stock" ? stockModules : tunedModules}
         onWorkspace={interactive ? (n) => exec({ type: "workspace", n }) : undefined}
         onMark={interactive ? () => exec({ type: "menu" }) : undefined}
       />
@@ -284,6 +312,7 @@ export function Screen({ state, dispatch, exec, mode, interactive, id }: Props) 
               title={t.title}
               body={t.body}
               critical={t.critical}
+              refKey={`toast:${t.id}`}
               onDismiss={interactive ? () => dispatch({ type: "dismiss", id: t.id }) : undefined}
             />
           ))}

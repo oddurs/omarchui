@@ -16,10 +16,12 @@ const s = stylex.create({
     display: "flex",
     flexDirection: "column",
     width: "100%",
-    maxWidth: "480px",
+    maxWidth: chrome.menuWidth,
     textAlign: "left",
     backgroundColor: chrome.panelBg,
-    border: chrome.menuBorder,
+    borderWidth: chrome.menuBorderWidth,
+    borderStyle: "solid",
+    borderColor: chrome.menuBorderColor,
     color: color["--text"],
   },
   search: {
@@ -34,13 +36,15 @@ const s = stylex.create({
     color: color["--text-3"],
   },
   trail: { whiteSpace: "nowrap" },
-  list: { listStyle: "none", margin: 0, padding: space.u1, display: "flex", flexDirection: "column", maxHeight: "340px", overflowY: "auto" },
+  list: { listStyle: "none", margin: 0, padding: space.u1, display: "flex", flexDirection: "column", maxHeight: "min(64vh, 560px)", overflowY: "auto" },
   row: {
     display: "grid",
     gridTemplateColumns: `${size.glyph} auto minmax(0, 1fr) auto`,
     alignItems: "center",
     gap: space.u3,
     height: chrome.row,
+    // In a scrolling column, rows would otherwise shrink below their height to fit.
+    flexShrink: 0,
     paddingInline: space.u3,
     cursor: "pointer",
     color: color["--text"],
@@ -48,9 +52,10 @@ const s = stylex.create({
   sel: { backgroundColor: chrome.selBg, boxShadow: chrome.selRing },
   glyph: { display: "grid", placeItems: "center", width: size.glyph, height: size.glyph, color: color["--text-2"], backgroundColor: chrome.iconBox },
   glyphSel: { color: color["--accent"] },
-  name: { fontWeight: chrome.uiWeight, whiteSpace: "nowrap" },
-  desc: { display: chrome.desc, color: color["--text-2"], whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
-  hint: { display: "inline-flex", alignItems: "center", gap: space.u1, color: color["--text-3"], whiteSpace: "nowrap", textTransform: "none" },
+  name: { fontSize: chrome.menuLabel, fontWeight: chrome.uiWeight, whiteSpace: "nowrap" },
+  nameSel: { color: chrome.selText },
+  desc: { gridColumn: 3, display: chrome.desc, color: color["--text-2"], whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+  hint: { gridColumn: 4, display: "inline-flex", alignItems: "center", gap: space.u1, color: color["--text-3"], whiteSpace: "nowrap", textTransform: "none" },
   hintSel: { color: color["--text-2"] },
   hintText: { display: chrome.desc },
   empty: { paddingBlock: space.u3, paddingInline: space.u3, color: color["--text-3"] },
@@ -88,7 +93,7 @@ export function rowId(listId: string, i: number) {
 /** The Omarchy menu card, tuned: name, description and shortcut on one row height everywhere. */
 export function MenuPanel({ label, trail, search, rows, sel, empty = "Nothing matches.", listId = "menu", onPick, onHover }: MenuPanelProps) {
   return (
-    <div {...stylex.props(s.panel)}>
+    <div data-ref="menu" {...stylex.props(s.panel)}>
       <div {...stylex.props(s.search)}>
         <Icon name="search" />
         {search}
@@ -100,6 +105,8 @@ export function MenuPanel({ label, trail, search, rows, sel, empty = "Nothing ma
           <li
             key={r.key}
             id={rowId(listId, i)}
+            data-ref="menu-row"
+            data-ref-key={`row:${r.key}`}
             role="option"
             aria-selected={i === sel}
             onPointerDown={(e) => {
@@ -112,7 +119,7 @@ export function MenuPanel({ label, trail, search, rows, sel, empty = "Nothing ma
             <span aria-hidden {...stylex.props(typo.caption, face.mono, s.glyph, i === sel && s.glyphSel)}>
               {r.glyph}
             </span>
-            <span {...stylex.props(typo.small, face.ui, s.name)}>{r.name}</span>
+            <span {...stylex.props(typo.small, face.ui, s.name, i === sel && s.nameSel)}>{r.name}</span>
             <span {...stylex.props(typo.caption, face.ui, s.desc)}>{r.desc}</span>
             <span {...stylex.props(typo.label, s.hint, i === sel && s.hintSel)}>
               {r.hint && <span {...stylex.props(s.hintText)}>{r.hint}</span>}

@@ -28,7 +28,7 @@ const s = stylex.create({
     ":hover": { borderColor: color["--text-3"] },
     ":focus": { borderColor: color["--accent"], boxShadow: chrome.halo },
   },
-  large: { height: size.fieldLg, textAlign: "center" },
+  large: { height: chrome.fieldLg, textAlign: "center" },
   invalid: { borderColor: color["--err"], ":hover": { borderColor: color["--err"] }, ":focus": { borderColor: color["--err"] } },
   disabled: { opacity: 0.45, cursor: "not-allowed" },
   error: { display: "flex", alignItems: "center", gap: space.u1 },

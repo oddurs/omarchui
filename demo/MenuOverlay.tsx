@@ -6,8 +6,8 @@ import { MenuPanel, rowId } from "@/design/shell/MenuPanel";
 import { face, typo } from "@/design/primitives/typography";
 import { color } from "@/design/tokens/color.stylex";
 import type { Command } from "@/lib/commands";
-import { openAt, overlayItems } from "./menu-state";
-import type { Action, Overlay, State } from "./state";
+import { openAt, overlayItems, type MenuContext } from "./menu-state";
+import type { Action, Overlay } from "./state";
 
 const s = stylex.create({
   input: {
@@ -23,7 +23,7 @@ const s = stylex.create({
 
 type Props = {
   overlay: NonNullable<Overlay>;
-  state: Pick<State, "theme" | "view">;
+  state: MenuContext;
   interactive: boolean;
   listId: string;
   dispatch: Dispatch<Action>;
@@ -32,7 +32,7 @@ type Props = {
 
 export function MenuOverlay({ overlay, state, interactive, listId, dispatch, exec }: Props) {
   const input = useRef<HTMLInputElement>(null);
-  const { items, trail } = overlayItems(overlay);
+  const { items, trail } = overlayItems(overlay, state);
   const sel = Math.min(overlay.sel, Math.max(0, items.length - 1));
 
   useEffect(() => {
@@ -49,7 +49,7 @@ export function MenuOverlay({ overlay, state, interactive, listId, dispatch, exe
   const pick = (i: number) => {
     const item = items[i];
     if (!item) return;
-    if (item.children) dispatch({ type: "overlay", overlay: openAt(overlay.root, [...overlay.path, item.id], state) });
+    if (item.children) dispatch({ type: "overlay", overlay: openAt(overlay.root, [...(item.path ?? overlay.path), item.id], state) });
     else if (item.command) exec(item.command);
   };
 
@@ -57,7 +57,7 @@ export function MenuOverlay({ overlay, state, interactive, listId, dispatch, exe
     if (!overlay.path.length) return close();
     const parent = overlay.path.slice(0, -1);
     const o = openAt(overlay.root, parent, state);
-    const { items: up } = overlayItems(o);
+    const { items: up } = overlayItems(o, state);
     dispatch({
       type: "overlay",
       overlay: {
