@@ -63,21 +63,33 @@ A re-tuning of Omarchy 4's interface.
 - Eighteen colours, named by job
 `;
 
-const NOTES = `Things to try in this demo
+// default/bashrc, which install copies to /etc/skel/.bashrc (docs/file-layout.md:124-125).
+const BASHRC = `# Omarchy environment (OMARCHY_PATH + PATH), needed even for non-interactive shells
+[[ -r /usr/share/omarchy/default/bash/env-bootstrap ]] && source /usr/share/omarchy/default/bash/env-bootstrap
 
-  Super is Alt in the browser.
+# If not running interactively, don't do anything else (leave this above the rc source)
+[[ $- != *i* ]] && return
 
-  Alt+Return     terminal
-  Alt+Space      Omarchy menu
-  Alt+Ctrl+Space apps
-  Alt+K          every keybinding
-  Alt+Ctrl+B     flip between stock, split and tuned
-  omarchy-theme-set nord
+# All the default Omarchy aliases and functions
+# (don't mess with these directly, just overwrite them here!)
+source "$OMARCHY_PATH/default/bash/rc"
+
+# Add your own exports, aliases, and functions here.
+#
+# Make an alias for invoking commands you use constantly
+# alias p='python'
 `;
 
+/**
+ * A fresh user's home: Documents, Downloads, Music, Pictures, Videos and Work, with Work/tries
+ * inside (bin/omarchy-provision-user:106-117; install/user/mise-work.sh:2-3). Dotfiles come
+ * from /etc/skel. The one addition is this repository, as a project in Work, for lazygit
+ * and the prompt's git segment.
+ */
 export const ROOT: Node = dir({
   home: dir({
     you: dir({
+      ".bashrc": file(BASHRC),
       ".config": dir({
         hypr: dir({
           "hyprland.lua": file(
@@ -95,8 +107,15 @@ export const ROOT: Node = dir({
         }),
         foot: dir({ "foot.ini": file("font=JetBrainsMono Nerd Font:size=9\npad=14x14") }),
       }),
-      Code: dir({ omarchui: dir({ "README.md": file(README) }) }),
-      "notes.txt": file(NOTES),
+      Documents: dir({}),
+      Downloads: dir({}),
+      Music: dir({}),
+      Pictures: dir({}),
+      Videos: dir({}),
+      Work: dir({
+        tries: dir({}),
+        omarchui: dir({ ".git": dir({ HEAD: file("ref: refs/heads/main\n") }), "README.md": file(README) }),
+      }),
     }),
   }),
 });
@@ -127,4 +146,39 @@ export function lookup(path: string): Node | null {
 export function pretty(path: string): string {
   if (path === HOME) return "~";
   return path.startsWith(HOME + "/") ? "~" + path.slice(HOME.length) : path;
+}
+
+/** The nearest directory at or above path that holds a .git directory, with its branch. */
+export function gitRepo(path: string): { root: string; branch: string } | null {
+  const segs = path.split("/").filter(Boolean);
+  for (let n = segs.length; n >= 0; n--) {
+    const root = "/" + segs.slice(0, n).join("/");
+    const head = lookup(root + "/.git/HEAD");
+    if (head?.kind === "file")
+      return {
+        root,
+        branch: head
+          .body()
+          .trim()
+          .replace(/^ref: refs\/heads\//, ""),
+      };
+  }
+  return null;
+}
+
+/** Every directory below path, breadth first, except git internals. */
+export function directories(path: string): string[] {
+  const out: string[] = [];
+  const queue = [path];
+  for (let p = queue.shift(); p !== undefined; p = queue.shift()) {
+    const node = lookup(p);
+    if (node?.kind !== "dir") continue;
+    for (const [name, child] of Object.entries(node.children)) {
+      if (child.kind !== "dir" || name === ".git") continue;
+      const full = (p === "/" ? "" : p) + "/" + name;
+      out.push(full);
+      queue.push(full);
+    }
+  }
+  return out;
 }
