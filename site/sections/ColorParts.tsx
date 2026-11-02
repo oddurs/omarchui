@@ -38,7 +38,7 @@ const s = stylex.create({
   on: { borderColor: color["--accent"], boxShadow: focus.halo },
   system: { backgroundColor: color["--surface"], color: color["--text"] },
   top: { display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: space.u2 },
-  name: { fontWeight: weight.semibold, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+  name: { fontWeight: weight.semibold, minWidth: 0 },
   line: { height: "3px" },
   dots: { display: "flex", gap: "3px" },
   dot: { flex: 1, height: "10px" },

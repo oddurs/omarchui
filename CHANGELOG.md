@@ -15,6 +15,10 @@ All notable changes to this project are documented here. The format follows
 
 ### Fixed
 
+- Key caps read as printed (Super, Return, Esc) instead of in capitals.
+- The stock bar draws a layout glyph on the active workspace that no longer duplicates the menu logo.
+- Phones: the demo dock is one row, the System and Omarchy navs fold behind a disclosure, keyboard-only hints hide, the bar sample clips instead of overlapping its clock, and the footer links to every page.
+- The hero's "press D" hint sits inside its sentence; long theme names wrap instead of truncating; type sizes on the Type page read in pixels.
 - Menus, notifications, the volume overlay and the bar rule had no border in either view: StyleX drops border shorthands built from variables without an error. Borders are now longhand, and a test rejects the shorthand.
 - In split view, the live screen's menus and toasts drew over the stock half. Each screen now isolates its own stacking.
 - Menu rows shrank below their height when the list scrolled.

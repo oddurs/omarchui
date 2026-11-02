@@ -15,6 +15,7 @@ import { MenuPanel } from "@/design/shell/MenuPanel";
 import { Osd } from "@/design/shell/Osd";
 import { Toast } from "@/design/shell/Toast";
 import { WindowFrame } from "@/design/shell/WindowFrame";
+import { bp } from "@/design/tokens/breakpoints.stylex";
 import { space } from "@/design/tokens/space.stylex";
 import { Tile } from "../Tile";
 import { LockSample, PartsCompare, SetupSample } from "./PartsCompare";
@@ -25,7 +26,7 @@ const s = stylex.create({
   stageWide: { display: "block", placeItems: "normal", minHeight: 0 },
   narrow: { width: "100%", maxWidth: "320px" },
   win: { height: "96px" },
-  legend: { display: "grid", gridTemplateColumns: "1fr auto 1fr", alignItems: "baseline", marginTop: space.u2 },
+  legend: { display: { default: "none", [bp.md]: "grid" }, gridTemplateColumns: "1fr auto 1fr", alignItems: "baseline", marginTop: space.u2 },
   center: { textAlign: "center" },
   end: { textAlign: "right" },
   winBody: { paddingBlock: space.u2, paddingInline: space.u3 },

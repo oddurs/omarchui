@@ -19,7 +19,7 @@ test("the reference nav is a column at desktop width", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/system/components/button");
   const dir = await page
-    .getByRole("navigation", { name: "System reference" })
+    .getByRole("navigation", { name: "System contents" })
     .locator("ul")
     .first()
     .evaluate((el) => getComputedStyle(el).flexDirection);

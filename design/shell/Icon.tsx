@@ -17,6 +17,7 @@ const PATHS = {
   expand: "M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5",
   exit: "M14 4h6v16h-6M10 8l-4 4 4 4M6 12h10",
   chevron: "M9 6l6 6-6 6",
+  dwindle: "M3 4h8v16H3zM14 4h7v7h-7zM14 14h7v6h-7z",
 } as const;
 
 export type IconName = keyof typeof PATHS;

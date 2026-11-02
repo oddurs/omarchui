@@ -1063,7 +1063,7 @@
     "props": [
       {
         "name": "icon",
-        "type": "'search' | 'wifi' | 'volume' | 'mute' | 'battery' | 'bluetooth' | 'cpu' | 'sun' | 'moon' | 'bell' | 'bellOff' | 'expand' | 'exit' | 'chevron'",
+        "type": "'search' | 'wifi' | 'volume' | 'mute' | 'battery' | 'bluetooth' | 'cpu' | 'sun' | 'moon' | 'bell' | 'bellOff' | 'expand' | 'exit' | 'chevron' | 'dwindle'",
         "required": true,
         "doc": ""
       },
@@ -1125,7 +1125,7 @@
     "props": [
       {
         "name": "name",
-        "type": "'search' | 'wifi' | 'volume' | 'mute' | 'battery' | 'bluetooth' | 'cpu' | 'sun' | 'moon' | 'bell' | 'bellOff' | 'expand' | 'exit' | 'chevron'",
+        "type": "'search' | 'wifi' | 'volume' | 'mute' | 'battery' | 'bluetooth' | 'cpu' | 'sun' | 'moon' | 'bell' | 'bellOff' | 'expand' | 'exit' | 'chevron' | 'dwindle'",
         "required": true,
         "doc": ""
       },

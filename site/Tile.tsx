@@ -13,13 +13,22 @@ import { useWorkspaces } from "./workspaces";
 const s = stylex.create({
   cell: { gridColumn: "span 12", minWidth: 0, scrollMarginTop: `calc(${size.header} + 12px + env(safe-area-inset-top, 0px))` },
   span7: { gridColumn: { default: "span 12", [bp.lg]: "span 7" } },
+  keyboardOnly: { display: { default: "none", [bp.md]: "inline" } },
   span5: { gridColumn: { default: "span 12", [bp.lg]: "span 5" } },
 });
 
-type Props = { ws: number; aside?: ReactNode; span?: 12 | 7 | 5; children: ReactNode; labelledBy: string };
+type Props = {
+  ws: number;
+  aside?: ReactNode;
+  /** Hide the aside on phones, for hints that only make sense with a keyboard. */
+  asideNeedsKeyboard?: boolean;
+  span?: 12 | 7 | 5;
+  children: ReactNode;
+  labelledBy: string;
+};
 
 /** A section as a tiled window: numbered like a workspace, focused when in view or under the mouse. */
-export function Tile({ ws, aside, span = 12, children, labelledBy }: Props) {
+export function Tile({ ws, aside, asideNeedsKeyboard, span = 12, children, labelledBy }: Props) {
   const { active, focus } = useWorkspaces();
   const sec = SECTIONS.find((x) => x.ws === ws);
   return (
@@ -45,9 +54,11 @@ export function Tile({ ws, aside, span = 12, children, labelledBy }: Props) {
               {sec?.name}
             </Text>
             {aside && (
-              <Text as="span" variant="label" tone="faint">
-                {aside}
-              </Text>
+              <span {...stylex.props(asideNeedsKeyboard && s.keyboardOnly)}>
+                <Text as="span" variant="label" tone="faint">
+                  {aside}
+                </Text>
+              </span>
             )}
           </Inline>
           {children}

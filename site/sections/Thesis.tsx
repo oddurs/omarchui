@@ -1,5 +1,5 @@
 import { ButtonLink } from "@/design/components/ButtonLink";
-import { Chord } from "@/design/components/Kbd";
+import { Kbd } from "@/design/components/Kbd";
 import { Tag } from "@/design/components/Tag";
 import { Grid } from "@/design/primitives/Grid";
 import { Inline, Stack } from "@/design/primitives/Stack";
@@ -11,7 +11,7 @@ const KEEPS = ["Keyboard first", "Tiling by default", "Square corners", "No titl
 
 export function Thesis() {
   return (
-    <Tile ws={1} labelledBy="h-thesis" aside="Press 1 to 8 to move between workspaces">
+    <Tile ws={1} labelledBy="h-thesis" aside="Press 1 to 8 to move between workspaces" asideNeedsKeyboard>
       <Text as="h1" variant="display" id="h-thesis">
         Omarchy, tuned.
       </Text>
@@ -39,13 +39,10 @@ export function Thesis() {
               Read the system
             </ButtonLink>
           </Inline>
-          <Inline gap="u2" wrap>
-            <Text variant="caption" tone="faint" as="span">
-              A working desktop with Omarchy 4&apos;s real menu and bindings, before and after, and a reference mode that cites the source. Alt stands in for
-              Super. Or press
-            </Text>
-            <Chord chord="D" />
-          </Inline>
+          <Text variant="caption" tone="faint" measure>
+            A working desktop with Omarchy 4&apos;s real menu and bindings, before and after, and a reference mode that cites the source. Alt stands in for
+            Super. Or press <Kbd>D</Kbd>.
+          </Text>
         </Stack>
       </Grid>
       <HeroPreview />

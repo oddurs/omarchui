@@ -22,6 +22,9 @@ const s = stylex.create({
     borderInlineWidth: stroke.hair,
     borderBottomWidth: stroke.strong,
     whiteSpace: "nowrap",
+    // Keys read as printed on the cap: Super, Return, Esc. The label preset would shout them.
+    textTransform: "none",
+    letterSpacing: "normal",
   },
   chord: { display: "inline-flex", alignItems: "center", gap: space.u1, whiteSpace: "nowrap" },
   plus: { color: color["--text-3"] },

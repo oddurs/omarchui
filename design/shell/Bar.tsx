@@ -32,7 +32,7 @@ const s = stylex.create({
     flexShrink: 0,
     height: chrome.barHeight,
     display: "grid",
-    gridTemplateColumns: "1fr auto 1fr",
+    gridTemplateColumns: "minmax(0, 1fr) auto minmax(0, 1fr)",
     alignItems: "center",
     paddingInline: space.u2,
     backgroundColor: color["--wall"],
@@ -42,7 +42,7 @@ const s = stylex.create({
     color: color["--text-2"],
   },
   framed: { borderWidth: stroke.hair, borderStyle: "solid", borderColor: color["--line"] },
-  zone: { display: "flex", alignItems: "center", gap: "2px", minWidth: 0 },
+  zone: { display: "flex", alignItems: "center", gap: "2px", minWidth: 0, overflow: "hidden" },
   state: { justifyContent: "flex-end", gap: space.u1 },
   press: {
     display: "inline-grid",
@@ -143,7 +143,7 @@ export function Bar({ workspaces, clock, modules, onWorkspace, onMark, framed }:
             <span {...stylex.props(w.active && s.activeNumber)}>{w.n}</span>
             {w.active && (
               <span aria-hidden {...stylex.props(s.activeGlyph)}>
-                <Mark />
+                <Icon name="dwindle" />
               </span>
             )}
           </button>
