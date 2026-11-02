@@ -11,7 +11,9 @@ export type Command =
   | { type: "launcher" }
   | { type: "menu"; path?: string[] }
   | { type: "close" }
-  | { type: "fullscreen" }
+  | { type: "fullscreen"; kind?: "full" | "max" }
+  | { type: "float" }
+  | { type: "pop" }
   | { type: "flip" }
   | { type: "focus"; dir: Dir }
   | { type: "swap"; dir: Dir }

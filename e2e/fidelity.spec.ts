@@ -9,7 +9,7 @@ type Item = { id: string; value: string | number; source?: string };
 type Spec = { items?: Item[]; [part: string]: unknown };
 
 const load = (file: string) => JSON.parse(readFileSync(path.join(process.cwd(), "research/omarchy/spec", `${file}.json`), "utf8")) as Spec;
-const SPECS = { bar: load("bar"), menu: load("menu"), services: load("services") };
+const SPECS = { bar: load("bar"), menu: load("menu"), services: load("services"), windows: load("windows") };
 
 /** A numeric value from a spec file, with its citation for the failure message. */
 function spec(file: keyof typeof SPECS, id: string, part?: string): { n: number; why: string } {
@@ -302,5 +302,46 @@ test.describe("the stock view matches Omarchy's source", () => {
     ];
     const open = spec("services", "toast.deck.gap", "notifications");
     expect(b.y - (a.y + a.height), open.why).toBeCloseTo(open.n, 0);
+  });
+
+  test("windows", async ({ page }) => {
+    const screen = await stock(page);
+    for (let i = 0; i < 3; i++) await page.keyboard.press("Alt+Enter");
+    const wins = screen.locator("section[aria-label=Terminal]");
+    await expect(wins).toHaveCount(3);
+    await page.evaluate(() =>
+      Promise.all(
+        document
+          .getAnimations()
+          .filter((x) => x.effect?.getTiming().iterations !== Infinity)
+          .map((x) => x.finished.catch(() => undefined)),
+      ),
+    );
+    const [a, b, c] = [await box(wins.nth(0)), await box(wins.nth(1)), await box(wins.nth(2))];
+    const gin = spec("windows", "gaps.in", "layout");
+    const gout = spec("windows", "gaps.out", "layout");
+    // Side by side, then the right tile stacked: force_split 2, w > h. looknfeel.lua:97.
+    expect(b.x - (a.x + a.width), `2 x ${gin.why}`).toBeCloseTo(2 * gin.n, 0);
+    expect(c.y - (b.y + b.height), `2 x ${gin.why}`).toBeCloseTo(2 * gin.n, 0);
+    expect(c.x, "the third window stacks under the second").toBeCloseTo(b.x, 0);
+    expect(a.x, gout.why).toBeCloseTo(gout.n, 0);
+    const border = spec("windows", "border.size", "layout");
+    expect(await css(wins.nth(0), "border-top-width"), border.why).toBe(`${border.n}px`);
+
+    // btop floats centred at 875x600.
+    await page.keyboard.press("Alt+Shift+t");
+    const btop = screen.locator("section[aria-label=btop]");
+    await expect(btop).toBeVisible();
+    await css(btop, "opacity");
+    await page.evaluate(() => Promise.all(document.getAnimations().map((x) => x.finished.catch(() => undefined))));
+    const f = await box(btop);
+    expect([Math.round(f.width), Math.round(f.height)], spec("windows", "float.tag.size", "floating").why).toEqual([875, 600]);
+    const area = await box(screen.locator("[data-wallpaper]"));
+    expect(Math.abs(f.x + f.width / 2 - area.width / 2), spec("windows", "float.tag.center", "floating").why).toBeLessThanOrEqual(1);
+
+    // A new window pops in from 87% over 328ms on easeOutQuint.
+    await page.keyboard.press("Alt+Enter");
+    const pop = wins.last().locator("xpath=ancestor::div[2]");
+    expect(await pop.evaluate((e) => getComputedStyle(e).animationDuration), spec("windows", "anim.windowsIn", "animations").why).toBe("0.328s");
   });
 });

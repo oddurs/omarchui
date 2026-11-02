@@ -1,46 +1,63 @@
 import { describe, expect, it } from "vitest";
-import { dwindle, neighbor, type Rect } from "@/lib/layout";
+import { insert, leaves, neighbor, rectsOf, remove, swapIds, toggleSplit, type Node } from "@/lib/layout";
 
-const area = (r: Rect) => r.w * r.h;
-const overlaps = (a: Rect, b: Rect) => a.x < b.x + b.w - 1e-9 && b.x < a.x + a.w - 1e-9 && a.y < b.y + b.h - 1e-9 && b.y < a.y + a.h - 1e-9;
+const WIDE = 16 / 9;
+const build = (ids: string[], at: (i: number) => string | null = (i) => ids[i - 1] ?? null): Node | null =>
+  ids.reduce<Node | null>((t, id, i) => insert(t, at(i), id, WIDE), null);
 
-describe("dwindle", () => {
+describe("dwindle, as Omarchy configures Hyprland", () => {
   it("gives a lone window the whole workspace", () => {
-    expect(dwindle(["a"], 16 / 9).get("a")).toEqual({ x: 0, y: 0, w: 1, h: 1 });
+    expect(rectsOf(build(["a"])).get("a")).toEqual({ x: 0, y: 0, w: 1, h: 1 });
   });
 
-  it("splits side by side on a wide screen, then stacks the right half", () => {
-    const r = dwindle(["a", "b", "c"], 16 / 9);
+  it("splits the focused tile in half, the new window right or below (force_split 2)", () => {
+    const r = rectsOf(build(["a", "b", "c"]));
     expect(r.get("a")).toEqual({ x: 0, y: 0, w: 0.5, h: 1 });
+    // b's tile is taller than wide on a 16:9 screen, so c stacks under it.
     expect(r.get("b")).toEqual({ x: 0.5, y: 0, w: 0.5, h: 0.5 });
     expect(r.get("c")).toEqual({ x: 0.5, y: 0.5, w: 0.5, h: 0.5 });
   });
 
-  it("flip swaps the first split axis", () => {
-    expect(dwindle(["a", "b"], 16 / 9, true).get("a")).toEqual({ x: 0, y: 0, w: 1, h: 0.5 });
+  it("splits whichever window has focus, not the last one opened", () => {
+    const t = build(["a", "b", "c"], (i) => (i === 2 ? "a" : (["a", "b", "c"][i - 1] ?? null)));
+    const r = rectsOf(t);
+    expect(r.get("a")).toEqual({ x: 0, y: 0, w: 0.5, h: 0.5 });
+    expect(r.get("c")).toEqual({ x: 0, y: 0.5, w: 0.5, h: 0.5 });
+    expect(r.get("b")).toEqual({ x: 0.5, y: 0, w: 0.5, h: 1 });
   });
 
-  it.each([1, 2, 3, 5, 8])("tiles %i windows with no overlap and no gaps", (n) => {
-    const ids = Array.from({ length: n }, (_, i) => `w${i}`);
-    const rects = [...dwindle(ids, 16 / 10).values()];
-    expect(rects.reduce((sum, r) => sum + area(r), 0)).toBeCloseTo(1, 10);
-    for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) expect(overlaps(rects[i]!, rects[j]!)).toBe(false);
+  it("hands a closed window's tile to its sibling", () => {
+    const t = remove(build(["a", "b", "c"]), "b");
+    expect(leaves(t)).toEqual(["a", "c"]);
+    expect(rectsOf(t).get("c")).toEqual({ x: 0.5, y: 0, w: 0.5, h: 1 });
+  });
+
+  it("flips only the split that holds the window (Super+J)", () => {
+    const t = toggleSplit(build(["a", "b", "c"]), "c");
+    const r = rectsOf(t);
+    expect(r.get("a")).toEqual({ x: 0, y: 0, w: 0.5, h: 1 });
+    expect(r.get("b")).toEqual({ x: 0.5, y: 0, w: 0.25, h: 1 });
+  });
+
+  it("swaps two windows without moving the splits", () => {
+    const r = rectsOf(swapIds(build(["a", "b"]), "a", "b"));
+    expect(r.get("b")).toEqual({ x: 0, y: 0, w: 0.5, h: 1 });
+  });
+
+  it("covers the workspace exactly, with no overlaps", () => {
+    const rects = [...rectsOf(build(["a", "b", "c", "d", "e"])).values()];
+    expect(rects.reduce((sum, r) => sum + r.w * r.h, 0)).toBeCloseTo(1);
   });
 });
 
-describe("neighbor", () => {
-  const r = dwindle(["a", "b", "c"], 16 / 9);
-
-  it("moves right from the master to the nearest stacked tile", () => {
+describe("moving focus", () => {
+  const r = rectsOf(build(["a", "b", "c"]));
+  it("finds the tile beside or below", () => {
     expect(neighbor(r, "a", "right")).toBe("b");
-  });
-
-  it("moves down and back up within the stack", () => {
     expect(neighbor(r, "b", "down")).toBe("c");
     expect(neighbor(r, "c", "up")).toBe("b");
   });
-
-  it("returns null at the edge", () => {
+  it("finds nothing past the edge", () => {
     expect(neighbor(r, "a", "left")).toBeNull();
     expect(neighbor(r, "a", "up")).toBeNull();
   });

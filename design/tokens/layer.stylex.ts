@@ -8,6 +8,8 @@ export const layer = stylex.defineVars({
   cardMid: "2",
   cardFront: "3",
   window: "1",
+  /** Floating and pinned windows: above the tiles, under a fullscreen window. */
+  floating: "4",
   fullscreen: "5",
   sticky: "20",
   toast: "30",

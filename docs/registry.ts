@@ -445,8 +445,10 @@ export const ENTRIES: Entry[] = [
     instead: [{ name: "Box", slug: "box", when: "it is a page surface, not an application window." }],
     anatomy: [
       ["Frame", "surface fill, Omarchy's 2px border in line-2."],
-      ["Active", "the border turns accent."],
+      ["Active", "the border turns accent over 431ms, as Hyprland's border animation does."],
       ["Urgent", "the border turns err."],
+      ["Popped", "Super+O: floating, pinned to every workspace, corners rounded 8px."],
+      ["Bare", "true fullscreen (Super+F): no border."],
     ],
     dos: ["Name the window with label; it has no visible title."],
     donts: ["Don't draw chrome inside the frame to fake a title bar."],
