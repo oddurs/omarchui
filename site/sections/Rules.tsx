@@ -7,13 +7,13 @@ import { Tile } from "../Tile";
 const RULES = [
   [
     "Unit",
-    "Style.space steps of 2, 3, 4, 6, 8, 10, 12, 14 and 18px. The bar is 26, menu rows 50, card padding 18.",
-    "One 4px unit. Each size moves to the nearest step and never more than 2px: bar 28, rows 48, padding 16. The layout stays Omarchy's.",
+    "Style.space steps of 2, 3, 4, 6, 8, 10, 12, 14 and 18px, a pixel or two apart. The bar is 26, menu rows 50, card padding 18.",
+    "One 4px unit. Every step lands on it, one unit from Omarchy's at most, so nine steps become 2, 4, 8, 12, 16 and 20. Bar 28, rows 48, padding 16. The layout stays Omarchy's.",
   ],
   [
     "Type",
-    "JetBrains Mono at eight sizes, except notifications, which switch to Liberation Sans. Regular, medium and bold.",
-    "One face for the whole shell, notifications included. Two weights: regular and medium.",
+    "JetBrains Mono at eight sizes from 10 to 16px, most a pixel apart, and four raw hero sizes up to 64. Notifications switch to Liberation Sans. Regular, medium and bold.",
+    "One face for the whole shell, at Omarchy's own base-size 13 with the loud end pinned: 11, 12, 13, 14 and 15, then 24, 28 and one 44px hero. Two weights: regular and medium.",
   ],
   [
     "Color",

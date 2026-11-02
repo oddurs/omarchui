@@ -45,7 +45,7 @@ export const PARTS: Record<PartId, Part> = {
     measures: [
       m("Height", spacing("Bar", "height (horizontal / vertical)"), "28px · chrome.barHeight", "height"),
       m("Edge padding", spacing("Bar", "edge padding left/right"), "8px · space.u2", "paddingLeft"),
-      m("Label size", type("Bar labels", /^(\d+)/), "12px · chrome.clockText", "fontSize", px, "[data-ref=clock]"),
+      m("Label size", type("Bar labels", /^(\d+)/), "13px · shelltype.body", "fontSize", px, "[data-ref=clock]"),
     ],
   },
   workspace: {
@@ -66,7 +66,7 @@ export const PARTS: Record<PartId, Part> = {
     doc: "/system/shell/bar",
     measures: [
       { label: "Format", omarchy: "dddd HH:mm", src: "config/omarchy/shell.json:27-28", tuned: "dddd HH:mm, unchanged" },
-      m("Size", type("Bar labels", /^(\d+)/), "12px · chrome.clockText", "fontSize"),
+      m("Size", type("Bar labels", /^(\d+)/), "13px · shelltype.body", "fontSize"),
       { label: "Face", omarchy: "JetBrainsMono Nerd Font", src: "shell/Commons/Style.qml:267-277", tuned: "JetBrains Mono, unchanged", probe: "fontFamily" },
     ],
   },
@@ -93,7 +93,7 @@ export const PARTS: Record<PartId, Part> = {
     name: "Menu card",
     doc: "/system/shell/menu-panel",
     measures: [
-      m("Width", spacing("Menu card", "width / wide width"), "300px · chrome.menuWidth", "width"),
+      m("Width", spacing("Menu card", "width / wide width"), "324px · chrome.menuWidth", "width"),
       m("Border", spacing("Menu card", "padding / header / row / row+detail / row spacing / border", 5), "2px · chrome.menuBorderWidth", "borderTopWidth"),
       m("Padding", spacing("Menu card", "padding / header / row / row+detail / row spacing / border", 0), "16px · chrome.menuPad", "paddingLeft"),
     ],
@@ -103,7 +103,7 @@ export const PARTS: Record<PartId, Part> = {
     doc: "/system/shell/menu-panel",
     measures: [
       m("Height", spacing("Menu card", "padding / header / row / row+detail / row spacing / border", 2), "48px · chrome.row", "height"),
-      m("Label size", type("Menu", /rows (\d+)/), "16px · chrome.menuLabel", "fontSize", px, "span:nth-child(2) > span:first-child"),
+      m("Label size", type("Menu", /rows (\d+)/), "15px · shelltype.heading", "fontSize", px, "span:nth-child(2) > span:first-child"),
       m("Icon column", spacing("Menu row", "icon column / icon left inset"), "36px · chrome.glyphCol"),
     ],
   },
@@ -111,7 +111,7 @@ export const PARTS: Record<PartId, Part> = {
     name: "Notification",
     doc: "/system/shell/toast",
     measures: [
-      m("Width", spacing("Notifications", "width / card gap / deck gap / border / padding-x / icon slot", 0), "380px · chrome.toastWidth", "width"),
+      m("Width", spacing("Notifications", "width / card gap / deck gap / border / padding-x / icon slot", 0), "412px · chrome.toastWidth", "width"),
       m(
         "Border",
         spacing("Notifications", "width / card gap / deck gap / border / padding-x / icon slot", 3),
@@ -119,7 +119,7 @@ export const PARTS: Record<PartId, Part> = {
         "borderTopWidth",
       ),
       m("Padding", spacing("Notifications", "width / card gap / deck gap / border / padding-x / icon slot", 4), "12px · chrome.toastPad", "paddingLeft"),
-      m("Title size", type("Notifications", /title (\d+)/), "14px · chrome.toastTitle", "fontSize", px, "span:nth-child(1)"),
+      m("Title size", type("Notifications", /title (\d+)/), "15px · shelltype.title", "fontSize", px, "span:nth-child(1)"),
     ],
   },
   osd: {

@@ -4,6 +4,7 @@ import * as stylex from "@stylexjs/stylex";
 import { useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
 import { face } from "../primitives/typography";
 import { chrome } from "../tokens/chrome.stylex";
+import { shelltype } from "../tokens/shelltype.stylex";
 
 // Omarchy's carousel geometry, in pixels. shell/plugins/image-picker/ImagePicker.qml:58-64.
 const CARD_W = 768;
@@ -32,7 +33,7 @@ const s = stylex.create({
   label: {
     marginTop: "16px",
     textAlign: "center",
-    fontSize: chrome.pickerLabel,
+    fontSize: shelltype.display,
     fontWeight: chrome.pickerWeight,
     color: chrome.pickerInk,
     whiteSpace: "nowrap",
@@ -41,7 +42,7 @@ const s = stylex.create({
     // Qt's Text.Outline in the dim colour at 0.7, so the label reads over any wallpaper.
     textShadow: `0 0 2px color-mix(in srgb, ${chrome.pickerDim} 70%, transparent), 0 0 1px ${chrome.pickerDim}`,
   },
-  filter: { marginTop: "8px", textAlign: "center", fontSize: chrome.pickerFilter, color: chrome.pickerInk, opacity: 0.85 },
+  filter: { marginTop: "8px", textAlign: "center", fontSize: shelltype.title, color: chrome.pickerInk, opacity: 0.85 },
 });
 
 const pos = stylex.create({

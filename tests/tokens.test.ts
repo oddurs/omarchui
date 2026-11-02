@@ -15,3 +15,12 @@ describe("color tokens", () => {
     expect(m?.[2]).toBe(THEMES[DEFAULT_DARK][role]);
   });
 });
+
+describe("the chrome reference table", () => {
+  it("reads stock values that carry a source comment", async () => {
+    const { tokens } = await import("@/docs/tokens");
+    const gapIn = tokens.chrome().find((r) => r.name === "gapIn");
+    // `gapIn: "10px", // gaps_in 5 per side, looknfeel.lua:8` once fell back to the tuned 12px.
+    expect(gapIn).toMatchObject({ value: "12px", stock: "10px" });
+  });
+});

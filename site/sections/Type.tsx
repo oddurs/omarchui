@@ -1,10 +1,34 @@
+import * as stylex from "@stylexjs/stylex";
 import { Row, Rows } from "@/design/components/Rows";
 import { Box } from "@/design/primitives/Box";
 import { Stack } from "@/design/primitives/Stack";
 import { Text } from "@/design/primitives/Text";
 import type { TypeVariant } from "@/design/primitives/typography";
 import { Intro } from "@/design/patterns/Intro";
+import { shelltype } from "@/design/tokens/shelltype.stylex";
+import { font } from "@/design/tokens/type.stylex";
+import { tokens } from "@/docs/tokens";
 import { Tile } from "../Tile";
+
+// The desktop's steps, each set at its own size in the shell's face.
+const desk = stylex.create({
+  caption: { fontFamily: font.mono, fontSize: shelltype.caption },
+  bodySmall: { fontFamily: font.mono, fontSize: shelltype.bodySmall },
+  body: { fontFamily: font.mono, fontSize: shelltype.body },
+  subtitle: { fontFamily: font.mono, fontSize: shelltype.subtitle },
+  title: { fontFamily: font.mono, fontSize: shelltype.title },
+  display: { fontFamily: font.mono, fontSize: shelltype.display, lineHeight: 1.2 },
+  clockDate: { fontFamily: font.mono, fontSize: shelltype.clockDate, lineHeight: 1.1 },
+});
+const DESK: { name: keyof typeof desk; use: string }[] = [
+  { name: "caption", use: "SECTION HEADS · W 45" },
+  { name: "bodySmall", use: "a search result's path" },
+  { name: "body", use: "Monday 15:07 · the terminal" },
+  { name: "subtitle", use: "a weather reading" },
+  { name: "title", use: "Appearance · a panel's name" },
+  { name: "display", use: "Tokyo Night" },
+  { name: "clockDate", use: "November 2" },
+];
 
 export const SPECIMEN: { name: TypeVariant; face: string; metric: string; sample: string; mono?: boolean }[] = [
   { name: "display", face: "Mono 800", metric: "40–76 / 0.95", sample: "14:32" },
@@ -53,6 +77,31 @@ export function Type() {
             </Text>
           </Row>
         ))}
+      </Rows>
+      <Text variant="label" tone="faint">
+        On the desktop
+      </Text>
+      <Text variant="small" tone="muted">
+        Omarchy&apos;s own scale at its roomier base-size, 13, so nothing on a 1x screen sits at 10px. Base 13 would also grow the loud end, so the menu&apos;s
+        names, the display sizes and the clock and weather heroes are pinned back: eight text sizes, where Omarchy has ten.
+      </Text>
+      <Rows>
+        {DESK.map((x) => {
+          const t = tokens.shelltype().find((r) => r.name === x.name);
+          return (
+            <Row key={x.name} layout="keyed">
+              <Stack gap="u0">
+                <Text as="span" variant="caption" face="mono" weight="semibold">
+                  {x.name}
+                </Text>
+                <Text as="span" variant="caption" face="mono" tone="faint">
+                  {t?.stock} → {t?.value}
+                </Text>
+              </Stack>
+              <span {...stylex.props(desk[x.name])}>{x.use}</span>
+            </Row>
+          );
+        })}
       </Rows>
       <Text variant="caption" tone="faint">
         JetBrains Mono is Omarchy&apos;s default monospace. Instrument Sans is for these pages only.

@@ -3,6 +3,8 @@
 import * as stylex from "@stylexjs/stylex";
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { color } from "@/design/tokens/color.stylex";
+import { shellspace } from "@/design/tokens/shellspace.stylex";
+import { shelltype } from "@/design/tokens/shelltype.stylex";
 import { stroke } from "@/design/tokens/size.stylex";
 import { font, weight } from "@/design/tokens/type.stylex";
 import { complete, prompt, type Line } from "@/lib/shell";
@@ -10,15 +12,16 @@ import { tones } from "../tones";
 import type { AppProps } from "./types";
 
 const s = stylex.create({
-  root: { flex: 1, minHeight: 0, overflowY: "auto", paddingBlock: "10px", paddingInline: "12px", cursor: "text" },
-  line: { whiteSpace: "pre-wrap", overflowWrap: "anywhere", minHeight: "1.62em" },
+  // foot pads the cell grid with 14px of background. config/foot/foot.ini:5.
+  root: { flex: 1, minHeight: 0, overflowY: "auto", padding: shellspace.xxxl, cursor: "text" },
+  line: { whiteSpace: "pre-wrap", overflowWrap: "anywhere", minHeight: shelltype.termLine },
   // A program that turns auto-wrap off, as fastfetch does, is cut at the edge.
   clip: { whiteSpace: "pre", overflow: "hidden" },
   // SGR bold; semibold is the system's heaviest working weight.
   bold: { fontWeight: weight.semibold },
   italic: { fontStyle: "italic" },
   underline: { textDecorationLine: "underline" },
-  block: { display: "inline-block", height: "1.62em", verticalAlign: "top", backgroundColor: "currentColor" },
+  block: { display: "inline-block", height: shelltype.termLine, verticalAlign: "top", backgroundColor: "currentColor" },
   inputRow: { display: "flex", alignItems: "baseline" },
   input: {
     flex: 1,
@@ -43,7 +46,7 @@ const cells = stylex.create({ w: (n: number) => ({ width: `${n}ch` }) });
 const LINE = "linear-gradient(currentColor, currentColor)";
 const LINES = `${LINE}, ${LINE}`;
 const box = stylex.create({
-  cell: { display: "inline-block", height: "1.62em", verticalAlign: "top", backgroundRepeat: "no-repeat" },
+  cell: { display: "inline-block", height: shelltype.termLine, verticalAlign: "top", backgroundRepeat: "no-repeat" },
   "─": { backgroundImage: LINE, backgroundPosition: "0 50%", backgroundSize: `100% ${stroke.hair}` },
   "│": { backgroundImage: LINE, backgroundPosition: "50% 0", backgroundSize: `${stroke.hair} 100%` },
   "┌": { backgroundImage: LINES, backgroundPosition: "100% 50%, 50% 100%", backgroundSize: `50% ${stroke.hair}, ${stroke.hair} 50%` },

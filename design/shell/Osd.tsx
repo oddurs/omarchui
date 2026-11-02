@@ -1,6 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { face, numeric, typo } from "../primitives/typography";
 import { chrome } from "../tokens/chrome.stylex";
+import { shelltype } from "../tokens/shelltype.stylex";
 import { Icon, type IconName } from "./Icon";
 
 const s = stylex.create({
@@ -21,12 +22,12 @@ const s = stylex.create({
   track: { position: "relative", height: chrome.osdTrack, backgroundColor: chrome.osdTrackBg },
   fill: { position: "absolute", top: 0, bottom: 0, left: 0, backgroundColor: chrome.osdFill },
   muted: { backgroundColor: chrome.osdMutedFill },
-  value: { fontSize: chrome.osdValue, fontWeight: chrome.osdValueWeight, textAlign: "right" },
+  value: { fontSize: shelltype.title, fontWeight: chrome.osdValueWeight, textAlign: "right" },
   // A message instead of a level: the glyph, 11px, then the text, at most 190px. Osd.qml:22,34,49.
   said: { display: "flex", alignItems: "center", gap: "11px" },
   message: {
     maxWidth: "190px",
-    fontSize: chrome.osdValue,
+    fontSize: shelltype.title,
     fontWeight: chrome.osdValueWeight,
     whiteSpace: "nowrap",
     overflow: "hidden",

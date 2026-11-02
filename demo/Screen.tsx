@@ -16,6 +16,8 @@ import { Osd } from "@/design/shell/Osd";
 import { ToastDeck } from "@/design/shell/Toast";
 import { WindowFrame } from "@/design/shell/WindowFrame";
 import { chrome, stock } from "@/design/tokens/chrome.stylex";
+import { stockSpace } from "@/design/tokens/shellspace.stylex";
+import { stockType } from "@/design/tokens/shelltype.stylex";
 import { color } from "@/design/tokens/color.stylex";
 import { layer } from "@/design/tokens/layer.stylex";
 import { motion } from "@/design/tokens/motion.stylex";
@@ -404,7 +406,7 @@ export function Screen({ state, dispatch, exec, mode, interactive, id, onToastsH
   const barHidden = state.fullscreen[state.ws]?.kind === "full";
 
   return (
-    <div ref={root} {...stylex.props(s.screen, mode === "stock" && stock)} data-mode={mode} data-screen={id}>
+    <div ref={root} {...stylex.props(s.screen, mode === "stock" && [stock, stockType, stockSpace])} data-mode={mode} data-screen={id}>
       <Wallpaper src={backgroundSrc(state.theme, backgroundIndex(state.theme, state.bg[state.theme]))} />
       <div {...stylex.props(barHidden && s.noBar)}>
         <Bar

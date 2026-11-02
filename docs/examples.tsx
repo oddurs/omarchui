@@ -325,6 +325,17 @@ export const EXAMPLES: Record<string, Example> = {
               { id: "tuned", label: "Tuned" },
             ]}
           />
+          <Segmented
+            label="View, in a window"
+            face="mono"
+            value={v}
+            onChange={setV}
+            options={[
+              { id: "stock", label: "Stock" },
+              { id: "split", label: "Split" },
+              { id: "tuned", label: "Tuned" },
+            ]}
+          />
           <Text as="span" variant="small" tone="faint">
             Showing {v}
           </Text>

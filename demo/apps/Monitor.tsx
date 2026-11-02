@@ -2,14 +2,17 @@
 
 import * as stylex from "@stylexjs/stylex";
 import { color } from "@/design/tokens/color.stylex";
+import { shellspace } from "@/design/tokens/shellspace.stylex";
+import { shelltype } from "@/design/tokens/shelltype.stylex";
 import { motion } from "@/design/tokens/motion.stylex";
 import type { AppProps } from "./types";
 
 const s = stylex.create({
-  root: { flex: 1, minHeight: 0, overflow: "auto", paddingBlock: "10px", paddingInline: "12px", display: "grid", gap: "14px", alignContent: "start" },
-  head: { display: "flex", justifyContent: "space-between", color: color["--text-3"], marginBottom: "4px" },
+  // btop draws in foot's cell grid: foot's pad at the edge, a blank row between boxes, a cell between columns.
+  root: { flex: 1, minHeight: 0, overflow: "auto", padding: shellspace.xxxl, display: "grid", gap: shelltype.termLine, alignContent: "start" },
+  head: { display: "flex", justifyContent: "space-between", color: color["--text-3"] },
   title: { color: color["--accent"] },
-  grid: { display: "grid", gridTemplateColumns: "3em 1fr 3.2em", alignItems: "center", columnGap: "8px", rowGap: "3px" },
+  grid: { display: "grid", gridTemplateColumns: "3em 1fr 3.2em", alignItems: "center", columnGap: "1ch" },
   track: { position: "relative", height: "6px", backgroundColor: color["--sunken"], overflow: "hidden" },
   fill: {
     position: "absolute",
@@ -25,11 +28,11 @@ const s = stylex.create({
   hi: { backgroundColor: color["--red"] },
   val: { textAlign: "right", color: color["--text-2"], fontVariantNumeric: "tabular-nums" },
   faint: { color: color["--text-3"] },
-  spark: { width: "100%", height: "40px", display: "block" },
+  spark: { width: "100%", height: `calc(${shelltype.termLine} * 2)`, display: "block" },
   line: { fill: "none", stroke: color["--cyan"], strokeWidth: 1.5 },
   area: { fill: color["--tint"] },
   table: { width: "100%", borderCollapse: "collapse", fontVariantNumeric: "tabular-nums" },
-  th: { textAlign: "left", fontWeight: 400, color: color["--text-3"], paddingBottom: "2px" },
+  th: { textAlign: "left", fontWeight: 400, color: color["--text-3"] },
   num: { textAlign: "right" },
   sel: { backgroundColor: color["--tint"] },
 });

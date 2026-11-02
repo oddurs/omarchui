@@ -5,6 +5,7 @@ import { useId, type ReactNode } from "react";
 import { face } from "../primitives/typography";
 import { chrome } from "../tokens/chrome.stylex";
 import { focus } from "../tokens/effect.stylex";
+import { shellspace } from "../tokens/shellspace.stylex";
 import { shelltype } from "../tokens/shelltype.stylex";
 
 // research/omarchy/spec/panels.json: the container, then the control kit (shell/Ui/Panel*.qml).
@@ -17,8 +18,8 @@ const s = stylex.create({
   card: {
     display: "flex",
     flexDirection: "column",
-    gap: chrome.panelGap,
-    padding: chrome.panelPad,
+    gap: shellspace.panelGap,
+    padding: shellspace.popupPadding,
     maxHeight: "calc(100% - 36px)",
     overflowY: "auto",
     textAlign: "left",
@@ -33,9 +34,9 @@ const s = stylex.create({
     animationTimingFunction: EASE,
     animationFillMode: "both",
   },
-  hero: { display: "grid", gridTemplateColumns: "auto minmax(0, 1fr) auto", alignItems: "center", columnGap: "14px", minHeight: "34px" },
+  hero: { display: "grid", gridTemplateColumns: "auto minmax(0, 1fr) auto", alignItems: "center", columnGap: shellspace.xxxl, minHeight: "34px" },
   heroDim: { opacity: 0.5 },
-  heroText: { display: "flex", flexDirection: "column", gap: "2px", minWidth: 0 },
+  heroText: { display: "flex", flexDirection: "column", gap: shellspace.xxs, minWidth: 0 },
   title: { fontSize: shelltype.title, fontWeight: chrome.panelBold, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
   // Caption 10, bold, tracked 1.2, uppercase, in Qt.darker(foreground, 1.4). PanelHero.
   meta: {
@@ -48,12 +49,12 @@ const s = stylex.create({
     overflow: "hidden",
     textOverflow: "ellipsis",
   },
-  section: { display: "flex", flexDirection: "column", gap: "6px" },
-  head: { display: "flex", justifyContent: "space-between", alignItems: "baseline", paddingTop: "2px", paddingRight: "6px" },
+  section: { display: "flex", flexDirection: "column", gap: shellspace.md },
+  head: { display: "flex", justifyContent: "space-between", alignItems: "baseline", paddingTop: shellspace.xxs, paddingRight: shellspace.md },
   headText: { fontSize: shelltype.caption, fontWeight: chrome.panelBold, color: chrome.panelDim, letterSpacing: "1px" },
   rule: { height: "1px", flexShrink: 0, backgroundColor: chrome.panelLine },
   // Slider: a 4px rounded track inset by half the 14px knob, foreground fill, a knob ringed in the bar's background.
-  slider: { position: "relative", height: "30px", marginInline: "6px", display: "flex", alignItems: "center" },
+  slider: { position: "relative", height: "30px", marginInline: shellspace.md, display: "flex", alignItems: "center" },
   track: { position: "absolute", left: "7px", right: "7px", height: "4px", borderRadius: "2px", backgroundColor: chrome.panelPick },
   fill: { position: "absolute", left: "7px", height: "4px", borderRadius: "2px", backgroundColor: chrome.panelInk },
   knob: {
@@ -82,7 +83,7 @@ const s = stylex.create({
     flexShrink: 0,
     width: "42px",
     height: "22px",
-    margin: "6px",
+    margin: shellspace.md,
     padding: 0,
     borderWidth: "1px",
     borderStyle: "solid",
@@ -110,11 +111,11 @@ const s = stylex.create({
   row: {
     display: "flex",
     alignItems: "center",
-    gap: "10px",
+    gap: shellspace.xl,
     width: "100%",
     minHeight: "30px",
-    paddingBlock: "6px",
-    paddingInline: "10px",
+    paddingBlock: shellspace.md,
+    paddingInline: shellspace.xl,
     borderWidth: "1px",
     borderStyle: "solid",
     borderColor: "transparent",
@@ -128,20 +129,20 @@ const s = stylex.create({
     ":focus-visible": { backgroundColor: chrome.selBg, borderColor: chrome.panelEdge },
   },
   rowCurrent: { backgroundColor: chrome.panelPick, ":hover": { backgroundColor: chrome.panelPick } },
-  rowText: { display: "flex", flexDirection: "column", gap: "1px", minWidth: 0, flex: 1 },
+  rowText: { display: "flex", flexDirection: "column", gap: shellspace.hairline, minWidth: 0, flex: 1 },
   rowName: { fontSize: shelltype.body, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
   rowStrong: { fontWeight: chrome.panelBold },
   rowSub: { fontSize: shelltype.caption, color: chrome.panelDim },
   rowEnd: { marginLeft: "auto", color: chrome.panelDim },
   // Pills: equal bordered buttons 6px apart, the current one selected. Power profiles, DNS.
-  pills: { display: "grid", gridAutoFlow: "column", gridAutoColumns: "1fr", gap: "6px" },
+  pills: { display: "grid", gridAutoFlow: "column", gridAutoColumns: "1fr", gap: shellspace.md },
   pill: {
     display: "inline-flex",
     alignItems: "center",
     justifyContent: "center",
-    gap: "8px",
-    paddingBlock: "8px",
-    paddingInline: "10px",
+    gap: shellspace.lg,
+    paddingBlock: shellspace.lg,
+    paddingInline: shellspace.xl,
     fontSize: shelltype.bodySmall,
     borderWidth: "1px",
     borderStyle: "solid",

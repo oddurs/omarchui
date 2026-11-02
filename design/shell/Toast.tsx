@@ -4,6 +4,8 @@ import * as stylex from "@stylexjs/stylex";
 import { useEffect, useRef, useState } from "react";
 import { face, typo } from "../primitives/typography";
 import { chrome } from "../tokens/chrome.stylex";
+import { shellspace } from "../tokens/shellspace.stylex";
+import { shelltype } from "../tokens/shelltype.stylex";
 import { focus } from "../tokens/effect.stylex";
 import { layer } from "../tokens/layer.stylex";
 import { motion } from "../tokens/motion.stylex";
@@ -40,11 +42,12 @@ const s = stylex.create({
   critical: { borderColor: chrome.critBorder },
   // Behind the front of a closed deck only the plate shows. Toast.qml:91.
   hidden: { visibility: "hidden" },
-  head: { display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", alignItems: "start", columnGap: "8px" },
+  head: { display: "grid", gridTemplateColumns: "minmax(0, 1fr) auto", alignItems: "start", columnGap: shellspace.lg },
   title: {
     fontFamily: chrome.toastFace,
-    fontSize: chrome.toastTitle,
+    fontSize: shelltype.title,
     fontWeight: chrome.toastTitleWeight,
+    lineHeight: shelltype.copy,
     display: "-webkit-box",
     WebkitBoxOrient: "vertical",
     WebkitLineClamp: 3,
@@ -54,6 +57,7 @@ const s = stylex.create({
     fontFamily: chrome.toastFace,
     fontSize: chrome.toastBody,
     color: chrome.toastBodyInk,
+    lineHeight: shelltype.copy,
     display: "-webkit-box",
     WebkitBoxOrient: "vertical",
     WebkitLineClamp: 2,
@@ -61,7 +65,7 @@ const s = stylex.create({
   },
   bodyOpen: { WebkitLineClamp: 8 },
   // The time and the close mark share one slot and crossfade on hover. Toast.qml:440-485.
-  slot: { display: "grid", justifyItems: "end", minWidth: "20px" },
+  slot: { display: "grid", justifyItems: "end", minWidth: "20px", fontSize: shelltype.bodySmall, lineHeight: shelltype.copy },
   time: { gridArea: "1 / 1", opacity: 1, transitionProperty: "opacity", transitionDuration: "150ms", color: chrome.toastBodyInk },
   close: {
     gridArea: "1 / 1",

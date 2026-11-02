@@ -3,29 +3,29 @@
 import * as stylex from "@stylexjs/stylex";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import { color } from "@/design/tokens/color.stylex";
+import { shellspace } from "@/design/tokens/shellspace.stylex";
+import { shelltype } from "@/design/tokens/shelltype.stylex";
 import { stroke } from "@/design/tokens/size.stylex";
 import { font } from "@/design/tokens/type.stylex";
 import { pretty } from "@/lib/fs";
-import { typo } from "@/design/primitives/typography";
 import type { EditorData } from "../state";
 import type { AppProps } from "./types";
 
 type EditorPatch = Partial<Omit<EditorData, "kind">>;
-
-const LH = 1.62;
 
 const s = stylex.create({
   root: { flex: 1, minHeight: 0, display: "flex", flexDirection: "column" },
   scroll: { flex: 1, minHeight: 0, overflow: "auto", display: "grid", gridTemplateColumns: "auto 1fr", alignItems: "start" },
   gutter: {
     margin: 0,
-    paddingBlock: "10px",
-    paddingInline: "10px 8px",
+    // Neovim draws inside foot, so the grid sits in foot's 14px pad.
+    paddingBlock: shellspace.xxxl,
+    paddingInline: `${shellspace.xxxl} ${shellspace.lg}`,
     textAlign: "right",
     color: color["--text-3"],
     fontFamily: font.mono,
     fontSize: "inherit",
-    lineHeight: LH,
+    lineHeight: shelltype.termLine,
     userSelect: "none",
     position: "sticky",
     left: 0,
@@ -38,15 +38,15 @@ const s = stylex.create({
     minWidth: "40ch",
     resize: "none",
     overflow: "hidden",
-    paddingBlock: "10px",
-    paddingInline: "4px 12px",
+    paddingBlock: shellspace.xxxl,
+    paddingInline: `${shellspace.sm} ${shellspace.xxxl}`,
     borderWidth: 0,
     outline: "none",
     backgroundColor: "transparent",
     color: color["--text"],
     fontFamily: font.mono,
     fontSize: "inherit",
-    lineHeight: LH,
+    lineHeight: shelltype.termLine,
     whiteSpace: "pre",
     caretColor: color["--accent"],
     tabSize: 2,
@@ -60,13 +60,12 @@ const s = stylex.create({
     borderTopWidth: stroke.hair,
     borderTopStyle: "solid",
     borderTopColor: color["--line"],
-    lineHeight: 1.9,
-    textTransform: "none",
-    letterSpacing: "normal",
+    // The statusline is one more row of the grid, in the grid's own type.
+    lineHeight: shelltype.termLine,
     whiteSpace: "nowrap",
     overflow: "hidden",
   },
-  seg: { paddingInline: "8px" },
+  seg: { paddingInline: "1ch" },
   mode: { backgroundColor: color["--accent"], color: color["--on-accent"], fontWeight: 700 },
   insert: { backgroundColor: color["--green"] },
   command: { backgroundColor: color["--yellow"] },
@@ -244,7 +243,7 @@ export function Editor({ win, live, interactive, dispatch }: AppProps<"editor">)
           {...stylex.props(s.area, d.mode !== "insert" && s.normal)}
         />
       </div>
-      <div {...stylex.props(typo.label, s.status)}>
+      <div {...stylex.props(s.status)}>
         {d.mode === "command" ? (
           <>
             <span {...stylex.props(s.seg, s.mode, s.command)}>:</span>

@@ -5,6 +5,7 @@ import { useEffect, useRef, type Dispatch } from "react";
 import { MenuPanel, rowId } from "@/design/shell/MenuPanel";
 import { face, typo } from "@/design/primitives/typography";
 import { chrome } from "@/design/tokens/chrome.stylex";
+import { shelltype } from "@/design/tokens/shelltype.stylex";
 import type { Command } from "@/lib/commands";
 import { openAt, overlayItems, type MenuContext } from "./menu-state";
 import type { Action, Overlay } from "./state";
@@ -17,7 +18,7 @@ const s = stylex.create({
     borderWidth: 0,
     outline: "none",
     backgroundColor: "transparent",
-    fontSize: chrome.menuLabel,
+    fontSize: shelltype.heading,
     color: chrome.menuInk,
     "::placeholder": { color: chrome.menuPlaceholder },
   },
