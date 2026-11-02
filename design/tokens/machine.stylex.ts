@@ -13,4 +13,13 @@ export const machine = stylex.defineVars({
    * and Plymouth's background, rgb(0.101, 0.105, 0.149) (default/plymouth/omarchy.script:3-4).
    */
   boot: "#1a1b26",
+  /**
+   * Limine's menu, from Omarchy's config: text in term_foreground, the branding and help keys in
+   * interface_branding_color, comments in the palette's cyan. default/limine/limine.conf:5-8,15,19.
+   */
+  limineInk: "#c0caf5",
+  limineBrand: "#9ece6a",
+  limineComment: "#7dcfff",
+  /** Limine draws a built-in 8x16 bitmap font; JetBrains Mono at 15px has its 9px advance. */
+  limineGlyph: "15px",
 });

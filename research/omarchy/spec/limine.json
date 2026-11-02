@@ -1,0 +1,716 @@
+{
+  "commit": "175e63b62dc3201866722e45ee9a60714cde16fa",
+  "part": "limine",
+  "assumptions": {
+    "limine.version": "12.9.6. Omarchy names the package without a version (install/omarchy-other.packages:20-22) and the repo holds no PKGBUILD or ISO pin for it. Arch extra/limine was 12.9.6-1 (updated 2026-10-28) when this was read, and v12.9.6 (89a9512c623a4779cc73e3869383876d54264b28, tagged 2026-10-28) is the newest tag before the Omarchy commit (2026-11-01). Omarchy may ship from its own mirror; that was not checked.",
+    "limine-entry-tool.version": "1.40.0 (AUR limine-mkinitcpio-hook 1.40.0-1; Omarchy's own test cites 'limine-mkinitcpio 1.40', test/shell.d/hibernation-setup-test.sh:45)",
+    "limine-snapper-sync.version": "1.32.1 (AUR limine-snapper-sync 1.32.1-1)",
+    "firmware": "x86_64 UEFI, Secure Boot off, no config hash enrolled (ENABLE_ENROLL_LIMINE_CONFIG is commented out: https://gitlab.com/Zesko/limine-entry-tool/-/blob/1.40.0/install/arch-linux/limine-mkinitcpio-hook/etc/limine-entry-tool.conf#L151), so the editor is enabled (https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/misc.c#L121 (limine v12.9.6, 89a9512c)). The firmware advertises EFI_OS_INDICATIONS_BOOT_TO_FW_UI, which most do; without it the 'S Firmware Setup' hint is dropped. No shellx64.efi on the ESP, so no 'U UEFI Shell' hint.",
+    "display": "One GOP output. Limine picks the EDID-native mode (the first detailed timing) at 32 bpp when it is at least the current mode; otherwise the firmware's preset mode (https://github.com/limine-bootloader/limine/blob/v12.9.6/common/drivers/gop.c#L374-L399 (limine v12.9.6, 89a9512c)). Worked numbers below use 1920x1080 and 2560x1600.",
+    "install": "Default x86_64 install: one kernel (linux-omarchy) built as a UKI, snapper enabled, no Windows or other OS on the ESP, no MKINITCPIO_FALLBACK (only the n1x hardware path sets it: install/hardware/n1x.sh:94).",
+    "colours": "Every colour is a literal from default/limine/limine.conf:5-21 (Tokyo Night). Limine draws in 24-bit RGB; its own SGR palette indices map to term_palette."
+  },
+  "quiet": {
+    "layout": "With 'timeout: 1' and 'quiet: yes', Limine draws nothing. It never starts its graphical terminal, prints nothing, and does not clear the screen, so whatever the firmware left (usually the OEM BGRT logo, or black) stays up for one second. The cursor is hidden. A key press in that second reveals the menu, but that key is swallowed and the countdown is cancelled, so the revealed menu waits with no timeout. If no key comes, Limine boots entry 2 (linux-omarchy) without touching the screen. The mouse cannot reveal the menu, because the mouse is not initialised in quiet mode.",
+    "items": [
+      {
+        "id": "quiet.flag",
+        "what": "quiet: yes switches all screen output off except panics and important warnings",
+        "value": "yes",
+        "unit": "",
+        "expr": "quiet = QUIET == \"yes\"",
+        "source": "default/limine/limine.conf:3; https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L1738-L1739 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/CONFIG.md#L100-L104 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "quiet.timeout",
+        "what": "Timeout parsed to milliseconds",
+        "value": "1000",
+        "unit": "ms",
+        "expr": "parse_timeout_ms(\"1\") = 1*1000",
+        "source": "default/limine/limine.conf:2; https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2043-L2069 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L95-L137 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "quiet.default",
+        "what": "default_entry is a 1-based index over visible entries, counting expanded directories. Index 2 is the first kernel under the expanded 'Omarchy' directory",
+        "value": "linux-omarchy",
+        "unit": "",
+        "expr": "selected_entry = 2 - 1 = 1 -> [0] Omarchy, [1] linux-omarchy, [2] Snapshots",
+        "source": "default/limine/limine.conf:4; https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L1974-L1996 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/CONFIG.md#L114-L127 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "quiet.autoboot-guard",
+        "what": "Autoboot runs only if the default entry resolves to a bootable leaf. A directory or an unresolved entry turns quiet off and shows the menu ('Default entry is not valid, booting to menu.' for the unresolved case)",
+        "value": "leaf -> autoboot",
+        "unit": "",
+        "expr": "if unresolved: quiet=false, print msg; if sub!=NULL: skip_timeout; skip_timeout => quiet=false",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2080-L2097 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "quiet.no-term",
+        "what": "In quiet mode menu_init_term does not call gterm_init, and gterm_init returns early in quiet mode. No framebuffer terminal exists",
+        "value": "none",
+        "unit": "",
+        "expr": "if (!quiet && !gterm_init(...)); gterm_init: if (quiet) { term_notready(); return false; }",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L1481-L1524 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/gterm.c#L829-L832 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "quiet.print-suppressed",
+        "what": "print() writes nothing to the terminal while quiet is set",
+        "value": "suppressed",
+        "unit": "",
+        "expr": "out: if (!quiet) flanterm_write(...)",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/print.s2.c#L208-L219 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "quiet.screen-kept",
+        "what": "The screen is not cleared at startup, so the firmware's BGRT logo survives",
+        "value": "firmware image kept",
+        "unit": "",
+        "expr": "// XXX: Ideally we clear the screen, but that gets rid of the BGRT boot logo",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/term.c#L380-L382 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "quiet.cursor",
+        "what": "The UEFI text cursor is disabled at entry",
+        "value": "hidden",
+        "unit": "",
+        "expr": "gST->ConOut->EnableCursor(gST->ConOut, false)",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/entry.s3.c#L46 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "quiet.countdown-loop",
+        "what": "The countdown loop still runs, invisibly: one 1000 ms wait that returns early on input",
+        "value": "1 x 1000",
+        "unit": "ms",
+        "expr": "sleep_ms = 1000 % 1000 = 0 -> 1000; pit_sleep_ms_and_quit_on_input(1000)",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2228-L2262 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "quiet.no-mouse",
+        "what": "Mouse is initialised only when not quiet, so only the keyboard can interrupt",
+        "value": "keyboard only",
+        "unit": "",
+        "expr": "if (!quiet) mouse_init();",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2101-L2103 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "quiet.reveal",
+        "what": "Any key during the timeout: skip_timeout = true, then quiet = false, the terminal is initialised and the menu is drawn. The key is not acted on, and no countdown follows",
+        "value": "menu, no countdown",
+        "unit": "",
+        "expr": "goto timeout_aborted -> if (quiet) { quiet=false; menu_init_term(); mouse_init(); goto refresh; }",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2249-L2256 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2282-L2288 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/CONFIG.md#L100-L104 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "quiet.reveal-timing",
+        "what": "The reveal is immediate on the key press (the wait polls input), not at the end of the second",
+        "value": "<= 1000",
+        "unit": "ms",
+        "expr": "pit_sleep_ms_and_quit_on_input",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2249 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "quiet.end",
+        "what": "When the timeout ends it goes to autoboot. In quiet mode there is no reset_term, and chainload's fb_init keeps the screen (quiet forces preserve_screen). Limine then LoadImage/StartImage's the UKI. The GOP may be switched to the EDID-native mode first if the firmware was in another mode, and a mode set usually blanks the screen. That depends on the firmware",
+        "value": "screen untouched by Limine",
+        "unit": "",
+        "expr": "fb_init: if (quiet) preserve_screen = true; chainload -> gBS->StartImage",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2373-L2416 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/fb.c#L17-L22 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/protos/chainload.c#L466-L479 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/drivers/gop.c#L139-L184 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "quiet.firmware_logo",
+        "what": "firmware_logo is unset (default no), so Limine does not ask the OS to redraw the BGRT logo",
+        "value": "no",
+        "unit": "",
+        "expr": "FIRMWARE_LOGO unset",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/CONFIG.md#L161-L165 (limine v12.9.6, 89a9512c)"
+      }
+    ]
+  },
+  "grid": {
+    "layout": "With no wallpaper, the whole screen is one flat terminal in term_background 1a1b26, with no margin, no gradient and no frame. Cells use the built-in Toshiba Satellite 8x16 font, one pixel of spacing (9x16 cells), scaled by an integer factor chosen from the resolution. The grid is centred in the framebuffer and the leftover pixels are split equally on each side. The main menu has no box. The framed box (┌─┤title├─┐) appears only in the 'E' editor.",
+    "items": [
+      {
+        "id": "grid.font",
+        "what": "Built-in font: the Toshiba Satellite 8x16 VGA font (TOSH-SAT.F16), code page 437, 256 glyphs. Glyph n is at gterm.c line 21+n",
+        "value": "TOSH-SAT.F16 8x16",
+        "unit": "dots",
+        "expr": "builtin_font[4096]",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/gterm.c#L18-L277 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "grid.font.size",
+        "what": "Glyph bitmap size (no term_font set)",
+        "value": "8x16",
+        "unit": "dots",
+        "expr": "cfg->font_width = 8; cfg->font_height = 16",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/gterm.c#L667-L672 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "grid.font.spacing",
+        "what": "Horizontal spacing between glyphs (term_font_spacing unset)",
+        "value": "1",
+        "unit": "px (before scale)",
+        "expr": "font_spacing = 1; ctx->font_width += font_spacing",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/gterm.c#L732-L742 (limine v12.9.6, 89a9512c); https://github.com/Mintsuki/Flanterm/blob/3e311fe2ce4f663273c22d1a229745bc53afa930/src/flanterm_backends/fb.c#L1433-L1436 (Flanterm 3e311fe2, pinned by limine v12.9.6 bootstrap:77-80)"
+      },
+      {
+        "id": "grid.font.ninth-column",
+        "what": "The ninth (spacing) column is blank, except for CP437 0xC0-0xDF (box drawing), where it repeats column 8. So ─ └ ├ join across cells and ► does not",
+        "value": "VGA line-graphics",
+        "unit": "",
+        "expr": "if (i >= 0xc0 && i <= 0xdf) font_bool = glyph[y] & 1",
+        "source": "https://github.com/Mintsuki/Flanterm/blob/3e311fe2ce4f663273c22d1a229745bc53afa930/src/flanterm_backends/fb.c#L1450-L1470 (Flanterm 3e311fe2, pinned by limine v12.9.6 bootstrap:77-80)"
+      },
+      {
+        "id": "grid.scale",
+        "what": "Font scale, since term_font_scale is unset",
+        "value": "1x1 below 2560x1440; 2x2 from 2560x1440; 4x4 from 5120x2880",
+        "unit": "",
+        "expr": "w >= 1920+640 && h >= 1080+360 -> 2; w >= 3840+1280 && h >= 2160+720 -> 4",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/gterm.c#L785-L798 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/CONFIG.md#L224-L231 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "grid.cell",
+        "what": "Cell size on screen",
+        "value": "(8+1)*scale x 16*scale",
+        "unit": "px",
+        "expr": "glyph_width = (font_width+spacing)*scale_x; glyph_height = 16*scale_y",
+        "source": "https://github.com/Mintsuki/Flanterm/blob/3e311fe2ce4f663273c22d1a229745bc53afa930/src/flanterm_backends/fb.c#L1480-L1482 (Flanterm 3e311fe2, pinned by limine v12.9.6 bootstrap:77-80)"
+      },
+      {
+        "id": "grid.size",
+        "what": "Columns and rows",
+        "value": "cols = floor(W / cellW); rows = floor(H / cellH)",
+        "unit": "cells",
+        "expr": "(width - 2*margin)/glyph_width, margin = 0",
+        "source": "https://github.com/Mintsuki/Flanterm/blob/3e311fe2ce4f663273c22d1a229745bc53afa930/src/flanterm_backends/fb.c#L1493-L1494 (Flanterm 3e311fe2, pinned by limine v12.9.6 bootstrap:77-80)"
+      },
+      {
+        "id": "grid.offset",
+        "what": "The grid is centred: half the leftover pixels go before it (rounded down)",
+        "value": "offset_x = (W % cellW)/2; offset_y = (H % cellH)/2",
+        "unit": "px",
+        "expr": "margin + ((width - 2*margin) % glyph_width)/2",
+        "source": "https://github.com/Mintsuki/Flanterm/blob/3e311fe2ce4f663273c22d1a229745bc53afa930/src/flanterm_backends/fb.c#L1500-L1501 (Flanterm 3e311fe2, pinned by limine v12.9.6 bootstrap:77-80)"
+      },
+      {
+        "id": "grid.example.1080p",
+        "what": "1920x1080: scale 1, cell 9x16",
+        "value": "213 cols x 67 rows, offset (1,4)",
+        "unit": "cells/px",
+        "expr": "1920/9=213 r3; 1080/16=67 r8",
+        "source": "derived from grid.cell/grid.size/grid.offset"
+      },
+      {
+        "id": "grid.example.1600p",
+        "what": "2560x1600: scale 2, cell 18x32",
+        "value": "142 cols x 50 rows, offset (2,0)",
+        "unit": "cells/px",
+        "expr": "2560/18=142 r4; 1600/32=50 r0",
+        "source": "derived"
+      },
+      {
+        "id": "grid.example.4k",
+        "what": "3840x2160: scale 2 (4x needs 5120x2880), cell 18x32",
+        "value": "213 cols x 67 rows, offset (3,8)",
+        "unit": "cells/px",
+        "expr": "3840/18=213 r6; 2160/32=67 r16",
+        "source": "derived"
+      },
+      {
+        "id": "grid.min",
+        "what": "If the grid is under 40x16, Limine falls back to the firmware text console",
+        "value": "40x16",
+        "unit": "cells",
+        "expr": "cols < 40 || rows < 16 -> term_fallback()",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L1514-L1522 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "grid.margin",
+        "what": "term_margin and term_margin_gradient default to 0 when there is no wallpaper. Omarchy sets neither and has no wallpaper",
+        "value": "0",
+        "unit": "px",
+        "expr": "background == NULL -> margin = 0, margin_gradient = 0",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/gterm.c#L641-L665 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/CONFIG.md#L249-L253 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "grid.background",
+        "what": "Whole-screen fill. term_background is TTRRGGBB; '1a1b26' has TT=00, which is opaque. With no wallpaper there is no canvas, and a full refresh paints every framebuffer pixel default_bg",
+        "value": "#1a1b26",
+        "unit": "",
+        "expr": "default_bg = strtoui(\"1a1b26\") = 0x001a1b26; plot_char_*_uncanvas; full_refresh fills default_bg",
+        "source": "default/limine/limine.conf:11; https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/gterm.c#L592-L595 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/gterm.c#L506-L509 (limine v12.9.6, 89a9512c); https://github.com/Mintsuki/Flanterm/blob/3e311fe2ce4f663273c22d1a229745bc53afa930/src/flanterm_backends/fb.c#L1135-L1160 (Flanterm 3e311fe2, pinned by limine v12.9.6 bootstrap:77-80)"
+      },
+      {
+        "id": "grid.backdrop",
+        "what": "'backdrop: 1a1b26' has no effect. It is read only for a wallpaper with wallpaper_style centered, and Omarchy sets no wallpaper",
+        "value": "unused",
+        "unit": "",
+        "expr": "if (background != NULL && style == centered) BACKDROP",
+        "source": "default/limine/limine.conf:12; https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/gterm.c#L769-L781 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/CONFIG.md#L139-L141 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "grid.resolution",
+        "what": "Resolution: interface_resolution is unset, so Limine tries the EDID-native mode at 32 bpp, then the firmware preset mode, then 1024x768/800x600/640x480",
+        "value": "panel native (usually)",
+        "unit": "",
+        "expr": "fallback_resolutions[] after EDID and preset",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/drivers/gop.c#L279-L291 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/drivers/gop.c#L374-L399 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "grid.cursor",
+        "what": "The text cursor is off while the menu draws. With a mouse, after it moves by more than one cell, a 16x16 arrow sprite (black outline, white fill, scaled by the font scale, hotspot top-left) follows the pointer",
+        "value": "hidden / arrow sprite",
+        "unit": "",
+        "expr": "TERM->cursor_enabled = false; pointer_shape[16]",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2128 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/drivers/mouse.c#L94-L104 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/drivers/mouse.c#L180-L202 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/drivers/mouse.c#L340-L373 (limine v12.9.6, 89a9512c)"
+      }
+    ]
+  },
+  "menu": {
+    "layout": "Rows from the top, 0-based. Row 0 is blank. Row 1 holds the branding, centred. Row 3 holds the primary help, centred. Row 5 holds the secondary help, centred. The tree is vertically centred, never higher than row 8, and is one left-aligned block whose left edge is chosen to centre the widest line. Row rows-2 holds the selected entry's first 'comment:' in cyan, centred. ↑↑↑ (row 7) and ↓↓↓ (row rows-4) appear only when the list scrolls. Everything uses term_foreground c0caf5 on 1a1b26 unless stated. Every row is redrawn from scratch on each key ('\\e[2J\\e[H').",
+    "items": [
+      {
+        "id": "menu.clear",
+        "what": "Each refresh clears the screen, homes the cursor and moves to row 1",
+        "value": "\\e[2J\\e[H then \\n",
+        "unit": "",
+        "expr": "print(\"\\e[2J\\e[H\"); print(\"\\n\")",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2130-L2131 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.header_offset",
+        "what": "header_offset = 2 (branding present) + 2 (secondary help present: editor enabled or firmware setup or shell)",
+        "value": "4",
+        "unit": "rows",
+        "expr": "(branding ? 2 : 0) + (has_secondary_help ? 2 : 0)",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2107-L2114 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.branding.text",
+        "what": "Branding string, verbatim. No Limine version and no Secure Boot suffix, because it is custom",
+        "value": "Omarchy Bootloader",
+        "unit": "",
+        "expr": "INTERFACE_BRANDING",
+        "source": "default/limine/limine.conf:5; https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L1855-L1907 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.branding.pos",
+        "what": "Row 1, horizontally centred by display width. If it is wider than cols-2, it is cut to cols-5 characters plus '...' at column 1",
+        "value": "row 1, x = (cols-18)/2",
+        "unit": "cells",
+        "expr": "set_cursor_pos((cols - width)/2, y)",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L290-L303 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.branding.colour",
+        "what": "Branding colour, set as a 24-bit SGR",
+        "value": "#9ece6a",
+        "unit": "",
+        "expr": "\\e[38;2;158;206;106m (default would be 00aaaa)",
+        "source": "default/limine/limine.conf:6; https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L1909-L1919 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L162-L173 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.help.primary.leaf",
+        "what": "Primary help when the selection is a bootable entry and the editor is enabled. Keys are in the help colour, labels in the default foreground, with four spaces between pairs",
+        "value": "ARROWS Select    ENTER Boot    E Edit",
+        "unit": "37 chars",
+        "expr": "row = 1 + header_offset - 2 = 3; x = (cols-37)/2",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2190-L2202 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.help.primary.dir",
+        "what": "Primary help when the selection is a directory: 'Collapse' if expanded, 'Expand' if collapsed",
+        "value": "ARROWS Select    ENTER Collapse | ARROWS Select    ENTER Expand",
+        "unit": "31 | 29 chars",
+        "expr": "len = 23 + strlen(action); x = (cols-len)/2",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2203-L2209 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.help.secondary",
+        "what": "Secondary help, row 5, centred. Shown pairs: S if the firmware supports boot-to-firmware-UI, U if shellx64.efi is on the ESP, B if the editor is enabled. Labels shorten to Setup/Shell/Blank if the line would be wider than cols",
+        "value": "S Firmware Setup    B Blank Entry",
+        "unit": "33 chars",
+        "expr": "row = 1 + header_offset = 5; x = (cols-len)/2; len = sum(2+label) + 4*(n-1)",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L194-L243 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2211-L2218 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L1551-L1610 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.help.colour",
+        "what": "Key glyphs ARROWS/ENTER/E/S/B colour. Labels follow '\\e[0m', so they are term_foreground",
+        "value": "#9ece6a keys, #c0caf5 labels",
+        "unit": "",
+        "expr": "\\e[38;2;158;206;106m<KEY>\\e[0m <label>",
+        "source": "default/limine/limine.conf:7,19; https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L186-L192 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L1835-L1853 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.help.hidden",
+        "what": "interface_help_hidden is unset, so both help rows show",
+        "value": "shown",
+        "unit": "",
+        "expr": "help_hidden = false",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L1830-L1833 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.tree.window",
+        "what": "Visible tree rows (scroll window)",
+        "value": "rows - 12",
+        "unit": "rows",
+        "expr": "rows - 8 - header_offset",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2148-L2158 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.tree.top",
+        "what": "First tree row: the tree is centred vertically, but never above row 8",
+        "value": "max((rows - height)/2, 8)",
+        "unit": "row",
+        "expr": "tree_start = (rows - max_tree_height)/2; if < 4 + header_offset -> 4 + header_offset",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2161-L2164 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.tree.left",
+        "what": "Every tree line starts after the same run of spaces, chosen from the widest line (max_tree_len counts decorations plus ' name ')",
+        "value": "(cols - max_tree_len - 3)/2",
+        "unit": "cols",
+        "expr": "tree_prefix_len",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2153-L2155 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.tree.prefix.top",
+        "what": "Top-level entry prefix: '[-]' expanded directory, '[+]' collapsed directory, three spaces for a leaf",
+        "value": "[-] | [+] | '   '",
+        "unit": "3 cells",
+        "expr": "current_entry->sub ? (expanded ? \"[-]\" : \"[+]\") : \"   \"",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L1420-L1426 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.tree.prefix.nested",
+        "what": "Nested entry prefix: for each ancestor level above the parent, ' │' if that ancestor has a later sibling, else two spaces. Then ' └' for the last sibling or ' ├' otherwise. Then '[-]'/'[+]' for a directory or '──►' for a leaf",
+        "value": " ├──► | └──► | ├[+] | └[-] ...",
+        "unit": "2 per level + 3",
+        "expr": "see expr in source",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L1402-L1424 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.tree.name",
+        "what": "The name is printed as ' ' + name + ' '. A name too wide for the row is cut and ends in '...'",
+        "value": "' linux-omarchy '",
+        "unit": "",
+        "expr": "print(\" %s \\e[27m\\n\")",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L1432-L1443 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.tree.selected",
+        "what": "Selection highlight: reverse video starts after the prefix, so it covers ' name ' (one space each side) and not the tree glyphs. In reverse video the background is term_foreground and the glyphs are term_background",
+        "value": "bg #c0caf5, text #1a1b26",
+        "unit": "",
+        "expr": "\\e[7m swaps text_fg (default_fg c0caf5) and text_bg (default flag) -> bg=c0caf5, fg_default -> default_bg 1a1b26",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L1428-L1431 (limine v12.9.6, 89a9512c); https://github.com/Mintsuki/Flanterm/blob/3e311fe2ce4f663273c22d1a229745bc53afa930/src/flanterm.c#L361-L367 (Flanterm 3e311fe2, pinned by limine v12.9.6 bootstrap:77-80); https://github.com/Mintsuki/Flanterm/blob/3e311fe2ce4f663273c22d1a229745bc53afa930/src/flanterm_backends/fb.c#L563-L571 (Flanterm 3e311fe2, pinned by limine v12.9.6 bootstrap:77-80); https://github.com/Mintsuki/Flanterm/blob/3e311fe2ce4f663273c22d1a229745bc53afa930/src/flanterm_backends/fb.c#L638-L642 (Flanterm 3e311fe2, pinned by limine v12.9.6 bootstrap:77-80)"
+      },
+      {
+        "id": "menu.tree.colour",
+        "what": "Tree glyphs, brackets and names of unselected entries",
+        "value": "#c0caf5 on #1a1b26",
+        "unit": "",
+        "expr": "default fg/bg; no SGR emitted",
+        "source": "default/limine/limine.conf:11,19; https://github.com/Mintsuki/Flanterm/blob/3e311fe2ce4f663273c22d1a229745bc53afa930/src/flanterm_backends/fb.c#L1388-L1392 (Flanterm 3e311fe2, pinned by limine v12.9.6 bootstrap:77-80)"
+      },
+      {
+        "id": "menu.tree.glyphs",
+        "what": "Tree glyphs are UTF-8 mapped to CP437: ─ 0xC4, ├ 0xC3, └ 0xC0, │ 0xB3, ► 0x10, ↑ 0x18, ↓ 0x19",
+        "value": "CP437",
+        "unit": "",
+        "expr": "cp437 table",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/cp437.s2.c#L4-L37 (limine v12.9.6, 89a9512c); glyph bitmaps https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/gterm.c#L37 (limine v12.9.6, 89a9512c) (►), https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/gterm.c#L217 (limine v12.9.6, 89a9512c) (─)"
+      },
+      {
+        "id": "menu.tree.scroll",
+        "what": "Scroll markers, centred: '↑↑↑' at row 3+header_offset (7) when entries are hidden above, '↓↓↓' at row rows-4 when hidden below",
+        "value": "↑↑↑ / ↓↓↓",
+        "unit": "",
+        "expr": "x = (cols-3)/2",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2176-L2188 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.comment",
+        "what": "The selected entry's first 'comment:' value, in cyan (SGR 36 = term_palette[6]), centred at row rows-2 (rows-3 while a countdown runs). Cut with '...' if too wide",
+        "value": "#7dcfff",
+        "unit": "",
+        "expr": "print(\"\\e[36m%s\\e[0m\", comment)",
+        "source": "default/limine/limine.conf:15; https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L1658-L1676 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2230 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2263-L2265 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.countdown.text",
+        "what": "Countdown string. It has no 'press any key' text. It is never visible with Omarchy's config: quiet hides it, and revealing the menu cancels it",
+        "value": "Booting automatically in 1...",
+        "unit": "",
+        "expr": "\"\\e[2K%sBooting automatically in %s%s%s...\\e[0m\" (help colour, bright help colour for N); x = (cols - (28+len(N)))/2, row rows-2",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2228-L2241 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.countdown.colour",
+        "what": "Countdown text and digit. Omarchy sets interface_help_color_bright to the same green",
+        "value": "#9ece6a text and digit",
+        "unit": "",
+        "expr": "INTERFACE_HELP_COLOUR_BRIGHT (else help + 0x55 per channel)",
+        "source": "default/limine/limine.conf:7-8; https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L1845-L1853 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/CONFIG.md#L200-L204 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.keys",
+        "what": "Up/Down move and wrap. Home/End jump. Enter, Space or Right boots a leaf or toggles a directory. 1-9 boots that visible index at once. E opens the editor. B opens a blank entry. S reboots to firmware setup. Left is ignored. The mouse moves the selection, a click boots, and the wheel scrolls",
+        "value": "",
+        "unit": "",
+        "expr": "switch (c)",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2305-L2470 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/CONFIG.md#L173-L178 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.boot-from-menu",
+        "what": "Choosing an entry from the revealed menu clears to 1a1b26 (reset_term), then chainload's fb_init clears the framebuffer to 0x000000 on x86 (fb_flush_reliable is true there, so preserve_screen is false). Then the UKI starts",
+        "value": "#000000",
+        "unit": "",
+        "expr": "reset_term(); fb_init(..., !fb_flush_reliable(), false) -> fb_clear writes 0",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L2385-L2398 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/term.h#L41-L50 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/protos/chainload.c#L478-L479 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/fb.c#L66-L70 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/fb.c#L91-L100 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/fb.c#L329-L343 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.editor",
+        "what": "Editor (E): help line 'ESC Discard and Exit    F10/CTRL+X Boot' (39 chars, keys in help colour), then a full-width box ┌─┤<entry name>├─┐ … └─┘ in default fg, with syntax colours from SGR 36/32/39/31/33",
+        "value": "ESC Discard and Exit    F10/CTRL+X Boot",
+        "unit": "",
+        "expr": "config_entry_editor",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L489-L600 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L439-L457 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "menu.example.1080p",
+        "what": "Worked layout at 1920x1080 (213x67), default tree, linux-omarchy selected: branding row 1 col 97; primary help row 3 col 88; secondary help row 5 col 90; tree rows 32-34 at prefix 95 (max_tree_len 20). Row 32 '[-] Omarchy ', row 33 ' ├──►' + highlighted ' linux-omarchy ' (cols 100-114), row 34 ' └[+] Snapshots '. Comment 'Kernel version: <ver>' row 65, centred",
+        "value": "",
+        "unit": "cells",
+        "expr": "(213-18)/2=97; (213-37)/2=88; (213-33)/2=90; (67-3)/2=32; (213-20-3)/2=95",
+        "source": "derived from menu.* items"
+      }
+    ]
+  },
+  "palette": {
+    "layout": "Which Omarchy colour each element actually uses. Several configured colours never appear in the menu.",
+    "items": [
+      {
+        "id": "pal.bg",
+        "what": "Screen and every cell background",
+        "value": "#1a1b26",
+        "unit": "",
+        "expr": "term_background",
+        "source": "default/limine/limine.conf:11"
+      },
+      {
+        "id": "pal.fg",
+        "what": "Entry names, tree glyphs, [+]/[-], help labels, ↑↑↑/↓↓↓",
+        "value": "#c0caf5",
+        "unit": "",
+        "expr": "term_foreground",
+        "source": "default/limine/limine.conf:19"
+      },
+      {
+        "id": "pal.sel",
+        "what": "Selected-name bar / its text",
+        "value": "#c0caf5 / #1a1b26",
+        "unit": "",
+        "expr": "reverse video of default fg/bg",
+        "source": "see menu.tree.selected"
+      },
+      {
+        "id": "pal.branding",
+        "what": "'Omarchy Bootloader'",
+        "value": "#9ece6a",
+        "unit": "",
+        "expr": "interface_branding_color",
+        "source": "default/limine/limine.conf:6"
+      },
+      {
+        "id": "pal.help",
+        "what": "Help keys and countdown",
+        "value": "#9ece6a",
+        "unit": "",
+        "expr": "interface_help_color(_bright)",
+        "source": "default/limine/limine.conf:7-8"
+      },
+      {
+        "id": "pal.comment",
+        "what": "Entry comment line",
+        "value": "#7dcfff",
+        "unit": "",
+        "expr": "term_palette[6] (cyan) via SGR 36",
+        "source": "default/limine/limine.conf:15; https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L1670 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "pal.unused",
+        "what": "Not used by the menu: term_background_bright 24283b (only SGR 5 on the default bg reaches it), term_foreground_bright c0caf5 (SGR 1), term_palette_bright, and term_palette entries other than cyan. Red f7768e, green 9ece6a and brown e0af68 appear only in the editor's syntax colours and its overflow warning",
+        "value": "",
+        "unit": "",
+        "expr": "flanterm sgr(): 1 -> fg_default_bright, 5 -> bg_default_bright",
+        "source": "default/limine/limine.conf:15-21; https://github.com/Mintsuki/Flanterm/blob/3e311fe2ce4f663273c22d1a229745bc53afa930/src/flanterm.c#L165-L209 (Flanterm 3e311fe2, pinned by limine v12.9.6 bootstrap:77-80); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L439-L457 (limine v12.9.6, 89a9512c)"
+      }
+    ]
+  },
+  "entries": {
+    "layout": "limine-entry-tool writes Omarchy's OS directory, '/+Omarchy'. The '+' makes it expanded at boot. Its children follow BOOT_ORDER: linux-omarchy first, Snapshots last. limine-snapper-sync owns '//Snapshots', which is collapsed. Inside it, one collapsed directory per snapshot, newest first, each holding the kernel entries saved with it. Default visible tree:\n[-] Omarchy\n ├──► linux-omarchy      <- default_entry 2, selected\n └[+] Snapshots\nWith Snapshots expanded (five snapshots, upstream default format):\n └[-] Snapshots\n   ├[+] ID=5 2026-11-01 18:10:30\n   ├[+] ID=4 …\n   └[+] ID=1 …\nAn expanded snapshot holds '──► linux-omarchy'.",
+    "items": [
+      {
+        "id": "ent.os.name",
+        "what": "OS directory name, created expanded",
+        "value": "Omarchy",
+        "unit": "",
+        "expr": "\"/\" + \"+\" + TARGET_OS_NAME",
+        "source": "etc/limine-entry-tool.d/omarchy-defaults.conf:1; https://gitlab.com/Zesko/limine-entry-tool/-/blob/1.40.0/src/main/java/org/limine/entry/tool/processes/LimineReader.java#L33-46 (limine-entry-tool 1.40.0, 35dab4b7)"
+      },
+      {
+        "id": "ent.os.comment",
+        "what": "Comment shown when 'Omarchy' is selected (the first comment line is the clean name). The second line is 'machine-id=<id> order-priority=50'",
+        "value": "Omarchy",
+        "unit": "",
+        "expr": "comment: <cleanName>; comment: machine-id=… order-priority=…",
+        "source": "https://gitlab.com/Zesko/limine-entry-tool/-/blob/1.40.0/src/main/java/org/limine/entry/tool/processes/LimineReader.java#L41-44 (limine-entry-tool 1.40.0, 35dab4b7); Omarchy fixture test/shell.d/factory-reset-limine-test.sh:50-53"
+      },
+      {
+        "id": "ent.kernel.name",
+        "what": "Kernel entry name: the kernel's pkgbase. A UKI is written to /EFI/Linux/omarchy_linux-omarchy.efi",
+        "value": "linux-omarchy",
+        "unit": "",
+        "expr": "\"//\" + kernelName; CUSTOM_UKI_NAME=omarchy",
+        "source": "etc/limine-entry-tool.d/omarchy-defaults.conf:21; etc/limine-entry-tool.d/omarchy-uki.conf:1; install/omarchy-other.packages:24; bin/omarchy-kernel:24-27; https://gitlab.com/Zesko/limine-entry-tool/-/blob/1.40.0/src/main/java/org/limine/entry/tool/processes/LimineManager.java#L244-283 (limine-entry-tool 1.40.0, 35dab4b7)"
+      },
+      {
+        "id": "ent.kernel.comment",
+        "what": "First comment of the kernel entry, shown in cyan when selected. The second is 'kernel-id=linux-omarchy'",
+        "value": "Kernel version: <uname -r>, e.g. 'Kernel version: 7.2.8-9-omarchy'",
+        "unit": "",
+        "expr": "--comment \"Kernel version: ${KERNEL_VERSION}\"",
+        "source": "https://gitlab.com/Zesko/limine-entry-tool/-/blob/1.40.0/install/arch-linux/limine-mkinitcpio-hook/usr/share/libalpm/scripts/limine-mkinitcpio-install#L241 (limine-entry-tool 1.40.0, 35dab4b7); https://gitlab.com/Zesko/limine-entry-tool/-/blob/1.40.0/src/main/java/org/limine/entry/tool/processes/LimineManager.java#L260 (limine-entry-tool 1.40.0, 35dab4b7); version example from test/shell.d/hibernation-setup-test.sh:51"
+      },
+      {
+        "id": "ent.kernel.order",
+        "what": "Children order",
+        "value": "linux-t2, linux-omarchy, linux-omarchy-*, *, *fallback, Snapshots",
+        "unit": "",
+        "expr": "BOOT_ORDER",
+        "source": "etc/limine-entry-tool.d/omarchy-defaults.conf:28"
+      },
+      {
+        "id": "ent.fallback",
+        "what": "No '-fallback' kernel entry by default: MKINITCPIO_FALLBACK is unset. ENABLE_LIMINE_FALLBACK=yes copies Limine itself to /EFI/BOOT/BOOTX64.EFI and adds no menu entry",
+        "value": "absent",
+        "unit": "",
+        "expr": "if MKINITCPIO_FALLBACK == yes|<kernel>",
+        "source": "https://gitlab.com/Zesko/limine-entry-tool/-/blob/1.40.0/install/arch-linux/limine-mkinitcpio-hook/usr/share/libalpm/scripts/limine-mkinitcpio-install#L243-249 (limine-entry-tool 1.40.0, 35dab4b7); https://gitlab.com/Zesko/limine-entry-tool/-/blob/1.40.0/install/arch-linux/limine-mkinitcpio-hook/etc/limine-entry-tool.conf#L101-115 (limine-entry-tool 1.40.0, 35dab4b7)"
+      },
+      {
+        "id": "ent.efi-fallback",
+        "what": "Possible top-level leaf 'EFI fallback' (comment 'Default EFI loader', priority 10, placed after Omarchy). FIND_BOOTLOADERS=yes adds it when limine-install runs while /EFI/BOOT/BOOTX64.EFI already exists. Whether a default install reaches that state was not pinned",
+        "value": "maybe",
+        "unit": "",
+        "expr": "limine-entry-tool --add-efi \"EFI fallback\" … --priority 10",
+        "source": "etc/limine-entry-tool.d/omarchy-defaults.conf:25; https://gitlab.com/Zesko/limine-entry-tool/-/blob/1.40.0/install/arch-linux/limine-entry-tool/usr/bin/limine-install#L521-536 (limine-entry-tool 1.40.0, 35dab4b7)"
+      },
+      {
+        "id": "ent.snapshots.name",
+        "what": "Snapshots directory inside the OS entry, collapsed",
+        "value": "Snapshots",
+        "unit": "",
+        "expr": "\"//Snapshots\" appended to the OS node",
+        "source": "https://gitlab.com/Zesko/limine-snapper-sync/-/blob/1.32.1/src/main/java/org/limine/snapper/processes/LimineReader.java#L59-70 (limine-snapper-sync 1.32.1, b4c0da2d); https://gitlab.com/Zesko/limine-snapper-sync/-/blob/1.32.1/src/main/java/org/limine/snapper/objects/Config.java#L28 (limine-snapper-sync 1.32.1, b4c0da2d)"
+      },
+      {
+        "id": "ent.snapshots.comment",
+        "what": "Snapshots comment: 'N snapshots'. It reads 'N / 6 snapshots' only if MAX_SNAPSHOT_ENTRIES reaches the tool (see notes)",
+        "value": "5 snapshots",
+        "unit": "",
+        "expr": "size + \" snapshots\" (MAX_SNAPSHOT_ENTRIES default Integer.MAX_VALUE)",
+        "source": "https://gitlab.com/Zesko/limine-snapper-sync/-/blob/1.32.1/src/main/java/org/limine/snapper/processes/LimineWriter.java#L163-168 (limine-snapper-sync 1.32.1, b4c0da2d); https://gitlab.com/Zesko/limine-snapper-sync/-/blob/1.32.1/src/main/java/org/limine/snapper/objects/Config.java#L29-31 (limine-snapper-sync 1.32.1, b4c0da2d)"
+      },
+      {
+        "id": "ent.snapshot.name",
+        "what": "Snapshot directory name. Upstream default format 0 is 'ID=<n> <YYYY-MM-DD HH:MM:SS>' (id left-padded to the widest id). Omarchy asks for format 5, the timestamp alone ('2026-11-01 18:10:30'), but see notes on whether it applies",
+        "value": "ID=5 2026-11-01 18:10:30  |  2026-11-01 18:10:30",
+        "unit": "",
+        "expr": "snapshotNameFormat: case 5 -> timestamp; default -> \"ID=\" + id + \" \" + timestamp",
+        "source": "etc/limine-entry-tool.d/omarchy-defaults.conf:37; https://gitlab.com/Zesko/limine-snapper-sync/-/blob/1.32.1/src/main/java/org/limine/snapper/processes/LimineWriter.java#L272-288 (limine-snapper-sync 1.32.1, b4c0da2d); https://gitlab.com/Zesko/limine-snapper-sync/-/blob/1.32.1/src/main/java/org/limine/snapper/objects/Config.java#L45 (limine-snapper-sync 1.32.1, b4c0da2d)"
+      },
+      {
+        "id": "ent.snapshot.order",
+        "what": "Newest snapshot first. At most 5 kept by snapper (NUMBER_LIMIT=5), briefly 6",
+        "value": "newest first",
+        "unit": "",
+        "expr": "nodes.addFirst(snapshotNode)",
+        "source": "https://gitlab.com/Zesko/limine-snapper-sync/-/blob/1.32.1/src/main/java/org/limine/snapper/processes/LimineWriter.java#L177-195 (limine-snapper-sync 1.32.1, b4c0da2d); default/snapper/root:7; etc/limine-entry-tool.d/omarchy-defaults.conf:30-35"
+      },
+      {
+        "id": "ent.snapshot.comment",
+        "what": "A snapshot's comment is its snapper description. Omarchy's updater creates snapshots described with omarchy-version",
+        "value": "e.g. '4.0.1'",
+        "unit": "",
+        "expr": "comment: <description>; DESC=$(omarchy-version)",
+        "source": "https://gitlab.com/Zesko/limine-snapper-sync/-/blob/1.32.1/src/main/java/org/limine/snapper/processes/LimineWriter.java#L179-185 (limine-snapper-sync 1.32.1, b4c0da2d); bin/omarchy-snapshot:23,40; bin/omarchy-update:89"
+      },
+      {
+        "id": "ent.snapshot.kernel",
+        "what": "Leaf inside each snapshot directory: the kernel entry name saved with that snapshot",
+        "value": "linux-omarchy",
+        "unit": "",
+        "expr": "\"////\" + kernel.kernelVersion() (= kernel entry cleanName)",
+        "source": "https://gitlab.com/Zesko/limine-snapper-sync/-/blob/1.32.1/src/main/java/org/limine/snapper/processes/LimineWriter.java#L186-191 (limine-snapper-sync 1.32.1, b4c0da2d); https://gitlab.com/Zesko/limine-snapper-sync/-/blob/1.32.1/src/main/java/org/limine/snapper/processes/LimineWriter.java#L241-243 (limine-snapper-sync 1.32.1, b4c0da2d); https://gitlab.com/Zesko/limine-snapper-sync/-/blob/1.32.1/src/main/java/org/limine/snapper/processes/KernelReader.java#L141 (limine-snapper-sync 1.32.1, b4c0da2d)"
+      },
+      {
+        "id": "ent.indices",
+        "what": "Visible indices (default tree, Snapshots collapsed): 1 Omarchy, 2 linux-omarchy, 3 Snapshots (+1 'EFI fallback' if present)",
+        "value": "3",
+        "unit": "entries",
+        "expr": "count_visible_entries",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/menu.c#L985-L1001 (limine v12.9.6, 89a9512c)"
+      }
+    ]
+  },
+  "handoff": {
+    "layout": "What the screen shows from Limine's last frame until Plymouth draws. Default (quiet) path: Limine never paints, so the firmware's image stays (BGRT logo or black) unless the GOP mode set blanks it. The UKI's kernel runs with quiet logging and a hidden console cursor, so nothing new prints. Plymouth, from the initramfs, then fills the screen with its 1a1b26 background. Revealed-menu path: a black (#000000) screen from chainload's clear until Plymouth. Limine's 1a1b26 is never left on screen.",
+    "items": [
+      {
+        "id": "hand.cmdline",
+        "what": "Kernel cmdline that silences the console",
+        "value": "quiet splash loglevel=0 systemd.show_status=false rd.udev.log_level=0 vt.global_cursor_default=0 (+ initramfs_async=0 systemd.tty.term.console=dumb)",
+        "unit": "",
+        "expr": "KERNEL_CMDLINE[default]+=",
+        "source": "etc/limine-entry-tool.d/omarchy-defaults.conf:3,10,19; default/limine/default.conf:3"
+      },
+      {
+        "id": "hand.quiet",
+        "what": "Quiet path: no Limine clear before StartImage",
+        "value": "firmware image",
+        "unit": "",
+        "expr": "fb_init preserve_screen forced by quiet",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/fb.c#L17-L22 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/term.c#L380-L382 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "hand.revealed",
+        "what": "Revealed-menu path: framebuffer cleared to black before StartImage",
+        "value": "#000000",
+        "unit": "",
+        "expr": "fb_clear",
+        "source": "https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/fb.c#L66-L70 (limine v12.9.6, 89a9512c); https://github.com/limine-bootloader/limine/blob/v12.9.6/common/lib/fb.c#L91-L100 (limine v12.9.6, 89a9512c)"
+      },
+      {
+        "id": "hand.plymouth",
+        "what": "Plymouth's background: the first colour after the hand-off that Omarchy controls",
+        "value": "#1a1b26",
+        "unit": "",
+        "expr": "Window.SetBackgroundTopColor(0.101, 0.105, 0.149) = 26/255, 27/255, 38/255",
+        "source": "default/plymouth/omarchy.script:3-4"
+      }
+    ]
+  },
+  "notes": [
+    "Version: Limine v12.9.6 differs from older screenshots, including limine-snapper-sync's own (screenshots/2.jpg). In v12 both help rows are centred, primary at row 3 and secondary at row 5. Older versions put 'ARROWS Select / ENTER …' on the left and 'S Firmware Setup / B Blank Entry' on the right. The countdown reads 'Booting automatically in N...' and has no 'press any key to stop' text.",
+    "Conflict, not pinned: Omarchy sets SNAPSHOT_FORMAT_CHOICE=5 and MAX_SNAPSHOT_ENTRIES=6 in /etc/limine-entry-tool.d/omarchy-defaults.conf:35-37. limine-snapper-sync 1.32.1 reads only /etc/limine-snapper-sync.conf, /etc/default/limine and (inside a snapshot) /tmp/limine-snapper-sync.conf (https://gitlab.com/Zesko/limine-snapper-sync/-/blob/1.32.1/src/main/java/org/limine/snapper/processes/ConfigReader.java#L22-41 (limine-snapper-sync 1.32.1, b4c0da2d)). It does not read limine-entry-tool.d drop-ins, unlike limine-entry-tool (https://gitlab.com/Zesko/limine-entry-tool/-/blob/1.40.0/src/main/java/org/limine/entry/tool/processes/ConfigReader.java#L29-31 (limine-entry-tool 1.40.0, 35dab4b7)). Read strictly, snapshot names would be the default 'ID=<n> <timestamp>' with the comment 'N snapshots'. But the comment at omarchy-defaults.conf:30-34 quotes a snapper-sync warning about MAX_SNAPSHOT_ENTRIES=5, which implies the setting does reach it on real systems, perhaps through a packaged build that differs from the AUR source. For the demo, the timestamp-only form ('2026-11-01 18:10:30') matches Omarchy's intent. 'ID=5 2026-11-01 18:10:30' matches the pinned upstream source.",
+    "Omarchy's own test fixtures write snapshot names as '<id> │ <timestamp>' (format 2: test/shell.d/omarchy-kernel-test.sh:71, factory-reset-limine-test.sh:60). These are hand-written mocks, not output, and neither the pinned source nor Omarchy's setting produces that format.",
+    "The firmware's image during the quiet second is not Limine's to decide. Most laptops show the OEM BGRT logo, others black. A GOP mode switch to the EDID-native mode before the kernel can blank it. The demo should show a plain black or vendor-logo screen for about 1 s, then go straight to Plymouth.",
+    "Revealing the menu needs a key press inside that ~1 s window, and the key that reveals it does nothing else. After that the menu never times out.",
+    "Exact strings: branding 'Omarchy Bootloader'; 'ARROWS Select    ENTER Boot    E Edit'; 'ARROWS Select    ENTER Expand' / 'ARROWS Select    ENTER Collapse'; 'S Firmware Setup    B Blank Entry' (short form 'S Setup    B Blank' when narrow; 'U UEFI Shell' / 'U Shell' between them if shellx64.efi exists); 'Booting automatically in N...'; editor 'ESC Discard and Exit    F10/CTRL+X Boot'; 'Default entry is not valid, booting to menu.'; '[config file contains no valid entries]'; '[config file not found]'. Gaps between key pairs are four spaces.",
+    "Glyph fidelity: a web replica should render the Toshiba Satellite 8x16 bitmaps from gterm.c:21-276 (glyph n at line 21+n) on a 9-pixel advance, repeating column 8 into column 9 for CP437 0xC0-0xDF. A generic monospace font will not join '├──►' the way Limine does."
+  ]
+}
