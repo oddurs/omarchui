@@ -3,6 +3,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { useEffect, useRef } from "react";
 import { color } from "@/design/tokens/color.stylex";
+import { shelltype } from "@/design/tokens/shelltype.stylex";
 import type { AppProps } from "./types";
 
 // A plausible history for a tuning branch against Omarchy 4's real files.
@@ -71,17 +72,18 @@ const s = stylex.create({
     outline: "none",
   },
   col: { minHeight: 0, display: "grid", gridAutoRows: "min-content", alignContent: "start", gap: "1px", backgroundColor: color["--line"], overflow: "hidden" },
-  panel: { backgroundColor: color["--surface"], paddingBlock: "6px", paddingInline: "10px" },
-  diff: { backgroundColor: color["--surface"], paddingBlock: "6px", paddingInline: "10px", overflow: "auto", minHeight: 0 },
+  // lazygit's panes: half a row above and below, a cell at each side.
+  panel: { backgroundColor: color["--surface"], paddingBlock: `calc(${shelltype.termLine} / 2)`, paddingInline: "1ch" },
+  diff: { backgroundColor: color["--surface"], paddingBlock: `calc(${shelltype.termLine} / 2)`, paddingInline: "1ch", overflow: "auto", minHeight: 0 },
   title: { color: color["--accent"] },
   active: { color: color["--green"] },
   faint: { color: color["--text-3"] },
   yellow: { color: color["--yellow"] },
-  row: { display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", paddingInline: "4px", marginInline: "-4px" },
+  row: { display: "block", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", paddingInline: "1ch", marginInline: "-1ch" },
   sel: { backgroundColor: color["--tint"], boxShadow: `inset 2px 0 0 ${color["--accent"]}` },
   add: { color: color["--green"] },
   del: { color: color["--red"] },
-  hint: { color: color["--text-3"], marginTop: "6px" },
+  hint: { color: color["--text-3"], marginTop: shelltype.termLine },
 });
 
 export function Git({ win, live, interactive, dispatch }: AppProps<"git">) {

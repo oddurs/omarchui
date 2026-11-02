@@ -1,14 +1,26 @@
 import * as stylex from "@stylexjs/stylex";
 import type { InputHTMLAttributes, ReactNode } from "react";
-import { face, ink, typo } from "../primitives/typography";
+import { face } from "../primitives/typography";
 import { chrome } from "../tokens/chrome.stylex";
 import { motion } from "../tokens/motion.stylex";
+import { shellspace } from "../tokens/shellspace.stylex";
+import { shelltype } from "../tokens/shelltype.stylex";
 import { space } from "../tokens/space.stylex";
 import { font } from "../tokens/type.stylex";
 
 const s = stylex.create({
   root: { display: "grid", justifyItems: "center", width: "100%", textAlign: "center" },
-  hint: { margin: 0 },
+  // A blurred wallpaper can be any colour, so the hint sits on the field's own plate, in its ink.
+  hint: {
+    margin: 0,
+    justifySelf: "center",
+    paddingBlock: shellspace.xs,
+    paddingInline: shellspace.md,
+    fontSize: shelltype.bodySmall,
+    lineHeight: shelltype.copy,
+    color: chrome.lockInk,
+    backgroundColor: chrome.lockFieldBg,
+  },
   // Omarchy's fixed 381x67 surface with centred dots and no label, LockView.qml:24-42,144-222.
   input: {
     width: "100%",
@@ -47,7 +59,7 @@ export function LockPanel({ children, hint }: LockPanelProps) {
     <div {...stylex.props(s.root)}>
       <div data-ref="lock-field" {...stylex.props(s.field)}>
         {children}
-        {hint && <p {...stylex.props(typo.caption, face.mono, ink.faint, s.hint)}>{hint}</p>}
+        {hint && <p {...stylex.props(face.mono, s.hint)}>{hint}</p>}
       </div>
     </div>
   );

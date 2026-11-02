@@ -5,6 +5,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type Dispatch, type React
 import { Icon } from "@/design/shell/Icon";
 import { PanelCard, PanelHero, PanelPills, PanelRow, PanelRule, PanelSection, PanelSlider, PanelSwitch } from "@/design/shell/Panel";
 import { chrome } from "@/design/tokens/chrome.stylex";
+import { shellspace } from "@/design/tokens/shellspace.stylex";
 import { layer } from "@/design/tokens/layer.stylex";
 import { shelltype } from "@/design/tokens/shelltype.stylex";
 import type { Action, PanelId, Profile, State } from "./state";
@@ -40,17 +41,24 @@ const s = stylex.create({
   dim: { color: chrome.panelDim },
   faint: { opacity: 0.6, whiteSpace: "nowrap" },
   strong: { fontWeight: chrome.panelBold },
-  grid: { display: "grid", gridTemplateColumns: "auto 1fr auto 1fr", columnGap: "20px", rowGap: "4px" },
+  grid: { display: "grid", gridTemplateColumns: "auto 1fr auto 1fr", columnGap: "20px", rowGap: shellspace.sm },
   value: { textAlign: "right", whiteSpace: "nowrap" },
-  list: { display: "flex", flexDirection: "column", gap: "4px" },
+  list: { display: "flex", flexDirection: "column", gap: shellspace.sm },
   contents: { display: "contents" },
   // Clock.
   clockHero: { display: "flex", justifyContent: "center", alignItems: "baseline", gap: "22px" },
   clockDate: { fontSize: shelltype.clockDate, fontWeight: chrome.panelBold, lineHeight: 1 },
-  rail: { display: "grid", gridTemplateColumns: "auto 1fr auto", alignItems: "center", columnGap: "12px", width: "426px", marginInline: "auto" },
+  rail: { display: "grid", gridTemplateColumns: "auto 1fr auto", alignItems: "center", columnGap: shellspace.xxl, width: "426px", marginInline: "auto" },
   railTrack: { position: "relative", height: "6px", backgroundColor: chrome.panelLine },
   railFill: { position: "absolute", left: 0, top: 0, bottom: 0, backgroundColor: chrome.panelInk },
-  month: { display: "grid", gridTemplateColumns: "32px 14px repeat(7, 52px)", rowGap: "3px", columnGap: "2px", width: "426px", marginInline: "auto" },
+  month: {
+    display: "grid",
+    gridTemplateColumns: "32px 14px repeat(7, 52px)",
+    rowGap: shellspace.xs,
+    columnGap: shellspace.xxs,
+    width: "426px",
+    marginInline: "auto",
+  },
   weekday: { fontSize: shelltype.caption, fontWeight: chrome.panelBold, letterSpacing: "1px", textAlign: "center", color: chrome.panelDim, height: "16px" },
   week: { fontSize: shelltype.caption, display: "grid", placeItems: "center", height: "34px", color: chrome.panelDim, opacity: 0.8 },
   gutter: { justifySelf: "center", width: "1px", height: "100%", backgroundColor: chrome.panelLine },
@@ -90,16 +98,16 @@ const s = stylex.create({
   wxHero: { display: "flex", justifyContent: "space-between", alignItems: "center", paddingInline: "16px 20px" },
   wxNow: { display: "flex", alignItems: "flex-start", gap: "16px" },
   temp: { fontSize: shelltype.weatherTemp, fontWeight: chrome.panelBold, lineHeight: 1 },
-  unit: { fontSize: shelltype.display, marginTop: "10px" },
-  wxSide: { display: "flex", flexDirection: "column", gap: "12px" },
-  wxPlace: { display: "flex", alignItems: "center", gap: "6px", fontSize: shelltype.body, letterSpacing: "1px", color: chrome.panelDim },
+  unit: { fontSize: shelltype.display, marginTop: shellspace.xl },
+  wxSide: { display: "flex", flexDirection: "column", gap: shellspace.xxl },
+  wxPlace: { display: "flex", alignItems: "center", gap: shellspace.md, fontSize: shelltype.body, letterSpacing: "1px", color: chrome.panelDim },
   wxStats: { display: "flex", gap: "36px" },
   wxStat: { display: "flex", flexDirection: "column", gap: "5px" },
   wxLabel: { fontSize: shelltype.bodySmall, letterSpacing: "1px", color: chrome.panelDim },
   wxValue: { fontSize: shelltype.title },
   forecast: { display: "flex", justifyContent: "center", gap: "44px" },
-  fday: { display: "flex", alignItems: "center", gap: "10px" },
-  fcol: { display: "flex", flexDirection: "column", gap: "6px" },
+  fday: { display: "flex", alignItems: "center", gap: shellspace.xl },
+  fcol: { display: "flex", flexDirection: "column", gap: shellspace.md },
 });
 
 const dyn = stylex.create({
@@ -620,7 +628,9 @@ export function PanelLayer({
     const r = root.getBoundingClientRect();
     const a = anchor.getBoundingClientRect();
     const bar = root.querySelector<HTMLElement>("[data-ref=bar]")?.getBoundingClientRect();
-    const w = Math.min(width, r.width - 10);
+    // The view's card scale is a token on the screen; StyleX names it var(--hash).
+    const scale = Number(getComputedStyle(root).getPropertyValue(shellspace.cardScale.slice(4, -1))) || 1;
+    const w = Math.min(4 * Math.round((width * scale) / 4), r.width - 10);
     const cx = a.left + a.width / 2 - r.left;
     const left = Math.round(Math.min(Math.max(cx - w / 2, 5), r.width - w - 5));
     // Placing the card needs the widget's measured position, so it lands in a second render

@@ -244,7 +244,7 @@ export const ENTRIES: Entry[] = [
       ["Group", "a sunken well with a hairline."],
       ["Segment", "caption text; the chosen one is raised to surface with a line-2 edge."],
     ],
-    dos: ["Keep labels to one word."],
+    dos: ["Keep labels to one word.", 'Set face="mono" inside a desktop window, so it reads with the text around it.'],
     donts: ["Don't use it for actions; every segment is a state."],
     keys: [
       ["Tab", "Focus the chosen segment"],

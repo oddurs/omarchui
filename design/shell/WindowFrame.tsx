@@ -1,8 +1,9 @@
 import * as stylex from "@stylexjs/stylex";
 import type { PointerEvent, ReactNode } from "react";
-import { face, typo } from "../primitives/typography";
+import { face } from "../primitives/typography";
 import { chrome } from "../tokens/chrome.stylex";
 import { color } from "../tokens/color.stylex";
+import { shelltype } from "../tokens/shelltype.stylex";
 
 const s = stylex.create({
   frame: {
@@ -18,7 +19,9 @@ const s = stylex.create({
     borderWidth: chrome.border,
     borderStyle: "solid",
     borderColor: chrome.borderIdle,
-    lineHeight: 1.62,
+    // Every app here draws in a terminal cell grid: foot's font size and row height.
+    fontSize: shelltype.term,
+    lineHeight: shelltype.termLine,
     color: color["--text"],
     // The border colour follows focus over 431ms on easeOutQuint. looknfeel.lua:70,79.
     transitionProperty: "border-color",
@@ -58,7 +61,7 @@ export function WindowFrame({ label, active, urgent, popped, bare, children, onP
       data-ref="window"
       data-ref-key={refKey}
       onPointerDown={onPointerDown}
-      {...stylex.props(typo.caption, face.mono, s.frame, urgent && s.urgent, active && s.active, popped && s.popped, bare && s.bare)}
+      {...stylex.props(face.mono, s.frame, urgent && s.urgent, active && s.active, popped && s.popped, bare && s.bare)}
     >
       {children}
     </section>

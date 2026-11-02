@@ -11,8 +11,9 @@ export const SCALE = [
   [1, "Gap between menu rows, title to body, toast to the screen edge"],
   [2, "Menu row padding, the bar's edge, below the menu field"],
   [3, "Gaps between and around windows, toast padding"],
-  [4, "Padding inside the menu card and the overlay"],
+  [4, "Padding inside the menu card, the bar panels and the overlay"],
   [5, "A workspace slot"],
+  [6, "A status icon slot"],
   [7, "Bar height, a widget slot"],
   [12, "A menu row"],
 ] as const;
@@ -24,8 +25,9 @@ export function Space() {
   return (
     <Tile ws={5} span={5} labelledBy="h-space" aside="1u = 4px">
       <Intro id="h-space" title="One unit: four pixels">
-        Omarchy sizes things in nine Style.space steps. The tune keeps its sizes and moves each to the nearest step of 4px, never more than 2px away, so a menu
-        row lines up with a bar widget and a toast sits on the same edge as the window below it.
+        Omarchy spaces things in nine Style.space steps, most a pixel or two apart, so neighbouring gaps never read as different. The tune puts each step on
+        4px, at most one unit from Omarchy&apos;s and never tighter: 2, 4, 8, 12, 16, 20. A menu row lines up with a bar widget, and a toast sits on the same
+        edge as the window below it.
       </Intro>
       <Geometry />
       <Rows>

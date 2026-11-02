@@ -2,7 +2,7 @@
 
 import * as stylex from "@stylexjs/stylex";
 import { ToggleButton, ToggleButtonGroup, type Key } from "react-aria-components";
-import { typo } from "../primitives/typography";
+import { face as faces, typo } from "../primitives/typography";
 import { color } from "../tokens/color.stylex";
 import { focus } from "../tokens/effect.stylex";
 import { motion } from "../tokens/motion.stylex";
@@ -42,10 +42,12 @@ export type SegmentedProps<T extends string> = {
   value: T;
   options: { id: T; label: string }[];
   onChange: (v: T) => void;
+  /** mono inside a desktop window, where every other line is mono; sans on the page. */
+  face?: "sans" | "mono";
 };
 
 /** One choice from two to four mutually exclusive views, like stock / split / tuned. */
-export function Segmented<T extends string>({ label, value, options, onChange }: SegmentedProps<T>) {
+export function Segmented<T extends string>({ label, value, options, onChange, face = "sans" }: SegmentedProps<T>) {
   return (
     <ToggleButtonGroup
       aria-label={label}
@@ -59,7 +61,7 @@ export function Segmented<T extends string>({ label, value, options, onChange }:
       {...stylex.props(s.group)}
     >
       {options.map((o) => (
-        <ToggleButton key={o.id} id={o.id} {...stylex.props(typo.caption, s.item, o.id === value && s.on)}>
+        <ToggleButton key={o.id} id={o.id} {...stylex.props(typo.caption, faces[face], s.item, o.id === value && s.on)}>
           {o.label}
         </ToggleButton>
       ))}

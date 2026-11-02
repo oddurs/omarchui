@@ -5,6 +5,7 @@ import type { WheelEvent } from "react";
 import { face, typo } from "../primitives/typography";
 import { bp } from "../tokens/breakpoints.stylex";
 import { chrome } from "../tokens/chrome.stylex";
+import { shelltype } from "../tokens/shelltype.stylex";
 import { color } from "../tokens/color.stylex";
 import { focus } from "../tokens/effect.stylex";
 import { layer } from "../tokens/layer.stylex";
@@ -71,7 +72,7 @@ const s = stylex.create({
   markBtn: { minWidth: chrome.modSlot, color: chrome.barInk },
   ws: {
     minWidth: chrome.wsWidth,
-    fontSize: chrome.barText,
+    fontSize: shelltype.body,
     fontWeight: chrome.barWeight,
     color: chrome.wsIdle,
     transitionProperty: "color, background-color",
@@ -85,7 +86,7 @@ const s = stylex.create({
   // "dddd HH:mm" in one face, one weight, one ink, as Omarchy sets it. shell.json:25-29.
   clock: {
     paddingInline: chrome.clockPad,
-    fontSize: chrome.clockText,
+    fontSize: shelltype.body,
     color: chrome.clockInk,
     fontVariantNumeric: "tabular-nums",
     whiteSpace: "nowrap",

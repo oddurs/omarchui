@@ -32,8 +32,9 @@ function rows(body: string): TokenRow[] {
       pendingDoc = doc[1];
       continue;
     }
-    const themed = /^"?([\w-]+)"?:\s*\{\s*default:\s*("[^"]*"|'[^']*'),\s*\[\w+\]:\s*("[^"]*"|'[^']*')\s*\},?$/.exec(line);
-    const plain = /^"?([\w-]+)"?:\s*("[^"]*"|'[^']*'),?$/.exec(line);
+    // A value may carry a trailing source comment, as every stock override does.
+    const themed = /^"?([\w-]+)"?:\s*\{\s*default:\s*("[^"]*"|'[^']*'),\s*\[\w+\]:\s*("[^"]*"|'[^']*')\s*\},?\s*(?:\/\/.*)?$/.exec(line);
+    const plain = /^"?([\w-]+)"?:\s*("[^"]*"|'[^']*'),?\s*(?:\/\/.*)?$/.exec(line);
     const m = themed ?? plain;
     if (!m?.[1] || !m[2]) continue;
     out.push({ name: m[1], value: m[2].slice(1, -1), dark: themed?.[3]?.slice(1, -1), doc: pendingDoc });
@@ -56,11 +57,15 @@ export const tokens = {
   layer: () => rows(block(read("layer.stylex.ts"), "stylex.defineVars({")),
   focus: () => rows(block(read("effect.stylex.ts"), "stylex.defineVars({")),
   breakpoints: () => rows(block(read("breakpoints.stylex.ts"), "stylex.defineConsts({")),
-  /** Tuned values beside the stock override for every chrome token. */
-  chrome: () => {
-    const src = read("chrome.stylex.ts");
-    const tuned = rows(block(src, "export const chrome = stylex.defineVars({"));
-    const stock = new Map(rows(block(src, "export const stock = stylex.createTheme(chrome, {")).map((r) => [r.name, r.value]));
-    return tuned.map((r) => ({ ...r, stock: stock.get(r.name) ?? r.value }));
-  },
+  /** Tuned values beside the stock override, for chrome and the shell's type and spacing scales. */
+  chrome: () => paired("chrome.stylex.ts", "chrome", "stock"),
+  shelltype: () => paired("shelltype.stylex.ts", "shelltype", "stockType"),
+  shellspace: () => paired("shellspace.stylex.ts", "shellspace", "stockSpace"),
 };
+
+function paired(file: string, vars: string, theme: string): (TokenRow & { stock: string })[] {
+  const src = read(file);
+  const tuned = rows(block(src, `export const ${vars} = stylex.defineVars({`));
+  const stock = new Map(rows(block(src, `export const ${theme} = stylex.createTheme(${vars}, {`)).map((r) => [r.name, r.value]));
+  return tuned.map((r) => ({ ...r, stock: stock.get(r.name) ?? r.value }));
+}

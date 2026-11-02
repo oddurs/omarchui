@@ -561,6 +561,12 @@
         "type": "T",
         "required": true,
         "doc": ""
+      },
+      {
+        "name": "face",
+        "type": "'mono' | 'sans'",
+        "required": false,
+        "doc": "mono inside a desktop window, where every other line is mono; sans on the page."
       }
     ],
     "inherits": []

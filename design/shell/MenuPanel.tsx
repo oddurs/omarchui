@@ -4,6 +4,8 @@ import * as stylex from "@stylexjs/stylex";
 import type { ReactNode } from "react";
 import { face, typo } from "../primitives/typography";
 import { chrome } from "../tokens/chrome.stylex";
+import { shellspace } from "../tokens/shellspace.stylex";
+import { shelltype } from "../tokens/shelltype.stylex";
 import { color } from "../tokens/color.stylex";
 import { stroke } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
@@ -60,20 +62,20 @@ const s = stylex.create({
   },
   rowDetail: { height: chrome.rowDetail },
   sel: { backgroundColor: chrome.selBg },
-  glyph: { display: "grid", placeItems: "center", width: chrome.glyphCol, fontSize: chrome.glyphText, color: chrome.glyphInk },
+  glyph: { display: "grid", placeItems: "center", width: chrome.glyphCol, fontSize: shelltype.iconLarge, color: chrome.glyphInk },
   glyphSel: { color: chrome.selText },
-  label: { display: "flex", flexDirection: "column", gap: "3px", minWidth: 0 },
-  name: { fontSize: chrome.menuLabel, fontWeight: chrome.menuWeight, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+  label: { display: "flex", flexDirection: "column", gap: shellspace.xs, minWidth: 0 },
+  name: { fontSize: shelltype.heading, fontWeight: chrome.menuWeight, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
   nameSel: { color: chrome.selText },
   detail: {
-    fontSize: chrome.detailText,
+    fontSize: shelltype.bodySmall,
     opacity: chrome.detailOpacity,
     color: chrome.detailInk,
     whiteSpace: "nowrap",
     overflow: "hidden",
     textOverflow: "ellipsis",
   },
-  chev: { fontSize: chrome.menuLabel, opacity: chrome.chevOpacity, color: chrome.chevInk },
+  chev: { fontSize: shelltype.heading, opacity: chrome.chevOpacity, color: chrome.chevInk },
   chevSel: { color: chrome.selText },
   divider: { display: "flex", alignItems: "center", flexShrink: 0, height: "17px", paddingInline: space.u1 },
   dividerLine: { flex: 1, height: stroke.hair, backgroundColor: "currentColor", opacity: 0.25 },

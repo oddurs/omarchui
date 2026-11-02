@@ -38,16 +38,13 @@ export const chrome = stylex.defineVars({
   menuBorderColor: "var(--line-2)",
   /** Padding inside a notification. */
   toastPad: "12px",
-  /** Width of the menu card. */
-  menuWidth: "300px",
-  /** Size of a menu row's name. */
-  menuLabel: "16px",
+  /** Width of the menu card: Omarchy's Style.space(300), widened by shellspace.cardScale. */
+  menuWidth: "324px",
   /** Ink of the selected menu row's name. */
   selText: "var(--accent)",
-  /** Width of a notification. */
-  toastWidth: "380px",
-  /** Size and weight of a notification's title. */
-  toastTitle: "14px",
+  /** Width of a notification: Omarchy's Style.space(380), widened by shellspace.cardScale. */
+  toastWidth: "412px",
+  /** Weight of a notification's title. */
   toastTitleWeight: "500",
   /** Thickness of the volume overlay's track, and its distance from the bottom edge. */
   osdTrack: "4px",
@@ -56,11 +53,9 @@ export const chrome = stylex.defineVars({
   lockFieldWidth: "380px",
   /** Height of the lock screen's password field. */
   lockHeight: "68px",
-  /** Bar fill, ink and text size. */
+  /** Bar fill and ink. */
   barBg: "var(--surface)",
   barInk: "var(--text-2)",
-  barText: "12px",
-  clockText: "12px",
   /** Toast: face, inks, body size, gap under the title, padding without a body, edge inset and stack gap. */
   toastFace: 'var(--font-mono), "JetBrains Mono", ui-monospace, monospace',
   toastInk: "var(--text)",
@@ -79,7 +74,7 @@ export const chrome = stylex.defineVars({
   /** Toast arrival: distance dropped and duration. */
   toastDrop: "-8px",
   toastIn: { default: "180ms", [REDUCED]: "0ms" },
-  /** OSD: columns, gap, padding, fill, track and fill colours, icon and value sizes. */
+  /** OSD: columns, gap, padding, fill, track and fill colours, icon size and value weight. */
   osdCols: "28px 144px auto",
   osdGap: "16px",
   osdPad: "16px",
@@ -89,7 +84,6 @@ export const chrome = stylex.defineVars({
   osdFill: "var(--accent)",
   osdMutedFill: "var(--text-3)",
   osdIcon: "28px",
-  osdValue: "14px",
   osdValueWeight: "500",
   /** Lock field: outline, fill, inks, sizes and the spacing of the dots. */
   lockBorder: "2px",
@@ -98,21 +92,23 @@ export const chrome = stylex.defineVars({
   lockFieldBg: "color-mix(in srgb, var(--surface) 80%, transparent)",
   lockInk: "var(--text)",
   lockPlaceholder: "var(--text-3)",
+  /** Dots and placeholder: Omarchy derives both from heading (×1.33, ×1.125), so they follow the scale. LockView.qml:27-28. */
   lockText: "20px",
-  lockHint: "16px",
+  lockHint: "17px",
   lockTrack: "4px",
   /** Bar ink and fill on hover: the same light fill that marks the menu cursor. */
   barHover: "var(--text)",
   barHoverBg: "color-mix(in srgb, var(--text) 8%, transparent)",
-  /** Clock ink, weight of bar text, size of bar icons. */
+  /** Clock ink and the weight of bar text. */
   clockInk: "var(--text-2)",
   barWeight: "400",
-  barIcon: "12px",
+  /** The ink box of a bar glyph: Style.bar.iconSize, which grows with base-size to 13. Style.qml:356. */
+  barIcon: "13px",
   /** Clock padding each side, and the gap between weekday and time. */
   clockPad: "8px",
   clockGap: "1ch",
-  /** Width of a status icon slot: indicators, the world clock, weather. */
-  statusSlot: "20px",
+  /** Width of a status icon slot (indicators, the world clock, weather): Omarchy's 21 is 23 at base 13, on the unit at 24. */
+  statusSlot: "24px",
   /** Workspace button width and the gap between buttons. */
   wsWidth: "20px",
   wsGap: "0px",
@@ -135,13 +131,11 @@ export const chrome = stylex.defineVars({
   rowPad: "8px",
   rowDetail: "56px",
   glyphCol: "36px",
-  glyphText: "18px",
   /** Ink of a row's glyph. */
   glyphInk: "var(--text-2)",
   /** A search result's path and the submenu marker: ink, size and opacity. Tuned uses quieter roles; stock, opacity on the row ink. */
   detailInk: "var(--text-2)",
   chevInk: "var(--text-3)",
-  detailText: "11px",
   detailOpacity: "1",
   chevOpacity: "1",
   /** The scrim behind the menu. */
@@ -157,15 +151,13 @@ export const chrome = stylex.defineVars({
   winMove: { default: "303ms", [REDUCED]: "0ms" },
   winBorder: { default: "431ms", [REDUCED]: "0ms" },
   /**
-   * Bar panels: ink, the dim second line, the strong weight, the inner padding and block gap,
+   * Bar panels: ink, the dim second line, the strong weight (padding and gaps are shellspace),
    * and the fills Omarchy builds from the foreground: selected 18%, rule 12%, cursor edge 25%.
    * The hover fill is selBg (8%). research/omarchy/spec/panels.json, controls.
    */
   panelInk: "var(--text)",
   panelDim: "var(--text-3)",
   panelBold: "500",
-  panelPad: "16px",
-  panelGap: "16px",
   panelPick: "color-mix(in srgb, var(--text) 18%, transparent)",
   panelLine: "color-mix(in srgb, var(--text) 12%, transparent)",
   panelEdge: "color-mix(in srgb, var(--text) 25%, transparent)",
@@ -180,9 +172,6 @@ export const chrome = stylex.defineVars({
   pickerEdge: "color-mix(in srgb, var(--text) 28%, transparent)",
   pickerStroke: "2px",
   pickerWeight: "500",
-  /** Image picker label and filter text sizes. */
-  pickerLabel: "24px",
-  pickerFilter: "14px",
   /** The active workspace shows its number (tuned) or its layout glyph (stock). */
   wsActiveNumber: "inline",
   wsActiveGlyph: "none",
@@ -207,10 +196,8 @@ export const stock = stylex.createTheme(chrome, {
   menuBorderColor: "var(--o-foreground)", // shell.toml.tpl:179-180: active-border foreground, else foreground
   toastPad: "10px 12px", // padding-x 12, Toast.qml
   menuWidth: "300px", // shell/plugins/menu/Menu.qml:138
-  menuLabel: "16px", // Menu.qml:1413
   selText: "var(--o-accent)", // shell.toml.tpl:185
   toastWidth: "380px", // shell/plugins/notifications/Service.qml:64
-  toastTitle: "14px", // Toast.qml:321
   toastTitleWeight: "700",
   osdTrack: "6px", // shell/plugins/osd/Osd.qml:142-144
   osdBottom: "67px", // Osd.qml:172
@@ -222,8 +209,6 @@ export const stock = stylex.createTheme(chrome, {
   panelInk: "var(--o-foreground)", // popups.text, shell.toml.tpl
   panelDim: "var(--o-dim-foreground)", // Qt.darker(foreground, 1.4)
   panelBold: "700",
-  panelPad: "14px", // popupPadding, Style.qml:262
-  panelGap: "14px", // panelGap, Style.qml:260
   panelPick: "color-mix(in srgb, var(--o-foreground) 18%, transparent)", // Style.qml:84-89
   panelLine: "color-mix(in srgb, var(--o-foreground) 12%, transparent)", // PanelSeparator
   panelEdge: "color-mix(in srgb, var(--o-foreground) 25%, transparent)", // CursorSurface border
@@ -235,13 +220,9 @@ export const stock = stylex.createTheme(chrome, {
   pickerEdge: "color-mix(in srgb, var(--o-foreground) 28%, transparent)",
   pickerStroke: "3px", // ImagePicker.qml:835
   pickerWeight: "600", // Font.DemiBold, ImagePicker.qml:867
-  pickerLabel: "24px", // Style.font.display, ImagePicker.qml:866
-  pickerFilter: "14px", // Style.font.title, ImagePicker.qml:884
   // research/omarchy/spec/bar.json
   barBg: "var(--o-background)", // shell/Commons/Color.qml:80
   barInk: "var(--o-foreground)", // Color.qml:81
-  barText: "12px", // Style.qml:331, WidgetButton.qml:11
-  clockText: "12px",
   // research/omarchy/spec/services.json: notifications
   toastFace: '"Liberation Sans", Arimo, Arial, sans-serif', // Toast.qml:399-401
   toastInk: "var(--o-foreground)", // shell.toml.tpl:146
@@ -267,7 +248,6 @@ export const stock = stylex.createTheme(chrome, {
   osdFill: "var(--o-accent)", // Osd.qml:180
   osdMutedFill: "var(--o-accent)",
   osdIcon: "28px",
-  osdValue: "14px", // Osd.qml:89-95
   osdValueWeight: "700",
   // lock
   lockBorder: "3px", // LockView.qml:26
@@ -304,11 +284,9 @@ export const stock = stylex.createTheme(chrome, {
   rowPad: "8px",
   rowDetail: "58px", // Menu.qml:130
   glyphCol: "36px",
-  glyphText: "18px", // Menu.qml:1522
   glyphInk: "var(--o-foreground)", // Menu.qml:1520
   detailInk: "inherit",
   chevInk: "inherit",
-  detailText: "11px", // Menu.qml:1575, Style.font.bodySmall
   detailOpacity: "0.52", // Menu.qml:1576
   chevOpacity: "0.36", // Menu.qml:1605-1606
   scrim: "color-mix(in srgb, var(--o-background) 50%, transparent)", // shell.toml.tpl:181-182

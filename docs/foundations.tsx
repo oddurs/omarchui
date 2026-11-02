@@ -14,6 +14,8 @@ import { MenuPanel } from "@/design/shell/MenuPanel";
 import { Toast } from "@/design/shell/Toast";
 import { WindowFrame } from "@/design/shell/WindowFrame";
 import { stock } from "@/design/tokens/chrome.stylex";
+import { stockSpace } from "@/design/tokens/shellspace.stylex";
+import { stockType } from "@/design/tokens/shelltype.stylex";
 import { color } from "@/design/tokens/color.stylex";
 import { focus } from "@/design/tokens/effect.stylex";
 import { stroke } from "@/design/tokens/size.stylex";
@@ -472,7 +474,7 @@ function ChromePage() {
               <Tag>Stock</Tag>
             </Inline>
             {/* Omarchy's own palette, pinned to its default theme so the sample reads the same in light and dark. */}
-            <div style={TOKYO_NIGHT} {...stylex.props(stock)}>
+            <div style={TOKYO_NIGHT} {...stylex.props(stock, stockType, stockSpace)}>
               <Box tone="wall" border="line" pad="u4">
                 <Sample />
               </Box>
@@ -490,6 +492,24 @@ function ChromePage() {
               <Sample />
             </Box>
           </Stack>
+        </Grid>
+      </DocSection>
+      <DocSection title="The desktop's scale" id="scale">
+        <Text variant="small" tone="muted">
+          Named as Omarchy names them in Style.qml. Type is Omarchy&apos;s base-size 13 with the loud end pinned; spacing sits on the 4px unit, at most one unit
+          from Omarchy&apos;s and never tighter. tests/scale.test.ts derives both.
+        </Text>
+        <Grid layout="halves" gap="u4">
+          <Table
+            label="Shell type"
+            head={["Style.font", "Tuned", "Stock"]}
+            rows={tokens.shelltype().map((r) => [code(r.name), code(r.value), code(r.stock)])}
+          />
+          <Table
+            label="Shell spacing"
+            head={["Style.spacing", "Tuned", "Stock"]}
+            rows={tokens.shellspace().map((r) => [code(r.name), code(r.value), code(r.stock)])}
+          />
         </Grid>
       </DocSection>
       <DocSection title="Chrome tokens" id="tokens">
