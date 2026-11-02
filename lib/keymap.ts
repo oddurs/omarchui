@@ -34,7 +34,10 @@ export const BINDINGS: Binding[] = [
   { chord: "Super+Up", label: "Move focus", group: "Open or go", today: true, command: { type: "focus", dir: "up" }, sheet: false },
   { chord: "Super+Down", label: "Move focus", group: "Open or go", today: true, command: { type: "focus", dir: "down" }, sheet: false },
   { chord: "Super+W", label: "Close window", group: "Open or go", today: true, command: { type: "close" } },
-  { chord: "Super+F", label: "Fullscreen", group: "Open or go", today: true, command: { type: "fullscreen" } },
+  { chord: "Super+F", label: "Fullscreen", group: "Open or go", today: true, command: { type: "fullscreen", kind: "full" } },
+  { chord: "Super+Alt+F", label: "Full width", group: "Open or go", today: true, command: { type: "fullscreen", kind: "max" } },
+  { chord: "Super+T", label: "Float or tile", group: "Open or go", today: true, command: { type: "float" } },
+  { chord: "Super+O", label: "Pop out", group: "Open or go", today: true, command: { type: "pop" } },
   { chord: "Super+J", label: "Flip split direction", group: "Open or go", today: true, command: { type: "flip" } },
 
   ...digits.map((n): Binding => ({

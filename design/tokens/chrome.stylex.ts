@@ -146,6 +146,16 @@ export const chrome = stylex.defineVars({
   chevOpacity: "1",
   /** The scrim behind the menu. */
   scrim: "var(--scrim)",
+  /**
+   * Hyprland's window animations, the same in both views: open (pop in from 87%), close (to 87%),
+   * move and resize, and the border colour on focus. default/hypr/looknfeel.lua:79-84.
+   */
+  winOpen: { default: "328ms", [REDUCED]: "0ms" },
+  winFadeIn: { default: "138ms", [REDUCED]: "0ms" },
+  winClose: { default: "119ms", [REDUCED]: "0ms" },
+  winFadeOut: { default: "117ms", [REDUCED]: "0ms" },
+  winMove: { default: "303ms", [REDUCED]: "0ms" },
+  winBorder: { default: "431ms", [REDUCED]: "0ms" },
   /** Window fill and border colours. */
   winBg: "var(--surface)",
   winActive: "var(--accent)",

@@ -927,6 +927,12 @@
         "doc": ""
       },
       {
+        "name": "bare",
+        "type": "boolean",
+        "required": false,
+        "doc": "True fullscreen (Super+F): no border."
+      },
+      {
         "name": "children",
         "type": "ReactNode",
         "required": false,
@@ -937,6 +943,12 @@
         "type": "((e: PointerEvent<HTMLElement>) => void)",
         "required": false,
         "doc": ""
+      },
+      {
+        "name": "popped",
+        "type": "boolean",
+        "required": false,
+        "doc": "Popped out with Super+O: floating, pinned, rounded."
       },
       {
         "name": "refKey",

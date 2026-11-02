@@ -51,8 +51,12 @@ export function Desktop() {
       case "open":
         dispatch({ type: "open", app: c.app, file: c.file, run: c.run, now: new Date() });
         return;
-      case "close":
       case "fullscreen":
+        dispatch({ type: "fullscreen", kind: c.kind });
+        break;
+      case "close":
+      case "float":
+      case "pop":
       case "flip":
       case "lock":
       case "screenshot":
@@ -159,6 +163,14 @@ export function Desktop() {
       }
     }
   }, [state.toasts, held]);
+
+  // A closed window stays drawn while it shrinks out (119ms), then goes.
+  useEffect(() => {
+    if (!state.closing.length) return;
+    const ids = state.closing.map((c) => c.win.id);
+    const t = window.setTimeout(() => ids.forEach((id) => dispatch({ type: "closed", id })), 140);
+    return () => window.clearTimeout(t);
+  }, [state.closing]);
 
   const osdKey = state.osd?.key;
   useEffect(() => {
