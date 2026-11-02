@@ -1,0 +1,10 @@
+.next
+node_modules
+pnpm-lock.yaml
+prototype
+playwright-report
+test-results
+next-env.d.ts
+docs/props.json
+lib/themes.generated.ts
+research

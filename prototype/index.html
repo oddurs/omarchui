@@ -1,0 +1,1359 @@
+<title>Omarchui</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400..700&family=JetBrains+Mono:wght@400;500;700;800&display=swap">
+<style>
+/* Layout: the page is a tiling workspace. Sections are square tiles on a wall,
+   the tile under the pointer or in view wears the focus ring, the header is the bar. */
+:root {
+  /* Roles. Light defaults = Catppuccin Latte. */
+  --wall: #dce0e8; --sunken: #e6e9ef; --surface: #eff1f5; --raised: #f7f8fa;
+  --line: #ccd0da; --line-2: #bcc0cc;
+  --text: #4c4f69; --text-2: #5c5f77; --text-3: #7c7f93;
+  --accent: #1e66f5; --on-accent: #eff1f5;
+  --red: #d20f39; --green: #40a02b; --yellow: #df8e1d; --blue: #1e66f5;
+  --magenta: #8839ef; --cyan: #179299; --orange: #fe640b;
+
+  --ok: var(--green); --warn: var(--yellow); --err: var(--red); --info: var(--cyan);
+  --halo: color-mix(in oklab, var(--accent) 30%, transparent);
+  --tint: color-mix(in oklab, var(--accent) 13%, transparent);
+
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-sans: "Instrument Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
+  --t-display: clamp(2.5rem, 5.4vw + .6rem, 4.5rem);
+  --t-heading: 1.75rem;
+  --t-title: 1.0625rem;
+  --t-body: .9375rem;
+  --t-label: .6875rem;
+  --t-machine: .8125rem;
+
+  --ease: cubic-bezier(.2, .7, .1, 1);
+  --d-tick: 120ms; --d-move: 180ms; --d-travel: 240ms;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    /* Dark defaults = Tokyo Night. */
+    --wall: #16161e; --sunken: #14151e; --surface: #1a1b26; --raised: #1f2335;
+    --line: #292e42; --line-2: #3b4261;
+    --text: #c0caf5; --text-2: #a9b1d6; --text-3: #737aa2;
+    --accent: #7aa2f7; --on-accent: #16161e;
+    --red: #f7768e; --green: #9ece6a; --yellow: #e0af68; --blue: #7aa2f7;
+    --magenta: #bb9af7; --cyan: #7dcfff; --orange: #ff9e64;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --wall: #16161e; --sunken: #14151e; --surface: #1a1b26; --raised: #1f2335;
+  --line: #292e42; --line-2: #3b4261;
+  --text: #c0caf5; --text-2: #a9b1d6; --text-3: #737aa2;
+  --accent: #7aa2f7; --on-accent: #16161e;
+  --red: #f7768e; --green: #9ece6a; --yellow: #e0af68; --blue: #7aa2f7;
+  --magenta: #bb9af7; --cyan: #7dcfff; --orange: #ff9e64;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--wall);
+  color: var(--text);
+  font: 400 var(--t-body)/1.6 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 30; background: var(--wall);
+}
+::selection { background: var(--accent); color: var(--on-accent); }
+:focus { outline: none; }
+:focus-visible { outline: none; box-shadow: 0 0 0 1px var(--accent), 0 0 0 4px var(--halo); }
+button { font: inherit; color: inherit; cursor: pointer; }
+a { color: var(--accent); text-underline-offset: 3px; }
+h1, h2, h3, p, ul, ol, figure, pre { margin: 0; }
+h1, h2, h3 { text-wrap: balance; }
+kbd {
+  font: 500 .6875rem/1 var(--font-mono); color: var(--text);
+  display: inline-block; padding: 3px 6px 2px;
+  background: var(--sunken); border: 1px solid var(--line-2); border-bottom-width: 2px;
+  white-space: nowrap;
+}
+.svgdefs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.ico { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: square; flex: none; }
+
+/* ---------- Bar (page header) ---------- */
+.bar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  background: var(--wall); border-bottom: 1px solid var(--line);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.bar-in {
+  max-width: 1240px; margin: 0 auto; height: 40px;
+  display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px;
+}
+.zone { display: flex; align-items: center; min-width: 0; }
+.zone-state { justify-content: flex-end; gap: 14px; position: relative; }
+.mark { width: 16px; height: 16px; flex: none; margin-right: 10px; }
+.mark .m-fill { fill: var(--accent); }
+.mark .m-line { fill: none; stroke: var(--text-2); stroke-width: 1.5; }
+.wsb {
+  position: relative; height: 40px; min-width: 26px; padding: 0 4px;
+  background: none; border: 0; color: var(--text-3);
+  font: 500 .8125rem/1 var(--font-mono); font-variant-numeric: tabular-nums;
+  transition: color var(--d-tick) var(--ease);
+}
+.wsb:hover { color: var(--text-2); }
+.wsb.is-on { color: var(--text); }
+.wsb.is-on::after {
+  content: ""; position: absolute; left: 5px; right: 5px; bottom: 0; height: 2px; background: var(--accent);
+}
+.ws-title {
+  margin-left: 12px; padding-left: 12px; border-left: 1px solid var(--line);
+  font: 500 .8125rem/1 var(--font-sans); color: var(--text-2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.clock { font: 600 .8125rem/1 var(--font-sans); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.clock .day { color: var(--text-2); font-weight: 400; margin-right: 6px; }
+.status { display: flex; align-items: center; gap: 12px; color: var(--text-2); }
+.status span { display: inline-flex; align-items: center; gap: 5px; font: 500 .6875rem/1 var(--font-mono); }
+.theme-btn {
+  display: inline-flex; align-items: center; gap: 8px; height: 28px; padding: 0 10px;
+  background: var(--surface); border: 1px solid var(--line-2);
+  font: 500 .75rem/1 var(--font-mono); white-space: nowrap;
+}
+.theme-btn:hover { border-color: var(--text-3); }
+.dots { display: inline-flex; gap: 2px; }
+.dots i { width: 6px; height: 6px; display: block; }
+.theme-menu {
+  position: absolute; right: 0; top: 40px; width: 300px; z-index: 25;
+  background: var(--raised); border: 1px solid var(--line-2); padding: 6px;
+  display: flex; flex-direction: column;
+}
+.tm-row {
+  display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 12px;
+  height: 36px; padding: 0 10px; background: none; border: 0; text-align: left;
+  font: 500 .8125rem/1 var(--font-sans);
+}
+.tm-row:hover { background: var(--sunken); }
+.tm-row small { font: 500 .625rem/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
+.tm-row[aria-checked="true"] { background: var(--tint); box-shadow: inset 0 0 0 1px var(--accent); }
+.tm-sep { height: 1px; background: var(--line); margin: 6px 0; }
+
+/* ---------- Workspace grid ---------- */
+main {
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 12px;
+}
+.grid {
+  max-width: 1240px; margin: 0 auto;
+  display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 8px;
+}
+.tile {
+  grid-column: span 12; min-width: 0;
+  display: flex; flex-direction: column; gap: 28px;
+  background: var(--surface); border: 1px solid var(--line);
+  padding: clamp(20px, 3.4vw, 48px);
+  scroll-margin-top: calc(52px + env(safe-area-inset-top, 0px));
+  transition: border-color var(--d-move) var(--ease), box-shadow var(--d-move) var(--ease);
+}
+.tile.is-focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--halo); }
+@media (min-width: 1000px) {
+  .span-6 { grid-column: span 6; }
+  .span-5 { grid-column: span 5; }
+  .span-7 { grid-column: span 7; }
+}
+.eyebrow {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  font: 500 var(--t-label)/1.4 var(--font-mono); letter-spacing: .08em; text-transform: uppercase;
+  color: var(--text-3);
+}
+.eyebrow b { color: var(--accent); font-weight: 700; margin-right: 8px; }
+.head { display: flex; flex-direction: column; gap: 12px; }
+h1 { font: 800 var(--t-display)/.95 var(--font-mono); letter-spacing: -.045em; }
+h2 { font: 600 var(--t-heading)/1.18 var(--font-sans); letter-spacing: -.012em; }
+h3 { font: 600 var(--t-title)/1.35 var(--font-sans); }
+.lede { font-size: 1.1875rem; line-height: 1.55; color: var(--text-2); max-width: 58ch; }
+.sub { color: var(--text-2); max-width: 64ch; }
+.label {
+  font: 500 var(--t-label)/1.4 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-3);
+}
+.mono { font-family: var(--font-mono); }
+
+/* ---------- Hero ---------- */
+.hero-top { display: grid; gap: 28px; align-items: end; }
+@media (min-width: 900px) { .hero-top { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 48px; } }
+.hero-copy { display: flex; flex-direction: column; gap: 20px; }
+.keeps { display: flex; flex-wrap: wrap; gap: 6px; }
+.keep {
+  display: inline-flex; align-items: center; gap: 8px; padding: 5px 10px;
+  border: 1px solid var(--line); font: 500 .75rem/1.2 var(--font-mono); color: var(--text-2);
+}
+.keep::before { content: ""; width: 6px; height: 6px; background: var(--accent); }
+.desk-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
+.seg { display: inline-flex; border: 1px solid var(--line-2); background: var(--sunken); padding: 2px; }
+.seg button {
+  border: 0; background: none; padding: 6px 14px; color: var(--text-2);
+  font: 500 .75rem/1 var(--font-mono); letter-spacing: .04em;
+  transition: background var(--d-tick) var(--ease), color var(--d-tick) var(--ease);
+}
+.seg button[aria-checked="true"] { background: var(--surface); color: var(--text); box-shadow: inset 0 0 0 1px var(--line-2); }
+.hint { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; color: var(--text-3); font-size: .8125rem; }
+.hint span { display: inline-flex; align-items: center; gap: 6px; }
+.btn-ghost {
+  display: inline-flex; align-items: center; gap: 8px; height: 30px; padding: 0 10px;
+  background: none; border: 1px solid var(--line-2); font: 500 .75rem/1 var(--font-sans); color: var(--text);
+}
+.btn-ghost:hover { border-color: var(--text-3); }
+
+/* ---------- Desktop mock ---------- */
+.desk {
+  --dg-in: 8px; --dg-out: 12px;
+  position: relative; max-width: 100%; aspect-ratio: 16 / 9.4;
+  display: flex; flex-direction: column; overflow: hidden;
+  border: 1px solid var(--line);
+  background:
+    radial-gradient(110% 90% at 85% -10%, color-mix(in oklab, var(--accent) 12%, var(--wall)), transparent 60%),
+    radial-gradient(80% 70% at 0% 110%, color-mix(in oklab, var(--magenta) 8%, var(--wall)), transparent 60%),
+    var(--wall);
+}
+.d-screen { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.d-track {
+  display: flex; width: 300%; height: 100%;
+  transform: translateX(calc(var(--ws, 0) * -33.3333%));
+  transition: transform var(--d-travel) var(--ease);
+}
+.d-pane { width: 33.3333%; height: 100%; min-width: 0; padding: var(--dg-out); display: grid; gap: var(--dg-in); }
+.pane-a { grid-template-columns: 1.12fr 1fr; grid-template-rows: 1.15fr 1fr; }
+.pane-a .win-term { grid-row: span 2; }
+.pane-b { grid-template-columns: 1fr 1fr; }
+.pane-c { place-items: center; }
+.empty-ws { text-align: center; display: grid; gap: 8px; justify-items: center; color: var(--text-3); font-size: .8125rem; }
+.empty-ws strong { font: 800 2.5rem/1 var(--font-mono); color: var(--line-2); letter-spacing: -.04em; }
+
+/* Waybar component */
+.wb {
+  height: 30px; flex: none; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+  padding: 0 10px; background: color-mix(in oklab, var(--wall) 88%, transparent);
+  border-bottom: 1px solid var(--line); color: var(--text-2);
+}
+.wb-zone { display: flex; align-items: center; gap: 2px; min-width: 0; }
+.wb-state { justify-content: flex-end; gap: 12px; }
+.wb .mark { width: 13px; height: 13px; margin-right: 8px; }
+.wb-ws {
+  position: relative; height: 30px; min-width: 22px; padding: 0 3px; background: none; border: 0;
+  font: 500 .6875rem/1 var(--font-mono); color: var(--text-3);
+}
+.wb-ws.is-busy { color: var(--text-2); }
+.wb-ws.is-on { color: var(--text); }
+.wb-ws.is-on::after { content: ""; position: absolute; left: 4px; right: 4px; bottom: 0; height: 2px; background: var(--accent); }
+span.wb-ws { display: inline-grid; place-items: center; cursor: default; }
+.wb-clock { font: 600 .75rem/1 var(--font-sans); color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.wb-clock .day { font-weight: 400; color: var(--text-2); margin-right: 5px; }
+.wb-mod { display: inline-flex; align-items: center; gap: 5px; font: 500 .65rem/1 var(--font-mono); color: var(--text-2); white-space: nowrap; }
+.wb-mod.ok { color: var(--ok); }
+.wb-sep { width: 1px; height: 12px; background: var(--line-2); }
+
+/* Window component */
+.win {
+  position: relative; min-width: 0; min-height: 0; overflow: hidden;
+  display: flex; flex-direction: column;
+  background: var(--surface); border: 1px solid var(--line);
+  font: 400 .6875rem/1.62 var(--font-mono); color: var(--text);
+  transition: border-color var(--d-move) var(--ease), box-shadow var(--d-move) var(--ease);
+}
+.win.is-active { border-color: var(--accent); box-shadow: 0 0 0 3px var(--halo); }
+.win.is-urgent { border-color: var(--err); }
+.win-body { flex: 1; min-height: 0; overflow: hidden; padding: 10px 12px; white-space: pre; }
+.c-acc { color: var(--accent); } .c-g { color: var(--green); } .c-b { color: var(--blue); }
+.c-m { color: var(--magenta); } .c-y { color: var(--yellow); } .c-c { color: var(--cyan); }
+.c-r { color: var(--red); } .c-o { color: var(--orange); } .c-3 { color: var(--text-3); } .c-2 { color: var(--text-2); }
+.cursor { display: inline-block; width: .6em; height: 1.15em; vertical-align: -.2em; background: var(--text); animation: blink 1.1s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.nv { display: grid; grid-template-columns: 2.2em 1fr; column-gap: 10px; }
+.nv .ln { color: var(--text-3); text-align: right; }
+.nv .ln.cur { color: var(--yellow); }
+.nv-status { display: flex; align-items: stretch; flex: none; background: var(--sunken); border-top: 1px solid var(--line); font-size: .625rem; line-height: 1.9; white-space: nowrap; }
+.nv-status > span { padding: 0 8px; }
+.nv-mode { background: var(--accent); color: var(--on-accent); font-weight: 700; }
+.nv-status .grow { flex: 1; }
+.bt { display: grid; grid-template-columns: 3.2em 1fr 3em; align-items: center; column-gap: 8px; row-gap: 3px; }
+.bt-track { height: 6px; background: var(--sunken); position: relative; overflow: hidden; }
+.bt-fill { position: absolute; inset: 0 auto 0 0; width: var(--v, 20%); background: var(--green); transition: width 900ms var(--ease), background var(--d-move); }
+.bt-fill.mid { background: var(--yellow); } .bt-fill.hi { background: var(--red); }
+.bt .val { text-align: right; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.bt-head { display: flex; justify-content: space-between; color: var(--text-3); margin-bottom: 6px; }
+
+/* Toast (mako) component */
+.toast {
+  width: 100%; background: var(--raised); border: 1px solid var(--line-2);
+  padding: 12px 14px; display: grid; gap: 3px; text-align: left;
+}
+.toast-head { display: flex; justify-content: space-between; gap: 12px; font: 500 .625rem/1.5 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
+.toast-head .who { display: inline-flex; align-items: center; gap: 6px; }
+.toast-head .who::before { content: ""; width: 6px; height: 6px; background: var(--info); }
+.toast-title { font: 600 .8125rem/1.35 var(--font-sans); color: var(--text); }
+.toast-body { font: 400 .75rem/1.45 var(--font-sans); color: var(--text-2); }
+.toast.is-critical { border-color: var(--err); }
+.toast.is-critical .who::before { background: var(--err); }
+.toast.is-critical .who { color: var(--err); }
+.desk .toast { position: absolute; top: 12px; right: 12px; width: min(264px, 64%); z-index: 3; }
+.toast.pop { animation: pop var(--d-move) var(--ease); }
+@keyframes pop { from { transform: translateY(-6px); } to { transform: none; } }
+
+/* Menu / launcher (walker) component */
+.launcher {
+  position: absolute; inset: 0; z-index: 5; display: grid; place-items: start center; padding-top: 7%;
+  background: color-mix(in oklab, var(--wall) 45%, transparent);
+}
+.menu-panel { width: min(460px, 92%); background: var(--raised); border: 1px solid var(--line-2); display: flex; flex-direction: column; text-align: left; }
+.menu-search { display: flex; align-items: center; gap: 10px; padding: 0 14px; height: 44px; border-bottom: 1px solid var(--line); color: var(--text-3); }
+.menu-search input { flex: 1; min-width: 0; background: none; border: 0; color: var(--text); font: 500 .875rem/1 var(--font-sans); }
+.menu-search input::placeholder { color: var(--text-3); }
+.menu-search input:focus-visible { box-shadow: none; }
+.menu-title { font: 500 .625rem/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
+.menu-list { list-style: none; padding: 6px; display: flex; flex-direction: column; max-height: 300px; overflow: auto; }
+.mi {
+  display: grid; grid-template-columns: 24px auto minmax(0, 1fr) auto; align-items: center; gap: 12px;
+  height: 36px; padding: 0 10px; cursor: pointer; color: var(--text);
+}
+.mi:hover { background: var(--sunken); }
+.mi-icon { width: 24px; height: 24px; display: grid; place-items: center; background: var(--sunken); color: var(--text-2); font: 500 .75rem/1 var(--font-mono); }
+.mi-name { font: 600 .8125rem/1 var(--font-sans); white-space: nowrap; }
+.mi-desc { font: 400 .75rem/1.2 var(--font-sans); color: var(--text-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mi-hint { font: 500 .625rem/1 var(--font-mono); color: var(--text-3); white-space: nowrap; }
+.mi.is-sel { background: var(--tint); box-shadow: inset 0 0 0 1px var(--accent); }
+.mi.is-sel .mi-icon { background: var(--accent); color: var(--on-accent); }
+.mi-none { padding: 12px 10px; color: var(--text-3); font-size: .8125rem; }
+.menu-foot { display: flex; flex-wrap: wrap; gap: 14px; padding: 8px 14px; border-top: 1px solid var(--line); font: 500 .625rem/1.4 var(--font-mono); color: var(--text-3); }
+.menu-foot kbd { font-size: .5625rem; padding: 2px 4px 1px; margin-right: 4px; }
+
+/* Stock comparison: how Omarchy draws the same parts today */
+.desk[data-mode="raw"] { --dg-in: 5px; --dg-out: 10px; }
+.desk[data-mode="raw"] .wb { border-bottom: 0; background: var(--wall); }
+.desk[data-mode="raw"] .wb-ws { color: var(--text-2); }
+.desk[data-mode="raw"] .wb-ws.is-on { color: var(--accent); }
+.desk[data-mode="raw"] .wb-ws.is-on::after,
+.desk[data-mode="raw"] .wb-sep,
+.desk[data-mode="raw"] .wb-mod b,
+.desk[data-mode="raw"] .wb .mark .m-fill { display: none; }
+.desk[data-mode="raw"] .wb-clock,
+.desk[data-mode="raw"] .wb-clock .day { font: 400 .6875rem/1 var(--font-mono); color: var(--text); }
+.desk[data-mode="raw"] .win { border: 2px solid var(--line-2); box-shadow: none; }
+.desk[data-mode="raw"] .win.is-active { border-color: var(--accent); }
+.desk[data-mode="raw"] .toast { background: var(--surface); border: 2px solid var(--accent); padding: 8px 10px; gap: 0; }
+.desk[data-mode="raw"] .toast-head,
+.desk[data-mode="raw"] .toast-title,
+.desk[data-mode="raw"] .toast-body { font: 400 .6875rem/1.5 var(--font-mono); color: var(--text); letter-spacing: 0; text-transform: none; }
+.desk[data-mode="raw"] .toast-head .who::before,
+.desk[data-mode="raw"] .toast-head time,
+.desk[data-mode="raw"] .mi-desc,
+.desk[data-mode="raw"] .mi-hint,
+.desk[data-mode="raw"] .menu-foot,
+.desk[data-mode="raw"] .menu-title { display: none; }
+.desk[data-mode="raw"] .menu-panel { background: var(--surface); border: 2px solid var(--accent); }
+.desk[data-mode="raw"] .menu-search input { font: 400 .75rem/1 var(--font-mono); }
+.desk[data-mode="raw"] .mi { grid-template-columns: 16px 1fr; height: 26px; gap: 8px; }
+.desk[data-mode="raw"] .mi-icon { background: none; width: 16px; }
+.desk[data-mode="raw"] .mi-name { font: 400 .75rem/1 var(--font-mono); }
+.desk[data-mode="raw"] .mi.is-sel { box-shadow: none; background: var(--line); }
+.desk[data-mode="raw"] .mi.is-sel .mi-icon { background: none; color: var(--accent); }
+
+@media (max-width: 720px) {
+  .desk { aspect-ratio: auto; }
+  .d-track { height: auto; align-items: stretch; }
+  .d-pane { height: auto; }
+  .pane-a { grid-template-columns: 1fr; grid-template-rows: auto; }
+  .pane-a .win-term { grid-row: auto; height: 230px; }
+  .pane-a .win-nv { height: 200px; }
+  .pane-a .win-bt { display: none; }
+  .pane-b { grid-template-columns: 1fr; }
+  .pane-b .win { height: 210px; }
+  .wb-state .wb-mod:not(.keep-sm), .wb-sep { display: none; }
+  .desk .toast { width: 72%; }
+}
+
+/* ---------- Rules ---------- */
+.rules { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.rule { display: grid; gap: 6px 32px; padding-block: 18px; border-bottom: 1px solid var(--line); }
+@media (min-width: 780px) { .rule { grid-template-columns: 9rem minmax(0, 1fr) minmax(0, 1.25fr); align-items: baseline; } }
+.rule .label { color: var(--accent); }
+.rule .was { color: var(--text-3); }
+.rule .now { color: var(--text); }
+.rules-head { display: none; }
+@media (min-width: 780px) { .rules-head { display: grid; padding-block: 0 10px; border-bottom: 1px solid var(--line); } .rules-head span { color: var(--text-3); } }
+
+/* ---------- Color ---------- */
+.roles { display: flex; flex-direction: column; gap: 22px; }
+.role-group { display: grid; gap: 10px; }
+@media (min-width: 900px) { .role-group { grid-template-columns: 9rem minmax(0, 1fr); gap: 24px; } }
+.role-group > .label { padding-top: 4px; }
+.sw-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.sw { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.sw-chip { height: 52px; border: 1px solid var(--line-2); background: var(--c); }
+.sw-meta { display: grid; gap: 1px; }
+.sw-name { font: 600 .75rem/1.4 var(--font-mono); }
+.sw-name em { font-style: normal; font-weight: 400; color: var(--text-3); }
+.sw-hex { font: 400 .6875rem/1.4 var(--font-mono); color: var(--text-3); text-transform: uppercase; }
+.sw-use { font-size: .75rem; line-height: 1.4; color: var(--text-2); }
+.color-split { display: grid; gap: 28px; }
+@media (min-width: 1000px) { .color-split { grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr); gap: 40px; } }
+.contrast { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.ct-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto auto; align-items: center; gap: 14px; padding-block: 10px; border-bottom: 1px solid var(--line); }
+.ct-sample { height: 32px; display: grid; place-items: center; font: 700 .875rem/1 var(--font-sans); border: 1px solid var(--line); }
+.ct-pair { font: 500 .75rem/1.3 var(--font-mono); color: var(--text-2); min-width: 0; }
+.ct-ratio { font: 600 .8125rem/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.grade { font: 600 .625rem/1 var(--font-mono); letter-spacing: .06em; padding: 4px 6px; border: 1px solid currentColor; min-width: 4.4em; text-align: center; text-transform: uppercase; }
+.grade.g-good { color: var(--ok); } .grade.g-mid { color: var(--warn); } .grade.g-low { color: var(--text-3); }
+.themes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+@media (min-width: 760px) { .themes { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+.th {
+  display: flex; flex-direction: column; gap: 10px; padding: 12px; text-align: left;
+  border: 1px solid var(--line-2); min-width: 0;
+  transition: box-shadow var(--d-tick) var(--ease), border-color var(--d-tick) var(--ease);
+}
+.th:hover { border-color: var(--text-3); }
+.th.is-on { border-color: var(--accent); box-shadow: 0 0 0 3px var(--halo); }
+.th-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.th-name { font: 600 .8125rem/1.2 var(--font-sans); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.th-mode { font: 500 .5625rem/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; opacity: .7; }
+.th-bar { height: 3px; }
+.th-dots { display: flex; gap: 3px; }
+.th-dots i { flex: 1; height: 10px; display: block; }
+
+/* ---------- Type ---------- */
+.specimen { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.sp { display: grid; gap: 8px 24px; padding-block: 18px; border-bottom: 1px solid var(--line); align-items: baseline; }
+@media (min-width: 640px) { .sp { grid-template-columns: 8.5rem minmax(0, 1fr); } }
+.sp-meta { display: grid; gap: 2px; font: 400 .6875rem/1.45 var(--font-mono); color: var(--text-3); }
+.sp-meta strong { font-weight: 600; color: var(--text); font-size: .75rem; }
+.sp-sample { min-width: 0; overflow-wrap: anywhere; }
+.s-display { font: 800 2.75rem/1 var(--font-mono); letter-spacing: -.045em; }
+.s-heading { font: 600 1.75rem/1.2 var(--font-sans); letter-spacing: -.012em; }
+.s-title { font: 600 1.0625rem/1.4 var(--font-sans); }
+.s-body { font: 400 .9375rem/1.6 var(--font-sans); color: var(--text-2); max-width: 52ch; }
+.s-label { font: 500 .6875rem/1.45 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
+.s-machine { font: 400 .8125rem/1.55 var(--font-mono); }
+.law { border: 1px solid var(--line-2); background: var(--sunken); padding: 16px 18px; display: grid; gap: 6px; }
+.law p { max-width: none; }
+
+/* ---------- Space ---------- */
+.scale { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.sc { display: grid; grid-template-columns: 4.6rem 52px minmax(0, 1fr); align-items: center; gap: 14px; padding-block: 8px; border-bottom: 1px solid var(--line); }
+.sc-k { font: 500 .75rem/1.2 var(--font-mono); font-variant-numeric: tabular-nums; }
+.sc-k span { color: var(--text-3); }
+.sc-bar { height: 10px; background: var(--accent); width: var(--w); }
+.sc-use { font-size: .8125rem; color: var(--text-2); line-height: 1.4; }
+.geo { width: 100%; height: auto; display: block; border: 1px solid var(--line); }
+.geo .g-wall { fill: var(--wall); }
+.geo .g-bar { fill: var(--wall); stroke: var(--line); }
+.geo .g-win { fill: var(--surface); stroke: var(--line); stroke-width: 1; }
+.geo .g-act { fill: var(--surface); stroke: var(--accent); stroke-width: 1; }
+.geo .g-halo { fill: none; stroke: var(--halo); stroke-width: 3; }
+.geo .g-dim { stroke: var(--accent); stroke-width: 1; fill: none; }
+.geo .g-txt { fill: var(--text-2); font: 500 9px var(--font-mono); }
+.geo .g-strong { fill: var(--text); font: 600 9px var(--font-mono); }
+.geo .g-ws { fill: var(--accent); }
+.geo .g-faint { fill: var(--text-3); font: 500 8px var(--font-mono); }
+
+/* ---------- Parts ---------- */
+.parts { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 320px), 1fr)); gap: 8px; }
+.part { display: flex; flex-direction: column; border: 1px solid var(--line); min-width: 0; }
+.part-stage { flex: 1; background: var(--wall); padding: 28px 20px; display: grid; place-items: center; gap: 12px; min-height: 210px; }
+.part-stage.wide { place-items: stretch; min-height: 0; padding: 24px 20px; }
+.part-spec { display: grid; gap: 6px; padding: 14px 16px 16px; border-top: 1px solid var(--line); }
+.part-spec p { font-size: .8125rem; color: var(--text-2); }
+.tokens { display: flex; flex-wrap: wrap; gap: 4px 10px; font: 400 .6875rem/1.5 var(--font-mono); color: var(--text-3); }
+.tokens span::before { content: "--"; opacity: .6; }
+.part-full { grid-column: 1 / -1; }
+.bar-legend { display: grid; grid-template-columns: 1fr auto 1fr; margin-top: 10px; font: 500 .625rem/1.4 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
+.bar-legend span:nth-child(2) { text-align: center; }
+.bar-legend span:nth-child(3) { text-align: right; }
+.part-stage .wb { border: 1px solid var(--line); }
+.winrow { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.winrow figure { display: grid; gap: 10px; }
+.winrow .win { height: 96px; }
+.winrow .win-body { font-size: .625rem; }
+.winrow figcaption { font: 500 .6875rem/1.4 var(--font-mono); color: var(--text-2); }
+.winrow figcaption span { color: var(--text-3); display: block; }
+.stack { display: grid; gap: 8px; width: 100%; max-width: 300px; }
+.keys { display: grid; gap: 10px; width: 100%; max-width: 300px; }
+.keys div { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: .8125rem; color: var(--text-2); }
+.keys div span:first-child { display: inline-flex; gap: 3px; align-items: center; color: var(--text-3); font-size: .6875rem; }
+.osd { width: 100%; max-width: 300px; display: grid; grid-template-columns: 16px 1fr 2.4em; align-items: center; gap: 12px; background: var(--raised); border: 1px solid var(--line-2); padding: 12px 14px; color: var(--text); }
+.osd .ico { width: 16px; height: 16px; }
+.osd-track { height: 4px; background: var(--sunken); position: relative; }
+.osd-track i { position: absolute; inset: 0 auto 0 0; width: var(--v); background: var(--accent); }
+.osd-val { font: 600 .75rem/1 var(--font-mono); text-align: right; font-variant-numeric: tabular-nums; }
+.ctrl { display: grid; gap: 14px; width: 100%; max-width: 300px; }
+.field { display: grid; gap: 6px; }
+.field label { font: 500 .6875rem/1 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--text-3); }
+.input {
+  height: 36px; padding: 0 12px; background: var(--sunken); border: 1px solid var(--line-2);
+  color: var(--text); font: 400 .8125rem/1 var(--font-mono); width: 100%;
+}
+.input:focus-visible, .input.is-focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--halo); }
+.btns { display: flex; gap: 8px; }
+.btn { height: 34px; padding: 0 14px; border: 1px solid var(--line-2); background: var(--surface); font: 600 .8125rem/1 var(--font-sans); }
+.btn:hover { border-color: var(--text-3); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn-primary:hover { border-color: var(--accent); filter: brightness(1.06); }
+.toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: .8125rem; }
+.switch { width: 34px; height: 18px; border: 1px solid var(--line-2); background: var(--sunken); position: relative; padding: 0; flex: none; }
+.switch::after { content: ""; position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; background: var(--text-3); transition: transform var(--d-tick) var(--ease), background var(--d-tick); }
+.switch[aria-checked="true"] { background: var(--tint); border-color: var(--accent); }
+.switch[aria-checked="true"]::after { transform: translateX(16px); background: var(--accent); }
+.lock { display: grid; justify-items: center; gap: 6px; width: 100%; }
+.lock-time { font: 800 3rem/1 var(--font-mono); letter-spacing: -.05em; font-variant-numeric: tabular-nums; }
+.lock-date { font-size: .8125rem; color: var(--text-2); }
+.lock .input { width: 200px; margin-top: 14px; text-align: center; letter-spacing: .3em; }
+.part-stage .menu-panel { width: 100%; max-width: 360px; }
+
+/* ---------- Keys & motion ---------- */
+.grammar { display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.gr { display: grid; gap: 8px 24px; padding-block: 16px; border-bottom: 1px solid var(--line); }
+@media (min-width: 640px) { .gr { grid-template-columns: 10.5rem minmax(0, 1fr); } }
+.gr-mod { display: grid; gap: 6px; align-content: start; }
+.gr-mod .verb { font: 600 .9375rem/1.2 var(--font-sans); }
+.gr-mod .combo { display: flex; gap: 3px; flex-wrap: wrap; }
+.gr-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px 20px; }
+.gr-list div { display: flex; justify-content: space-between; gap: 10px; font-size: .8125rem; color: var(--text-2); padding-block: 3px; border-bottom: 1px dashed var(--line); }
+.gr-list kbd { flex: none; }
+.gr-list .today { color: var(--text); }
+.gr-list .today::after { content: " •"; color: var(--accent); }
+.motion { display: grid; gap: 12px; }
+.mo { display: grid; grid-template-columns: 7rem minmax(0, 1fr); align-items: center; gap: 14px; }
+.mo-k { display: grid; gap: 1px; font: 500 .75rem/1.3 var(--font-mono); }
+.mo-k span { color: var(--text-3); font-weight: 400; font-size: .6875rem; }
+.mo-track { position: relative; height: 26px; background: var(--sunken); border: 1px solid var(--line); }
+.mo-dot { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: var(--accent); transition: left calc(var(--dur) * var(--slow, 1)) var(--ease); }
+.motion.go .mo-dot { left: calc(100% - 21px); }
+.mo-ctrl { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.check { display: inline-flex; align-items: center; gap: 8px; font-size: .8125rem; color: var(--text-2); cursor: pointer; }
+.check input { accent-color: var(--accent); margin: 0; }
+
+/* ---------- Theme file ---------- */
+.code-wrap { position: relative; border: 1px solid var(--line-2); background: var(--sunken); min-width: 0; }
+.code-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 0 0 0 14px; height: 36px; border-bottom: 1px solid var(--line); }
+.code-bar .label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.copy { height: 35px; padding: 0 14px; border: 0; border-left: 1px solid var(--line); background: none; font: 500 .75rem/1 var(--font-mono); color: var(--text); }
+.copy:hover { background: var(--surface); }
+pre.code { overflow-x: auto; padding: 14px; font: 400 .75rem/1.7 var(--font-mono); color: var(--text); }
+.tk-c { color: var(--text-3); } .tk-s { color: var(--magenta); } .tk-k { color: var(--text); } .tk-str { color: var(--green); }
+.tk-str[style]::after { content: ""; display: inline-block; width: .85em; height: .85em; margin-left: .7em; vertical-align: -.1em; background: var(--c); border: 1px solid var(--line-2); }
+.gen { list-style: none; padding: 0; display: flex; flex-direction: column; border-top: 1px solid var(--line); }
+.gen li { display: grid; grid-template-columns: minmax(0, 9.5rem) minmax(0, 1fr); gap: 14px; padding-block: 8px; border-bottom: 1px solid var(--line); font-size: .8125rem; color: var(--text-2); }
+.gen li code { font: 500 .75rem/1.5 var(--font-mono); color: var(--text); overflow-wrap: anywhere; }
+
+footer {
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 48px;
+}
+.foot { max-width: 1240px; margin: 0 auto; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 32px; font-size: .8125rem; color: var(--text-3); }
+.foot p { max-width: 70ch; }
+
+@media (max-width: 720px) {
+  .bar-in { grid-template-columns: minmax(0, 1fr) auto; }
+  .zone-when, .status, .ws-title { display: none; }
+  .theme-name { display: none; }
+  .winrow { grid-template-columns: 1fr; }
+  .winrow .win { height: 72px; }
+}
+@media (max-width: 420px) {
+  .wsb { min-width: 22px; padding: 0 2px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition-duration: 0ms !important; animation: none !important; }
+  .mo-dot { transition-duration: calc(var(--dur) * var(--slow, 1)) !important; }
+}
+</style>
+
+<svg class="svgdefs" aria-hidden="true">
+  <symbol id="i-wifi" viewBox="0 0 24 24"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0M12 19.5h.01"/></symbol>
+  <symbol id="i-vol" viewBox="0 0 24 24"><path d="M4 9v6h4l5 4V5L8 9zM16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/></symbol>
+  <symbol id="i-bat" viewBox="0 0 24 24"><path d="M2 7h18v10H2zM22 10.5v3M5 10h10v4H5z"/></symbol>
+  <symbol id="i-bt" viewBox="0 0 24 24"><path d="M7 7l10 10-5 4V3l5 4L7 17"/></symbol>
+  <symbol id="i-cpu" viewBox="0 0 24 24"><path d="M6 6h12v12H6zM9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><path d="M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13zM15.5 15.5 21 21"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-mark" viewBox="0 0 16 16"><rect class="m-fill" x="1" y="1" width="7" height="14"/><rect class="m-line" x="10.25" y="1.75" width="4.5" height="5.5"/><rect class="m-line" x="10.25" y="9.25" width="4.5" height="5.5"/></symbol>
+</svg>
+
+<header class="bar">
+  <div class="bar-in">
+    <nav class="zone zone-where" aria-label="Workspaces">
+      <svg class="mark" aria-hidden="true"><use href="#i-mark"/></svg>
+      <div id="wsNav"></div>
+      <span class="ws-title" id="wsTitle">Thesis</span>
+    </nav>
+    <div class="zone zone-when"><span class="clock" id="clock"><span class="day">Sunday</span>14:32</span></div>
+    <div class="zone zone-state">
+      <div class="status" aria-hidden="true">
+        <span><svg class="ico"><use href="#i-wifi"/></svg></span>
+        <span><svg class="ico"><use href="#i-vol"/></svg>64</span>
+        <span><svg class="ico"><use href="#i-bat"/></svg>82</span>
+      </div>
+      <button class="theme-btn" id="themeBtn" aria-haspopup="true" aria-expanded="false" aria-controls="themeMenu">
+        <span class="dots" aria-hidden="true"><i style="background:var(--accent)"></i><i style="background:var(--green)"></i><i style="background:var(--magenta)"></i></span>
+        <span class="theme-name" id="themeName">Theme</span>
+      </button>
+      <div class="theme-menu" id="themeMenu" role="menu" aria-label="Theme" hidden></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="grid">
+
+    <!-- 1 -->
+    <section class="tile is-focus" id="thesis" data-ws="1" data-name="Thesis" aria-labelledby="h-thesis">
+      <div class="eyebrow"><span><b>1</b>Thesis</span><span>Press <kbd>1</kbd> to <kbd>8</kbd> to move between workspaces</span></div>
+      <div class="hero-top">
+        <h1 id="h-thesis">Omarchy, tuned.</h1>
+        <div class="hero-copy">
+          <p class="lede">Omarchy gets the hard parts right. Every action is a keystroke away, windows tile themselves, and one theme recolors the whole machine. What it lacks is a shared grammar: each part sizes, spaces and colors itself. This study keeps the paradigm and adds the structure.</p>
+          <div class="keeps" aria-label="What stays">
+            <span class="keep">Keyboard first</span><span class="keep">Tiling by default</span><span class="keep">Square corners</span><span class="keep">No title bars</span><span class="keep">One theme recolors all</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="desk-controls">
+        <div class="seg" role="radiogroup" aria-label="Compare stock and tuned">
+          <button role="radio" aria-checked="false" data-mode="raw" id="segRaw">Stock</button>
+          <button role="radio" aria-checked="true" data-mode="tuned" id="segTuned">Tuned</button>
+        </div>
+        <div class="hint">
+          <span>Click a window to focus it</span>
+          <span><kbd>T</kbd> theme</span>
+          <button class="btn-ghost" id="openMenu"><svg class="ico"><use href="#i-search"/></svg>Open the menu <kbd>/</kbd></button>
+        </div>
+      </div>
+
+      <div class="desk" id="desk" data-mode="tuned">
+        <div class="wb">
+          <div class="wb-zone">
+            <svg class="mark" aria-hidden="true"><use href="#i-mark"/></svg>
+            <button class="wb-ws is-busy is-on" data-dws="0" aria-label="Workspace 1">1</button>
+            <button class="wb-ws is-busy" data-dws="1" aria-label="Workspace 2">2</button>
+            <button class="wb-ws" data-dws="2" aria-label="Workspace 3">3</button>
+            <span class="wb-ws" aria-hidden="true">4</span>
+            <span class="wb-ws" aria-hidden="true">5</span>
+          </div>
+          <div class="wb-clock" data-clock><span class="day">Sunday</span>14:32</div>
+          <div class="wb-zone wb-state">
+            <span class="wb-mod"><svg class="ico"><use href="#i-cpu"/></svg><b data-cpu>13%</b></span>
+            <span class="wb-sep"></span>
+            <span class="wb-mod"><svg class="ico"><use href="#i-bt"/></svg></span>
+            <span class="wb-mod"><svg class="ico"><use href="#i-wifi"/></svg><b>home</b></span>
+            <span class="wb-mod keep-sm"><svg class="ico"><use href="#i-vol"/></svg><b>64</b></span>
+            <span class="wb-mod ok keep-sm"><svg class="ico"><use href="#i-bat"/></svg><b>82</b></span>
+          </div>
+        </div>
+
+        <div class="d-screen">
+          <div class="d-track" id="dTrack">
+            <div class="d-pane pane-a">
+              <div class="win win-term is-active" aria-label="Terminal">
+<div class="win-body"><span class="c-acc">~</span> <span class="c-m">❯</span> ls ~/.config/hypr
+<span class="c-b">autostart.conf</span>  <span class="c-b">bindings.conf</span>   <span class="c-b">envs.conf</span>
+<span class="c-b">hypridle.conf</span>   <span class="c-b">hyprland.conf</span>   <span class="c-b">hyprlock.conf</span>
+<span class="c-b">input.conf</span>      <span class="c-b">looknfeel.conf</span>  <span class="c-b">monitors.conf</span>
+
+<span class="c-acc">~</span> <span class="c-m">❯</span> git log --oneline -5
+<span class="c-y">a41c9e2</span> Map theme roles to waybar
+<span class="c-y">7f02b1d</span> Set launcher rows to 9u
+<span class="c-y">19d8e6a</span> Add halo focus ring
+<span class="c-y">c03e5f7</span> Split mono and sans roles
+<span class="c-y">8be1a40</span> Generate per-app configs from theme.toml
+
+<span class="c-acc">~</span> <span class="c-m">❯</span> <span class="cursor"></span></div>
+              </div>
+              <div class="win win-nv" aria-label="Neovim">
+<div class="win-body nv"><span class="ln">1</span><span><span class="c-b">#workspaces</span> <span class="c-m">button</span> {</span><span class="ln">2</span><span>  <span class="c-c">color</span>: <span class="c-o">@text-3</span>;</span><span class="ln">3</span><span>  <span class="c-c">padding</span>: <span class="c-o">0</span> <span class="c-o">8px</span>;</span><span class="ln">4</span><span>}</span><span class="ln">5</span><span><span class="c-b">#workspaces</span> <span class="c-m">button</span><span class="c-y">.active</span> {</span><span class="ln">6</span><span>  <span class="c-c">color</span>: <span class="c-o">@text</span>;</span><span class="ln cur">7</span><span>  <span class="c-c">box-shadow</span>: <span class="c-m">inset</span> <span class="c-o">0 -2px</span> <span class="c-o">@accent</span>;</span><span class="ln">8</span><span>}</span><span class="ln">9</span><span><span class="c-b">#clock</span> {</span><span class="ln">10</span><span>  <span class="c-c">font-family</span>: <span class="c-g">"Instrument Sans"</span>;</span><span class="ln">11</span><span>  <span class="c-c">font-weight</span>: <span class="c-o">600</span>;</span><span class="ln">12</span><span>}</span></div>
+                <div class="nv-status"><span class="nv-mode">NORMAL</span><span class="c-2">waybar.css</span><span class="grow"></span><span class="c-3">css</span><span class="c-2">7:28</span></div>
+              </div>
+              <div class="win win-bt" aria-label="System monitor">
+                <div class="win-body">
+                  <div class="bt-head"><span>cpu</span><span data-cpu>13%</span></div>
+                  <div class="bt" id="btop"></div>
+                </div>
+              </div>
+            </div>
+            <div class="d-pane pane-b">
+              <div class="win is-active" aria-label="lazygit">
+<div class="win-body"><span class="c-acc">Status</span> <span class="c-3">─</span> omarchui <span class="c-3">→</span> <span class="c-g">main</span>
+
+<span class="c-acc">Files</span>
+ <span class="c-y">M</span> index.html
+ <span class="c-y">M</span> tokens.css
+ <span class="c-g">A</span> theme.toml
+
+<span class="c-acc">Commits</span>
+ <span class="c-y">a41c9e2</span> Map theme roles to waybar
+ <span class="c-y">7f02b1d</span> Set launcher rows to 9u
+ <span class="c-y">19d8e6a</span> Add halo focus ring</div>
+              </div>
+              <div class="win" aria-label="Terminal">
+<div class="win-body"><span class="c-acc">~/omarchui</span> <span class="c-m">❯</span> bin/dev
+<span class="c-3">=&gt;</span> Booting Puma
+<span class="c-3">=&gt;</span> Rails 8.1 application starting in development
+<span class="c-3">*</span>  Environment: development
+<span class="c-3">*</span>  Listening on <span class="c-c">http://127.0.0.1:3000</span>
+Use Ctrl-C to stop
+<span class="c-g">Started GET "/" for 127.0.0.1</span>
+<span class="c-3">Completed</span> <span class="c-g">200 OK</span> <span class="c-3">in 14ms</span></div>
+              </div>
+            </div>
+            <div class="d-pane pane-c">
+              <div class="empty-ws"><strong>3</strong>Empty workspace<span><kbd>Super</kbd> <kbd>Return</kbd> opens a terminal here</span></div>
+            </div>
+          </div>
+
+          <div class="toast" id="dToast" role="status">
+            <div class="toast-head"><span class="who" data-t="who">Calendar</span><time>now</time></div>
+            <div class="toast-title" data-t="title">Design review moved to 15:00</div>
+            <div class="toast-body" data-t="body">Same room. Bring the theme file.</div>
+          </div>
+
+          <div class="launcher" id="launcher" hidden>
+            <div class="menu-panel" role="dialog" aria-label="Omarchy menu">
+              <div class="menu-search">
+                <svg class="ico"><use href="#i-search"/></svg>
+                <input id="menuQ" type="text" placeholder="Search the menu" autocomplete="off" spellcheck="false" aria-controls="menuList" aria-label="Search the menu">
+                <span class="menu-title">Omarchy</span>
+              </div>
+              <ul class="menu-list" id="menuList" role="listbox" aria-label="Menu items"></ul>
+              <div class="menu-foot"><span><kbd>↑</kbd><kbd>↓</kbd>move</span><span><kbd>Enter</kbd>open</span><span><kbd>Esc</kbd>close</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2 -->
+    <section class="tile" id="rules" data-ws="2" data-name="Rules" aria-labelledby="h-rules">
+      <div class="eyebrow"><span><b>2</b>Rules</span><span>Stock → tuned</span></div>
+      <div class="head">
+        <h2 id="h-rules">Seven adjustments, no new features</h2>
+        <p class="sub">Each row names how Omarchy draws something today and the change. None of them adds a capability. They make the parts agree with each other.</p>
+      </div>
+      <div class="rules">
+        <div class="rule rules-head"><span class="label">&nbsp;</span><span class="label">Today</span><span class="label">Tuned</span></div>
+        <div class="rule"><span class="label">Unit</span><span class="was">Each config picks its own sizes and gaps.</span><span class="now">One 4px unit. Gaps, padding, bar height and row height are all multiples of it.</span></div>
+        <div class="rule"><span class="label">Focus</span><span class="was">A 2px accent border marks the active window.</span><span class="now">A 1px accent border plus a soft halo. The same ring marks a focused window, field, menu row or theme card.</span></div>
+        <div class="rule"><span class="label">Type</span><span class="was">One monospace face at one size, everywhere.</span><span class="now">Mono for what a machine wrote, a sans for what a person reads. Six sizes, no others.</span></div>
+        <div class="rule"><span class="label">Color</span><span class="was">The palette is mapped by hand in each app's config.</span><span class="now">Eighteen colors with names by job. Every app reads roles, so a theme is one file.</span></div>
+        <div class="rule"><span class="label">Bar</span><span class="was">A row of modules with even spacing.</span><span class="now">Three zones: where you are, when it is, what the machine is doing. Labels sit next to the numbers that need them.</span></div>
+        <div class="rule"><span class="label">Menus</span><span class="was">A list of names.</span><span class="now">Name, one-line description and shortcut on every row, at one row height everywhere.</span></div>
+        <div class="rule"><span class="label">Depth</span><span class="was">Square, flat, bordered.</span><span class="now">Still square and flat. Layers step up in tone: wall, surface, raised. Nothing casts a shadow.</span></div>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section class="tile" id="color" data-ws="3" data-name="Color" aria-labelledby="h-color">
+      <div class="eyebrow"><span><b>3</b>Color</span><span id="colorTheme">Tokyo Night</span></div>
+      <div class="head">
+        <h2 id="h-color">Eighteen colors, each with a job</h2>
+        <p class="sub">An Omarchy theme is already a palette. The tuning names each color by what it does, so the bar, the launcher, notifications and the lock screen ask for the same name and agree. Pick a theme below and every role on this page changes with it.</p>
+      </div>
+
+      <div class="themes" id="themeCards" aria-label="Themes"></div>
+
+      <div class="roles" id="roles"></div>
+
+      <div class="color-split">
+        <div class="head">
+          <h3>Contrast on this theme</h3>
+          <p class="sub">Computed from the palette you are viewing. Faint text is for line numbers and timestamps, never for something you must read.</p>
+        </div>
+        <div class="contrast" id="contrast"></div>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section class="tile span-7" id="type" data-ws="4" data-name="Type" aria-labelledby="h-type">
+      <div class="eyebrow"><span><b>4</b>Type</span><span>2 faces · 6 sizes</span></div>
+      <div class="head">
+        <h2 id="h-type">Two faces, six sizes</h2>
+        <p class="sub">Keep the monospace face for what the machine says. Give human text a sans so menus, notifications and dialogs read as sentences.</p>
+      </div>
+      <div class="law">
+        <span class="label">The rule</span>
+        <p>If you would copy it into a terminal, set it in mono. If you would read it aloud, set it in sans.</p>
+      </div>
+      <div class="specimen">
+        <div class="sp"><div class="sp-meta"><strong>display</strong>Mono 800<br>44 / 44</div><div class="sp-sample s-display">Workspace 3</div></div>
+        <div class="sp"><div class="sp-meta"><strong>heading</strong>Sans 600<br>28 / 34</div><div class="sp-sample s-heading">Choose a background</div></div>
+        <div class="sp"><div class="sp-meta"><strong>title</strong>Sans 600<br>17 / 24</div><div class="sp-sample s-title">Design review moved to 15:00</div></div>
+        <div class="sp"><div class="sp-meta"><strong>body</strong>Sans 400<br>15 / 24</div><div class="sp-sample s-body">Pick a background for this theme. It changes on the next login, or right away with Super Ctrl Space.</div></div>
+        <div class="sp"><div class="sp-meta"><strong>label</strong>Mono 500 caps<br>11 / 16 · +8%</div><div class="sp-sample s-label">Network · wlan0 · connected</div></div>
+        <div class="sp"><div class="sp-meta"><strong>machine</strong>Mono 400<br>13 / 20</div><div class="sp-sample s-machine">192.168.1.24  up 3d 4h  load 0.42</div></div>
+      </div>
+      <p class="sub" style="font-size:.8125rem">JetBrains Mono stands in for CaskaydiaMono Nerd Font, Omarchy's default. Instrument Sans is the proposed sans.</p>
+    </section>
+
+    <!-- 5 -->
+    <section class="tile span-5" id="space" data-ws="5" data-name="Space" aria-labelledby="h-space">
+      <div class="eyebrow"><span><b>5</b>Space</span><span>1u = 4px</span></div>
+      <div class="head">
+        <h2 id="h-space">One unit: four pixels</h2>
+        <p class="sub">Everything measures in units, so a launcher row lines up with a bar module and a toast sits on the same edge as the window below it.</p>
+      </div>
+      <svg class="geo" viewBox="0 0 520 330" role="img" aria-label="Tile geometry: a 32 pixel bar, 12 pixel outer gap, 8 pixel inner gap, 1 pixel borders, 3 pixel focus halo">
+        <rect class="g-wall" x="0" y="0" width="520" height="330"/>
+        <rect class="g-bar" x="0.5" y="0.5" width="519" height="31"/>
+        <rect class="g-ws" x="16" y="29" width="12" height="2"/>
+        <text class="g-strong" x="18" y="20">1</text><text class="g-faint" x="36" y="20">2  3  4  5</text>
+        <text class="g-txt" x="508" y="20" text-anchor="end">bar · 32px · 8u</text>
+        <rect class="g-halo" x="10.5" y="42.5" width="303" height="277"/>
+        <rect class="g-act" x="12.5" y="44.5" width="299" height="273"/>
+        <rect class="g-win" x="320.5" y="44.5" width="187" height="132"/>
+        <rect class="g-win" x="320.5" y="185.5" width="187" height="132"/>
+        <path class="g-dim" d="M0 210h12M0 206v8M12 206v8"/>
+        <text class="g-txt" x="22" y="213">outer gap · 12px · 3u</text>
+        <path class="g-dim" d="M312 110h8M312 106v8M320 106v8"/>
+        <text class="g-txt" x="330" y="113">inner gap · 8px · 2u</text>
+        <path class="g-dim" d="M414 32v12M410 32h8M410 44h8"/>
+        <text class="g-txt" x="422" y="42">12px</text>
+        <text class="g-strong" x="28" y="72">active window</text>
+        <text class="g-txt" x="28" y="86">1px accent border</text>
+        <text class="g-txt" x="28" y="100">3px halo, 30% accent</text>
+        <text class="g-txt" x="330" y="212">inactive window</text>
+        <text class="g-txt" x="330" y="226">1px line</text>
+      </svg>
+      <div class="scale" id="scale"></div>
+    </section>
+
+    <!-- 6 -->
+    <section class="tile" id="parts" data-ws="6" data-name="Parts" aria-labelledby="h-parts">
+      <div class="eyebrow"><span><b>6</b>Parts</span><span>Built from the same roles</span></div>
+      <div class="head">
+        <h2 id="h-parts">Every surface Omarchy draws</h2>
+        <p class="sub">The bar, windows, the menu, notifications, the volume overlay, setup prompts and the lock screen, rebuilt from one set of roles. Under each part are the roles it reads.</p>
+      </div>
+
+      <div class="parts">
+        <div class="part part-full">
+          <div class="part-stage wide">
+            <div>
+              <div class="wb">
+                <div class="wb-zone">
+                  <svg class="mark" aria-hidden="true"><use href="#i-mark"/></svg>
+                  <span class="wb-ws is-busy is-on">1</span><span class="wb-ws is-busy">2</span><span class="wb-ws">3</span><span class="wb-ws">4</span><span class="wb-ws">5</span>
+                </div>
+                <div class="wb-clock" data-clock><span class="day">Sunday</span>14:32</div>
+                <div class="wb-zone wb-state">
+                  <span class="wb-mod"><svg class="ico"><use href="#i-cpu"/></svg><b data-cpu>13%</b></span>
+                  <span class="wb-sep"></span>
+                  <span class="wb-mod"><svg class="ico"><use href="#i-wifi"/></svg><b>home</b></span>
+                  <span class="wb-mod keep-sm"><svg class="ico"><use href="#i-vol"/></svg><b>64</b></span>
+                  <span class="wb-mod ok keep-sm"><svg class="ico"><use href="#i-bat"/></svg><b>82</b></span>
+                </div>
+              </div>
+              <div class="bar-legend"><span>Where · workspaces</span><span>When</span><span>State · system</span></div>
+            </div>
+          </div>
+          <div class="part-spec">
+            <h3>Bar</h3>
+            <p>8u tall. Occupied workspaces are brighter than empty ones; the active one gets a 2px accent underline. The clock is the only centered thing. Values sit next to their icons, in mono.</p>
+            <div class="tokens"><span>wall</span><span>line</span><span>text</span><span>text-2</span><span>text-3</span><span>accent</span><span>ok</span></div>
+          </div>
+        </div>
+
+        <div class="part part-full">
+          <div class="part-stage wide">
+            <div class="winrow">
+              <figure><div class="win"><div class="win-body"><span class="c-acc">~</span> <span class="c-m">❯</span> btop</div></div><figcaption>Inactive<span>1px line</span></figcaption></figure>
+              <figure><div class="win is-active"><div class="win-body"><span class="c-acc">~</span> <span class="c-m">❯</span> nvim .</div></div><figcaption>Active<span>1px accent + 3px halo</span></figcaption></figure>
+              <figure><div class="win is-urgent"><div class="win-body"><span class="c-acc">~</span> <span class="c-m">❯</span> make <span class="c-r">✗ failed</span></div></div><figcaption>Urgent<span>1px err, no halo</span></figcaption></figure>
+            </div>
+          </div>
+          <div class="part-spec">
+            <h3>Windows</h3>
+            <p>No title bars, as today. State lives in the border alone. The halo is the one focus signal on the whole system.</p>
+            <div class="tokens"><span>surface</span><span>line</span><span>accent</span><span>halo</span><span>err</span></div>
+          </div>
+        </div>
+
+        <div class="part">
+          <div class="part-stage">
+            <div class="menu-panel">
+              <div class="menu-search"><svg class="ico"><use href="#i-search"/></svg><span style="color:var(--text);font-size:.875rem;flex:1">sty</span><span class="menu-title">Omarchy</span></div>
+              <ul class="menu-list">
+                <li class="mi"><span class="mi-icon">◎</span><span class="mi-name">Trigger</span><span class="mi-desc">Capture, share, toggle</span><span class="mi-hint"></span></li>
+                <li class="mi is-sel"><span class="mi-icon">◐</span><span class="mi-name">Style</span><span class="mi-desc">Theme, font, background</span><span class="mi-hint">↵</span></li>
+                <li class="mi"><span class="mi-icon">≡</span><span class="mi-name">Setup</span><span class="mi-desc">Audio, wifi, monitors</span><span class="mi-hint"></span></li>
+              </ul>
+            </div>
+          </div>
+          <div class="part-spec">
+            <h3>Menu</h3>
+            <p>9u rows. Name in sans, description in a quieter tone, shortcut in mono at the far edge. The selected row takes the focus ring.</p>
+            <div class="tokens"><span>raised</span><span>line-2</span><span>tint</span><span>accent</span><span>text-2</span></div>
+          </div>
+        </div>
+
+        <div class="part">
+          <div class="part-stage">
+            <div class="stack">
+              <div class="toast"><div class="toast-head"><span class="who">Signal</span><time>2m</time></div><div class="toast-title">Kitchen group</div><div class="toast-body">Pizza is here. Come before it goes.</div></div>
+              <div class="toast is-critical"><div class="toast-head"><span class="who">Battery</span><time>now</time></div><div class="toast-title">Battery at 9%</div><div class="toast-body">Plug in within 15 minutes to avoid suspending.</div></div>
+            </div>
+          </div>
+          <div class="part-spec">
+            <h3>Notification</h3>
+            <p>Three lines of hierarchy: source and time in label caps, title in sans 600, body in text-2. Critical swaps the border and the dot to err.</p>
+            <div class="tokens"><span>raised</span><span>line-2</span><span>info</span><span>err</span></div>
+          </div>
+        </div>
+
+        <div class="part">
+          <div class="part-stage">
+            <div class="stack">
+              <div class="osd"><svg class="ico"><use href="#i-vol"/></svg><div class="osd-track" style="--v:64%"><i></i></div><span class="osd-val">64</span></div>
+              <div class="osd"><svg class="ico"><use href="#i-sun"/></svg><div class="osd-track" style="--v:40%"><i></i></div><span class="osd-val">40</span></div>
+            </div>
+          </div>
+          <div class="part-spec">
+            <h3>Overlay</h3>
+            <p>Volume and brightness. One icon, a 1u track, the value in mono. It shows for 1.2s and never takes focus.</p>
+            <div class="tokens"><span>raised</span><span>sunken</span><span>accent</span></div>
+          </div>
+        </div>
+
+        <div class="part">
+          <div class="part-stage">
+            <div class="keys">
+              <div><span><kbd>Super</kbd>+<kbd>Return</kbd></span><span>Terminal</span></div>
+              <div><span><kbd>Super</kbd>+<kbd>Space</kbd></span><span>Launcher</span></div>
+              <div><span><kbd>Super</kbd>+<kbd>Alt</kbd>+<kbd>Space</kbd></span><span>Omarchy menu</span></div>
+              <div><span><kbd>Super</kbd>+<kbd>W</kbd></span><span>Close window</span></div>
+            </div>
+          </div>
+          <div class="part-spec">
+            <h3>Key hint</h3>
+            <p>Keys are square caps with a 2px base. Used in menus, the keybinding sheet and first-run tips.</p>
+            <div class="tokens"><span>sunken</span><span>line-2</span><span>text</span></div>
+          </div>
+        </div>
+
+        <div class="part">
+          <div class="part-stage">
+            <div class="ctrl">
+              <div class="field"><label for="hostname">Hostname</label><input class="input is-focus" id="hostname" value="omarchy" spellcheck="false"></div>
+              <div class="toggle"><span>Night light after sunset</span><button class="switch" id="nightSwitch" role="switch" aria-checked="true" aria-label="Night light after sunset"></button></div>
+              <div class="btns"><button class="btn btn-primary">Save</button><button class="btn">Cancel</button></div>
+            </div>
+          </div>
+          <div class="part-spec">
+            <h3>Setup controls</h3>
+            <p>For the few places Omarchy asks a question. Fields sit in sunken wells; one primary action per prompt.</p>
+            <div class="tokens"><span>sunken</span><span>line-2</span><span>accent</span><span>on-accent</span><span>tint</span></div>
+          </div>
+        </div>
+
+        <div class="part">
+          <div class="part-stage">
+            <div class="lock">
+              <div class="lock-time" data-lock-time>14:32</div>
+              <div class="lock-date" data-lock-date>Sunday 1 November</div>
+              <input class="input is-focus" id="lockpw" type="text" value="••••••" aria-label="Password (example)" readonly>
+            </div>
+          </div>
+          <div class="part-spec">
+            <h3>Lock screen</h3>
+            <p>The one place display type is used at scale. Time in mono 800, date in sans, a single field that already has focus.</p>
+            <div class="tokens"><span>wall</span><span>text</span><span>text-2</span><span>sunken</span><span>halo</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section class="tile span-7" id="keys" data-ws="7" data-name="Keys" aria-labelledby="h-keys">
+      <div class="eyebrow"><span><b>7</b>Keys &amp; motion</span><span>• = binding Omarchy uses today</span></div>
+      <div class="head">
+        <h2 id="h-keys">Modifiers are verbs</h2>
+        <p class="sub">Omarchy already hangs almost everything off Super. The tuning gives each modifier one meaning, so you can guess a binding before you look it up.</p>
+      </div>
+      <div class="grammar">
+        <div class="gr">
+          <div class="gr-mod"><span class="combo"><kbd>Super</kbd></span><span class="verb">Open or go</span></div>
+          <div class="gr-list">
+            <div><span class="today">Terminal</span><kbd>Return</kbd></div>
+            <div><span class="today">Launcher</span><kbd>Space</kbd></div>
+            <div><span class="today">Go to workspace</span><kbd>1–9</kbd></div>
+            <div><span class="today">Move focus</span><kbd>←↑↓→</kbd></div>
+            <div><span class="today">Close window</span><kbd>W</kbd></div>
+          </div>
+        </div>
+        <div class="gr">
+          <div class="gr-mod"><span class="combo"><kbd>Super</kbd><kbd>Shift</kbd></span><span class="verb">Send or move</span></div>
+          <div class="gr-list">
+            <div><span class="today">Send window to workspace</span><kbd>1–9</kbd></div>
+            <div><span>Swap with neighbor</span><kbd>←↑↓→</kbd></div>
+          </div>
+        </div>
+        <div class="gr">
+          <div class="gr-mod"><span class="combo"><kbd>Super</kbd><kbd>Alt</kbd></span><span class="verb">Menus</span></div>
+          <div class="gr-list">
+            <div><span class="today">Omarchy menu</span><kbd>Space</kbd></div>
+            <div><span>Theme picker</span><kbd>T</kbd></div>
+            <div><span>Keybinding sheet</span><kbd>K</kbd></div>
+          </div>
+        </div>
+        <div class="gr">
+          <div class="gr-mod"><span class="combo"><kbd>Super</kbd><kbd>Ctrl</kbd></span><span class="verb">Toggles</span></div>
+          <div class="gr-list">
+            <div><span>Night light</span><kbd>N</kbd></div>
+            <div><span>Idle lock</span><kbd>I</kbd></div>
+            <div><span>Do not disturb</span><kbd>D</kbd></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="head">
+        <h3>Three speeds, one curve</h3>
+        <p class="sub">Motion confirms what you did and gets out of the way. Nothing bounces, nothing fades text in. The curve is cubic-bezier(.2, .7, .1, 1).</p>
+      </div>
+      <div class="motion" id="motion">
+        <div class="mo"><div class="mo-k">tick<span>120ms · hover, focus</span></div><div class="mo-track"><span class="mo-dot" style="--dur:120ms"></span></div></div>
+        <div class="mo"><div class="mo-k">move<span>180ms · open, resize</span></div><div class="mo-track"><span class="mo-dot" style="--dur:180ms"></span></div></div>
+        <div class="mo"><div class="mo-k">travel<span>240ms · workspaces</span></div><div class="mo-track"><span class="mo-dot" style="--dur:240ms"></span></div></div>
+      </div>
+      <div class="mo-ctrl">
+        <button class="btn" id="replay">Play</button>
+        <label class="check" for="slow"><input type="checkbox" id="slow"> Slow down 5×</label>
+      </div>
+    </section>
+
+    <!-- 8 -->
+    <section class="tile span-5" id="theme-file" data-ws="8" data-name="Theme file" aria-labelledby="h-file">
+      <div class="eyebrow"><span><b>8</b>Theme file</span><span>Proposed format</span></div>
+      <div class="head">
+        <h2 id="h-file">A theme is one file</h2>
+        <p class="sub">Today a theme is a folder with one config per app, each mapping the palette by hand. Tuned, a theme lists its colors by role and the per-app files are generated from it. This is the file for the theme on screen.</p>
+      </div>
+      <div class="code-wrap">
+        <div class="code-bar"><span class="label" id="codePath">theme.toml</span><button class="copy" id="copyBtn">Copy</button></div>
+        <pre class="code" id="code"></pre>
+      </div>
+      <div class="head"><span class="label">Generated from it</span></div>
+      <ul class="gen">
+        <li><code>hyprland.conf</code><span>Active, inactive and urgent borders</span></li>
+        <li><code>waybar.css</code><span>Bar, workspaces, modules</span></li>
+        <li><code>walker.css</code><span>Launcher and every menu</span></li>
+        <li><code>mako.ini</code><span>Notifications by urgency</span></li>
+        <li><code>swayosd.css</code><span>Volume and brightness overlay</span></li>
+        <li><code>hyprlock.conf</code><span>Lock screen</span></li>
+        <li><code>alacritty.toml</code><span>Terminal palette</span></li>
+        <li><code>btop.theme</code><span>System monitor</span></li>
+      </ul>
+    </section>
+
+  </div>
+</main>
+
+<footer>
+  <div class="foot">
+    <p>Omarchui is an unofficial design study. Omarchy is made by DHH and contributors at <a href="https://omarchy.org" target="_blank" rel="noopener">omarchy.org</a>. Theme palettes belong to their authors; the Matte Black values here are approximated.</p>
+    <p class="mono">1u = 4px · halo 3px · bar 8u · row 9u</p>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const root = document.documentElement;
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+
+  const ROLES = ['wall','sunken','surface','raised','line','line-2','text','text-2','text-3','accent','on-accent','red','green','yellow','blue','magenta','cyan','orange'];
+  const THEMES = {
+    'tokyo-night': { name:'Tokyo Night', mode:'dark', wall:'#16161e', sunken:'#14151e', surface:'#1a1b26', raised:'#1f2335', line:'#292e42', 'line-2':'#3b4261', text:'#c0caf5', 'text-2':'#a9b1d6', 'text-3':'#737aa2', accent:'#7aa2f7', 'on-accent':'#16161e', red:'#f7768e', green:'#9ece6a', yellow:'#e0af68', blue:'#7aa2f7', magenta:'#bb9af7', cyan:'#7dcfff', orange:'#ff9e64' },
+    'catppuccin': { name:'Catppuccin', mode:'dark', wall:'#11111b', sunken:'#181825', surface:'#1e1e2e', raised:'#262637', line:'#313244', 'line-2':'#45475a', text:'#cdd6f4', 'text-2':'#bac2de', 'text-3':'#7f849c', accent:'#cba6f7', 'on-accent':'#11111b', red:'#f38ba8', green:'#a6e3a1', yellow:'#f9e2af', blue:'#89b4fa', magenta:'#f5c2e7', cyan:'#94e2d5', orange:'#fab387' },
+    'gruvbox': { name:'Gruvbox', mode:'dark', wall:'#1d2021', sunken:'#232323', surface:'#282828', raised:'#32302f', line:'#3c3836', 'line-2':'#504945', text:'#ebdbb2', 'text-2':'#d5c4a1', 'text-3':'#928374', accent:'#fabd2f', 'on-accent':'#282828', red:'#fb4934', green:'#b8bb26', yellow:'#fabd2f', blue:'#83a598', magenta:'#d3869b', cyan:'#8ec07c', orange:'#fe8019' },
+    'everforest': { name:'Everforest', mode:'dark', wall:'#232a2e', sunken:'#272e33', surface:'#2d353b', raised:'#343f44', line:'#3d484d', 'line-2':'#475258', text:'#d3c6aa', 'text-2':'#a7b0a2', 'text-3':'#859289', accent:'#a7c080', 'on-accent':'#232a2e', red:'#e67e80', green:'#a7c080', yellow:'#dbbc7f', blue:'#7fbbb3', magenta:'#d699b6', cyan:'#83c092', orange:'#e69875' },
+    'kanagawa': { name:'Kanagawa', mode:'dark', wall:'#16161d', sunken:'#1a1a22', surface:'#1f1f28', raised:'#2a2a37', line:'#363646', 'line-2':'#54546d', text:'#dcd7ba', 'text-2':'#c8c093', 'text-3':'#727169', accent:'#7e9cd8', 'on-accent':'#16161d', red:'#e46876', green:'#98bb6c', yellow:'#e6c384', blue:'#7e9cd8', magenta:'#957fb8', cyan:'#7aa89f', orange:'#ffa066' },
+    'nord': { name:'Nord', mode:'dark', wall:'#242933', sunken:'#2a303b', surface:'#2e3440', raised:'#353c4a', line:'#434c5e', 'line-2':'#4c566a', text:'#eceff4', 'text-2':'#d8dee9', 'text-3':'#8892a6', accent:'#88c0d0', 'on-accent':'#2e3440', red:'#bf616a', green:'#a3be8c', yellow:'#ebcb8b', blue:'#81a1c1', magenta:'#b48ead', cyan:'#8fbcbb', orange:'#d08770' },
+    'ristretto': { name:'Ristretto', mode:'dark', wall:'#211c1c', sunken:'#262020', surface:'#2c2525', raised:'#352d2d', line:'#403838', 'line-2':'#5b5353', text:'#fff1f3', 'text-2':'#c3b7b8', 'text-3':'#948a8b', accent:'#f38d70', 'on-accent':'#2c2525', red:'#fd6883', green:'#adda78', yellow:'#f9cc6c', blue:'#85dacc', magenta:'#a8a9eb', cyan:'#85dacc', orange:'#f38d70' },
+    'matte-black': { name:'Matte Black', mode:'dark', wall:'#0b0b0b', sunken:'#0f0f0f', surface:'#121212', raised:'#1a1a1a', line:'#262626', 'line-2':'#363636', text:'#bebebe', 'text-2':'#9c9c9c', 'text-3':'#767676', accent:'#e68e0d', 'on-accent':'#121212', red:'#d35f5f', green:'#8fa876', yellow:'#e6b450', blue:'#8aa6c1', magenta:'#c49ac4', cyan:'#8cb8b2', orange:'#e68e0d' },
+    'catppuccin-latte': { name:'Catppuccin Latte', mode:'light', wall:'#dce0e8', sunken:'#e6e9ef', surface:'#eff1f5', raised:'#f7f8fa', line:'#ccd0da', 'line-2':'#bcc0cc', text:'#4c4f69', 'text-2':'#5c5f77', 'text-3':'#7c7f93', accent:'#1e66f5', 'on-accent':'#eff1f5', red:'#d20f39', green:'#40a02b', yellow:'#df8e1d', blue:'#1e66f5', magenta:'#8839ef', cyan:'#179299', orange:'#fe640b' },
+    'flexoki-light': { name:'Flexoki Light', mode:'light', wall:'#e6e4d9', sunken:'#f2f0e5', surface:'#fffcf0', raised:'#ffffff', line:'#dad8ce', 'line-2':'#cecdc3', text:'#100f0f', 'text-2':'#6f6e69', 'text-3':'#878580', accent:'#bc5215', 'on-accent':'#fffcf0', red:'#af3029', green:'#66800b', yellow:'#ad8301', blue:'#205ea6', magenta:'#a02f6f', cyan:'#24837b', orange:'#bc5215' },
+  };
+  const SLUGS = Object.keys(THEMES);
+  const KEY = 'omarchui-theme';
+
+  let chosen = null;
+  try { const v = localStorage.getItem(KEY); if (THEMES[v]) chosen = v; } catch (e) {}
+
+  const defaultSlug = () => {
+    const dt = root.dataset.theme;
+    if (dt === 'dark') return 'tokyo-night';
+    if (dt === 'light') return 'catppuccin-latte';
+    return matchMedia('(prefers-color-scheme: dark)').matches ? 'tokyo-night' : 'catppuccin-latte';
+  };
+  const current = () => chosen || defaultSlug();
+
+  function setTheme(slug) {
+    chosen = slug;
+    if (slug) {
+      const t = THEMES[slug];
+      ROLES.forEach(r => root.style.setProperty('--' + r, t[r]));
+      root.style.colorScheme = t.mode;
+    } else {
+      ROLES.forEach(r => root.style.removeProperty('--' + r));
+      root.style.removeProperty('color-scheme');
+    }
+    try { slug ? localStorage.setItem(KEY, slug) : localStorage.removeItem(KEY); } catch (e) {}
+    render();
+  }
+  function cycle(dir) {
+    const i = SLUGS.indexOf(current());
+    setTheme(SLUGS[(i + dir + SLUGS.length) % SLUGS.length]);
+    return THEMES[current()].name;
+  }
+
+  /* ---------- color math ---------- */
+  const lum = hex => {
+    const n = parseInt(hex.slice(1), 16);
+    const c = [n >> 16 & 255, n >> 8 & 255, n & 255].map(v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); });
+    return .2126 * c[0] + .7152 * c[1] + .0722 * c[2];
+  };
+  const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+  const grade = r => r >= 7 ? ['AAA', 'g-good'] : r >= 4.5 ? ['AA', 'g-good'] : r >= 3 ? ['Large', 'g-mid'] : ['Decor', 'g-low'];
+
+  /* ---------- static builds ---------- */
+  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+  const GROUPS = [
+    ['Ground', [['wall', 'wall', 'Behind everything: desktop, bar, gaps'], ['sunken', 'sunken', 'Fields, code, wells'], ['surface', 'surface', 'Window and tile fill'], ['raised', 'raised', 'Menus, toasts, overlays']]],
+    ['Line', [['line', 'line', 'Inactive borders, dividers'], ['line-2', 'line-2', 'Control borders, raised edges']]],
+    ['Ink', [['text', 'text', 'Primary text'], ['text-2', 'text-2', 'Descriptions, secondary values'], ['text-3', 'text-3', 'Line numbers, hints, time']]],
+    ['Signal', [['accent', 'accent', 'Focus, selection, active workspace'], ['on-accent', 'on-accent', 'Text on accent fills'], ['ok', 'green', 'Success, charging'], ['warn', 'yellow', 'Low battery, pending'], ['err', 'red', 'Errors, urgent windows'], ['info', 'cyan', 'Neutral notices, links']]],
+    ['Spectrum', [['blue', 'blue', 'Syntax, charts'], ['magenta', 'magenta', 'Syntax, prompts'], ['orange', 'orange', 'Syntax, numbers']]],
+  ];
+  $('#roles').innerHTML = GROUPS.map(([g, items]) => `
+    <div class="role-group"><span class="label">${g}</span><div class="sw-row">${items.map(([name, src, use]) => `
+      <div class="sw"><div class="sw-chip" style="--c:var(--${src})"></div><div class="sw-meta">
+        <span class="sw-name">${name}${name !== src ? ` <em>= ${src}</em>` : ''}</span>
+        <span class="sw-hex" data-hex="${src}"></span><span class="sw-use">${use}</span></div></div>`).join('')}
+    </div></div>`).join('');
+
+  const preview = t => `background:${t.surface};color:${t.text}`;
+  $('#themeCards').innerHTML = SLUGS.map(s => {
+    const t = THEMES[s];
+    return `<button class="th" data-slug="${s}" style="${preview(t)}" aria-pressed="false">
+      <span class="th-top"><span class="th-name">${t.name}</span><span class="th-mode">${t.mode}</span></span>
+      <span class="th-bar" style="background:${t.accent}"></span>
+      <span class="th-dots">${['red','yellow','green','cyan','blue','magenta'].map(k => `<i style="background:${t[k]}"></i>`).join('')}</span>
+    </button>`;
+  }).join('');
+  $('#themeCards').addEventListener('click', e => { const b = e.target.closest('.th'); if (b) setTheme(b.dataset.slug); });
+
+  const tm = $('#themeMenu'), tb = $('#themeBtn');
+  tm.innerHTML = `<button class="tm-row" role="menuitemradio" data-slug="" aria-checked="false"><span class="dots"><i style="background:#eff1f5;outline:1px solid var(--line-2)"></i><i style="background:#1a1b26"></i></span><span>Match system</span><small>auto</small></button><div class="tm-sep"></div>` +
+    SLUGS.map(s => { const t = THEMES[s]; return `<button class="tm-row" role="menuitemradio" data-slug="${s}" aria-checked="false"><span class="dots"><i style="background:${t.accent}"></i><i style="background:${t.green}"></i><i style="background:${t.magenta}"></i></span><span>${t.name}</span><small>${t.mode}</small></button>`; }).join('');
+  const closeTM = () => { tm.hidden = true; tb.setAttribute('aria-expanded', 'false'); };
+  tb.addEventListener('click', e => { e.stopPropagation(); const open = tm.hidden; tm.hidden = !open; tb.setAttribute('aria-expanded', String(open)); if (open) ($('[aria-checked="true"]', tm) || $('.tm-row', tm)).focus(); });
+  tm.addEventListener('click', e => { const r = e.target.closest('.tm-row'); if (!r) return; setTheme(r.dataset.slug || null); closeTM(); tb.focus(); });
+  document.addEventListener('click', e => { if (!tm.hidden && !tm.contains(e.target)) closeTM(); });
+
+  const SCALE = [[1, 'Icon to value, label to field'], [2, 'Inner gap between windows'], [3, 'Outer gap to the screen edge'], [4, 'Padding inside fields and toasts'], [6, 'Padding inside menus and dialogs'], [8, 'Bar height'], [9, 'Menu and list row height'], [12, 'Lock-screen field height']];
+  $('#scale').innerHTML = SCALE.map(([u, use]) => `<div class="sc"><span class="sc-k">${u}u <span>${u * 4}px</span></span><span class="sc-bar" style="--w:${u * 4}px"></span><span class="sc-use">${use}</span></div>`).join('');
+
+  /* ---------- render on theme change ---------- */
+  function render() {
+    const slug = current(), t = THEMES[slug];
+    $('#themeName').textContent = t.name;
+    $('#colorTheme').textContent = t.name;
+    $$('.tm-row', tm).forEach(r => r.setAttribute('aria-checked', String((r.dataset.slug || null) === chosen)));
+    $$('.th').forEach(b => { const on = b.dataset.slug === slug; b.classList.toggle('is-on', on); b.setAttribute('aria-pressed', String(on)); });
+    $$('[data-hex]').forEach(el => { el.textContent = t[el.dataset.hex]; });
+
+    const pairs = [['text', 'surface'], ['text-2', 'surface'], ['text-3', 'surface'], ['accent', 'surface'], ['on-accent', 'accent'], ['text', 'raised']];
+    $('#contrast').innerHTML = pairs.map(([f, b]) => {
+      const r = ratio(t[f], t[b]); const [g, cls] = grade(r);
+      return `<div class="ct-row"><span class="ct-sample" style="color:var(--${f});background:var(--${b})">Aa</span><span class="ct-pair">${f} on ${b}</span><span class="ct-ratio">${r.toFixed(1)}:1</span><span class="grade ${cls}">${g}</span></div>`;
+    }).join('');
+
+    const pad = k => k.padEnd(10);
+    const line = k => `<span class="tk-k">${pad(k)}</span>= <span class="tk-str" style="--c:${t[k]}">"${t[k]}"</span>`;
+    const sec = (name, keys, note) => [`<span class="tk-s">[${name}]</span>`, ...(note ? [`<span class="tk-c"># ${note}</span>`] : []), ...keys.map(line), ''];
+    $('#codePath').textContent = `~/.config/omarchy/themes/${slug}/theme.toml`;
+    $('#code').innerHTML = [
+      `<span class="tk-k">name</span> = <span class="tk-str">"${esc(t.name)}"</span>`,
+      `<span class="tk-k">mode</span> = <span class="tk-str">"${t.mode}"</span>`, '',
+      ...sec('ground', ['wall', 'sunken', 'surface', 'raised']),
+      ...sec('line', ['line', 'line-2']),
+      ...sec('ink', ['text', 'text-2', 'text-3']),
+      ...sec('signal', ['accent', 'on-accent'], 'ok = green, warn = yellow, err = red, info = cyan'),
+      ...sec('spectrum', ['red', 'green', 'yellow', 'blue', 'magenta', 'cyan', 'orange']),
+    ].join('\n').trimEnd();
+  }
+  new MutationObserver(() => { if (!chosen) render(); }).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { if (!chosen) render(); });
+
+  /* ---------- workspaces: nav, focus follows mouse, scroll spy ---------- */
+  const tiles = $$('.tile[data-ws]');
+  $('#wsNav').innerHTML = tiles.map(t => `<button class="wsb" data-go="${t.dataset.ws}" title="${t.dataset.name}" aria-label="${t.dataset.ws}: ${t.dataset.name}">${t.dataset.ws}</button>`).join('');
+  const navBtns = $$('.wsb');
+  function focusTile(tile) {
+    tiles.forEach(t => t.classList.toggle('is-focus', t === tile));
+    navBtns.forEach(b => { const on = b.dataset.go === tile.dataset.ws; b.classList.toggle('is-on', on); on ? b.setAttribute('aria-current', 'true') : b.removeAttribute('aria-current'); });
+    $('#wsTitle').textContent = tile.dataset.name;
+  }
+  function jump(n) {
+    const t = tiles.find(x => x.dataset.ws === String(n)); if (!t) return;
+    focusTile(t);
+    t.scrollIntoView({ behavior: reduced.matches ? 'auto' : 'smooth', block: 'start' });
+  }
+  $('#wsNav').addEventListener('click', e => { const b = e.target.closest('.wsb'); if (b) jump(b.dataset.go); });
+  tiles.forEach(t => t.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') focusTile(t); }));
+  const io = new IntersectionObserver(es => { es.forEach(en => { if (en.isIntersecting) focusTile(en.target); }); }, { rootMargin: '-45% 0px -50% 0px' });
+  tiles.forEach(t => io.observe(t));
+  focusTile(tiles[0]);
+
+  /* ---------- clock ---------- */
+  function tick() {
+    const d = new Date();
+    const day = d.toLocaleDateString('en-US', { weekday: 'long' });
+    const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const html = `<span class="day">${day}</span>${time}`;
+    $('#clock').innerHTML = html;
+    $$('[data-clock]').forEach(el => el.innerHTML = html);
+    $$('[data-lock-time]').forEach(el => el.textContent = time);
+    $$('[data-lock-date]').forEach(el => el.textContent = `${day} ${d.getDate()} ${d.toLocaleDateString('en-US', { month: 'long' })}`);
+  }
+  tick(); setInterval(tick, 10000);
+
+  /* ---------- desktop mock ---------- */
+  const desk = $('#desk');
+  desk.addEventListener('pointerdown', e => {
+    const w = e.target.closest('.win'); if (!w) return;
+    $$('.win', w.parentElement).forEach(x => x.classList.toggle('is-active', x === w));
+  });
+  $$('.seg button').forEach(b => b.addEventListener('click', () => {
+    desk.dataset.mode = b.dataset.mode;
+    $$('.seg button').forEach(x => x.setAttribute('aria-checked', String(x === b)));
+  }));
+  $$('.wb-ws[data-dws]', desk).forEach(b => b.addEventListener('click', () => {
+    $('#dTrack').style.setProperty('--ws', b.dataset.dws);
+    $$('.wb-ws', desk).forEach(x => x.classList.toggle('is-on', x === b));
+  }));
+
+  const cores = Array.from({ length: 8 }, (_, i) => 8 + (i * 13) % 40);
+  const btop = $('#btop');
+  btop.innerHTML = cores.map((v, i) => `<span class="c-3">c${i}</span><span class="bt-track"><span class="bt-fill"></span></span><span class="val"></span>`).join('') +
+    `<span class="c-3">mem</span><span class="bt-track"><span class="bt-fill" data-mem></span></span><span class="val" data-memv></span>`;
+  const fills = $$('.bt-fill:not([data-mem])', btop), vals = $$('.val:not([data-memv])', btop);
+  let mem = 41;
+  function sample(step) {
+    if (step) cores.forEach((v, i) => { cores[i] = Math.max(2, Math.min(97, v + (Math.random() - .5) * 26)); });
+    cores.forEach((v, i) => {
+      fills[i].style.setProperty('--v', v + '%');
+      fills[i].className = 'bt-fill' + (v > 80 ? ' hi' : v > 50 ? ' mid' : '');
+      vals[i].textContent = Math.round(v) + '%';
+    });
+    if (step) mem = Math.max(30, Math.min(70, mem + (Math.random() - .5) * 3));
+    $('[data-mem]', btop).style.setProperty('--v', mem + '%');
+    $('[data-memv]', btop).textContent = (mem * .32).toFixed(1) + 'G';
+    const avg = Math.round(cores.reduce((a, b) => a + b, 0) / cores.length) + '%';
+    $$('[data-cpu]').forEach(el => el.textContent = avg);
+  }
+  sample(false);
+  setInterval(() => { if (!document.hidden && !reduced.matches) sample(true); }, 1500);
+
+  const toast = $('#dToast');
+  function notify(who, title, body) {
+    $('[data-t="who"]', toast).textContent = who;
+    $('[data-t="title"]', toast).textContent = title;
+    $('[data-t="body"]', toast).textContent = body;
+    toast.classList.remove('pop'); void toast.offsetWidth; toast.classList.add('pop');
+  }
+
+  const MENU = [
+    ['▦', 'Apps', 'Launch an installed application', 'Super Space'],
+    ['¶', 'Learn', 'Keybindings, the manual, the Arch wiki', 'Super K'],
+    ['◎', 'Trigger', 'Capture, share, toggle', ''],
+    ['◐', 'Style', 'Theme, font, background', 'Super Alt T'],
+    ['≡', 'Setup', 'Audio, wifi, monitors, input', ''],
+    ['+', 'Install', 'Packages, web apps, dev environments', ''],
+    ['−', 'Remove', 'Uninstall what you added', ''],
+    ['↻', 'Update', 'Omarchy, packages, firmware', ''],
+    ['i', 'About', 'Version and hardware', ''],
+    ['◇', 'System', 'Lock, suspend, restart, shut down', 'Super Esc'],
+  ];
+  const launcher = $('#launcher'), q = $('#menuQ'), list = $('#menuList');
+  let sel = 0, shown = MENU, lastFocus = null;
+  function renderMenu() {
+    const s = q.value.trim().toLowerCase();
+    shown = MENU.filter(m => !s || (m[1] + ' ' + m[2]).toLowerCase().includes(s));
+    sel = Math.min(sel, Math.max(0, shown.length - 1));
+    list.innerHTML = shown.length ? shown.map((m, i) => `<li class="mi${i === sel ? ' is-sel' : ''}" role="option" id="mi-${i}" aria-selected="${i === sel}" data-i="${i}"><span class="mi-icon">${m[0]}</span><span class="mi-name">${m[1]}</span><span class="mi-desc">${m[2]}</span><span class="mi-hint">${m[3]}</span></li>`).join('')
+      : `<li class="mi-none">Nothing matches “${esc(q.value)}”.</li>`;
+    if (shown.length) { q.setAttribute('aria-activedescendant', 'mi-' + sel); $('#mi-' + sel).scrollIntoView({ block: 'nearest' }); }
+    else q.removeAttribute('aria-activedescendant');
+  }
+  function openLauncher() {
+    lastFocus = document.activeElement;
+    launcher.hidden = false; q.value = ''; sel = 0; renderMenu(); q.focus({ preventScroll: true });
+  }
+  function closeLauncher() { launcher.hidden = true; if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true }); }
+  function choose(m) {
+    closeLauncher();
+    if (!m) return;
+    if (m[1] === 'Style') { const n = cycle(1); notify('Omarchy', 'Theme set to ' + n, 'Every role on the page changed with it.'); }
+    else notify('Omarchy', m[1], m[2] + '.');
+  }
+  q.addEventListener('input', () => { sel = 0; renderMenu(); });
+  q.addEventListener('keydown', e => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(sel + 1, shown.length - 1); renderMenu(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(sel - 1, 0); renderMenu(); }
+    else if (e.key === 'Enter') { e.preventDefault(); choose(shown[sel]); }
+    else if (e.key === 'Escape') { e.preventDefault(); closeLauncher(); }
+  });
+  list.addEventListener('click', e => { const li = e.target.closest('.mi'); if (li) choose(shown[+li.dataset.i]); });
+  launcher.addEventListener('pointerdown', e => { if (e.target === launcher) { e.preventDefault(); closeLauncher(); } });
+  $('#openMenu').addEventListener('click', openLauncher);
+
+  /* ---------- global keys ---------- */
+  document.addEventListener('keydown', e => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    const tag = e.target.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target.isContentEditable) return;
+    if (e.key === 'Escape') { if (!tm.hidden) { closeTM(); tb.focus(); } return; }
+    if (!launcher.hidden) return;
+    if (/^[1-8]$/.test(e.key)) jump(+e.key);
+    else if (e.key === 't') cycle(1);
+    else if (e.key === 'T') cycle(-1);
+    else if (e.key === '/') {
+      e.preventDefault();
+      const r = desk.getBoundingClientRect();
+      if (r.bottom < 80 || r.top > innerHeight - 80) jump(1);
+      openLauncher();
+    }
+  });
+
+  /* ---------- motion demo, parts ---------- */
+  $('#replay').addEventListener('click', () => $('#motion').classList.toggle('go'));
+  $('#slow').addEventListener('change', e => $('#motion').style.setProperty('--slow', e.target.checked ? 5 : 1));
+  $('#nightSwitch').addEventListener('click', e => { const b = e.currentTarget; b.setAttribute('aria-checked', String(b.getAttribute('aria-checked') !== 'true')); });
+
+  $('#copyBtn').addEventListener('click', async e => {
+    const btn = e.currentTarget, code = $('#code');
+    try { await navigator.clipboard.writeText(code.textContent); btn.textContent = 'Copied'; }
+    catch (err) {
+      const r = document.createRange(); r.selectNodeContents(code);
+      const s = getSelection(); s.removeAllRanges(); s.addRange(r);
+      btn.textContent = 'Selected';
+    }
+    setTimeout(() => { btn.textContent = 'Copy'; }, 1600);
+  });
+
+  if (chosen) setTheme(chosen); else render();
+})();
+</script>
