@@ -14,7 +14,6 @@ import { layer } from "@/design/tokens/layer.stylex";
 import { motion } from "@/design/tokens/motion.stylex";
 import { size, stroke } from "@/design/tokens/size.stylex";
 import { space } from "@/design/tokens/space.stylex";
-import { weight } from "@/design/tokens/type.stylex";
 import { formatClock, useNow } from "@/lib/use-clock";
 import { SECTIONS } from "./sections";
 import { ThemeMenu } from "./ThemeMenu";
@@ -51,43 +50,27 @@ const s = stylex.create({
     outline: "none",
     ":focus-visible": { boxShadow: focus.ring },
   },
+  // The same rules as the desktop bar: the current section in accent, a light fill on hover,
+  // the clock in one face, weight and ink.
   ws: {
-    position: "relative",
-    height: size.header,
+    height: size.controlSm,
     minWidth: space.u6,
-    paddingInline: "3px",
     color: color["--text-3"],
-    backgroundColor: "transparent",
+    backgroundColor: { default: "transparent", ":hover": "color-mix(in srgb, var(--text) 8%, transparent)" },
     borderWidth: 0,
     cursor: "pointer",
     outline: "none",
     fontVariantNumeric: "tabular-nums",
     textTransform: "none",
-    transitionProperty: "color",
+    transitionProperty: "color, background-color",
     transitionDuration: motion.tick,
-    ":hover": { color: color["--text-2"] },
+    ":hover": { color: color["--text"] },
     ":focus-visible": { boxShadow: focus.inset },
-    "::after": { content: '""', position: "absolute", left: "5px", right: "5px", bottom: 0, height: 0, backgroundColor: color["--accent"] },
   },
-  wsOn: { color: color["--text"], "::after": { height: stroke.strong } },
-  title: {
-    display: { default: "none", [bp.lg]: "block" },
-    marginLeft: space.u3,
-    paddingLeft: space.u3,
-    borderLeftWidth: stroke.hair,
-    borderLeftStyle: "solid",
-    borderLeftColor: color["--line"],
-    color: color["--text-2"],
-    whiteSpace: "nowrap",
-  },
-  clock: {
-    display: { default: "none", [bp.lg]: "block" },
-    fontWeight: weight.semibold,
-    fontVariantNumeric: "tabular-nums",
-    whiteSpace: "nowrap",
-    color: color["--text"],
-  },
-  day: { fontWeight: weight.regular, color: color["--text-2"], marginRight: space.u2 },
+  wsOn: { color: color["--accent"] },
+  title: { display: { default: "none", [bp.lg]: "block" }, marginLeft: space.u3, color: color["--text-2"], whiteSpace: "nowrap" },
+  clock: { display: { default: "none", [bp.lg]: "block" }, fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap", color: color["--text-2"] },
+  day: { marginRight: "1ch" },
   link: {
     display: { default: "none", [bp.md]: "inline-flex" },
     alignItems: "center",
@@ -133,7 +116,7 @@ export function Header({ sections = true }: { sections?: boolean }) {
             </span>
           )}
         </nav>
-        <div {...stylex.props(typo.small, s.clock)} suppressHydrationWarning>
+        <div {...stylex.props(typo.small, face.mono, s.clock)} suppressHydrationWarning>
           <span {...stylex.props(s.day)}>{c.day}</span>
           {c.time}
         </div>

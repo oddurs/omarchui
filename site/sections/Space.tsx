@@ -8,13 +8,13 @@ import { space } from "@/design/tokens/space.stylex";
 import { Tile } from "../Tile";
 
 export const SCALE = [
-  [1, "Icon to value, label to field"],
-  [2, "Inner gap between windows, list padding"],
-  [3, "Outer gap to the screen edge, control padding"],
-  [4, "Padding inside fields and toasts"],
-  [6, "Padding inside menus and dialogs"],
-  [8, "Bar height, gaps between blocks"],
-  [12, "Lock-screen field, page padding"],
+  [1, "Gap between menu rows, title to body, toast to the screen edge"],
+  [2, "Menu row padding, the bar's edge, below the menu field"],
+  [3, "Gaps between and around windows, toast padding"],
+  [4, "Padding inside the menu card and the overlay"],
+  [5, "A workspace slot"],
+  [7, "Bar height, a widget slot"],
+  [12, "A menu row"],
 ] as const;
 
 const s = stylex.create({ bar: { height: space.u2, backgroundColor: color["--accent"] } });
@@ -24,7 +24,8 @@ export function Space() {
   return (
     <Tile ws={5} span={5} labelledBy="h-space" aside="1u = 4px">
       <Intro id="h-space" title="One unit: four pixels">
-        Everything measures in units, so a launcher row lines up with a bar module and a toast sits on the same edge as the window below it.
+        Omarchy sizes things in nine Style.space steps. The tune keeps its sizes and moves each to the nearest step of 4px, never more than 2px away, so a menu
+        row lines up with a bar widget and a toast sits on the same edge as the window below it.
       </Intro>
       <Geometry />
       <Rows>

@@ -25,7 +25,7 @@ const s = stylex.create({
     transitionDuration: motion.move,
     transitionTimingFunction: motion.ease,
   },
-  active: { borderColor: chrome.winActive, boxShadow: chrome.halo },
+  active: { borderColor: chrome.winActive },
   urgent: { borderColor: color["--err"] },
 });
 

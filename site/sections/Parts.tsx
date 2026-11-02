@@ -10,7 +10,7 @@ import { Inline, Stack } from "@/design/primitives/Stack";
 import { Text } from "@/design/primitives/Text";
 import { Intro } from "@/design/patterns/Intro";
 import { Bar } from "@/design/shell/Bar";
-import { LockPanel } from "@/design/shell/LockPanel";
+import { LockField, LockPanel } from "@/design/shell/LockPanel";
 import { MenuPanel } from "@/design/shell/MenuPanel";
 import { Osd } from "@/design/shell/Osd";
 import { Toast } from "@/design/shell/Toast";
@@ -18,7 +18,7 @@ import { WindowFrame } from "@/design/shell/WindowFrame";
 import { bp } from "@/design/tokens/breakpoints.stylex";
 import { space } from "@/design/tokens/space.stylex";
 import { Tile } from "../Tile";
-import { LockSample, PartsCompare, SetupSample } from "./PartsCompare";
+import { PartsCompare, SetupSample } from "./PartsCompare";
 
 const s = stylex.create({
   full: { gridColumn: "1 / -1" },
@@ -100,19 +100,28 @@ export function Parts() {
             wide
             href="/system/shell/bar"
             name="Bar"
-            desc="8u tall. Occupied workspaces are brighter than empty ones; the active one gets a 2px underline. The clock is the only centred thing."
-            tokens={["wall", "line", "text", "text-2", "text-3", "accent", "ok"]}
+            desc="Omarchy's bar at 7u. Occupied workspaces are brighter than empty ones and the current one keeps its number, in accent. The clock is centred on the whole bar."
+            tokens={["surface", "text", "text-2", "text-3", "accent"]}
           >
             <Bar
               framed
               workspaces={ws}
               clock={{ day: "Sunday", time: "14:32" }}
               modules={[
-                { id: "cpu", icon: "cpu", label: "CPU", value: "13%" },
-                { id: "wifi", icon: "wifi", label: "Wifi", value: "home" },
-                { id: "vol", icon: "volume", label: "Volume", value: "64" },
-                { id: "bat", icon: "battery", label: "Battery", value: "82", tone: "ok" },
+                { id: "agents", icon: "agents", label: "Agents" },
+                { id: "bt", icon: "bluetooth", label: "Bluetooth" },
+                { id: "wifi", icon: "wifi", label: "Network" },
+                { id: "vol", icon: "volume", label: "Audio" },
+                { id: "display", icon: "monitor", label: "Display" },
+                { id: "bat", icon: "battery", label: "Power" },
               ]}
+              beside={{
+                before: [],
+                after: [
+                  { id: "elsewhen", icon: "globe", label: "World clock", status: true },
+                  { id: "weather", icon: "cloud", label: "Weather", status: true },
+                ],
+              }}
             />
             <div aria-hidden {...stylex.props(s.legend)}>
               <Text as="span" variant="label" tone="faint">
@@ -136,15 +145,15 @@ export function Parts() {
             wide
             href="/system/shell/window"
             name="Windows"
-            desc="No title bars, as today. State lives in the border alone. The halo is the one focus signal on the system."
-            tokens={["surface", "line", "accent", "halo", "err"]}
+            desc="No title bars, as today. State lives in Omarchy's 2px border, which is accent on the current window, the theme's line on the rest and err when one needs you."
+            tokens={["surface", "line-2", "accent", "err"]}
           >
             <Grid layout="three" gap="u4">
               {(
                 [
-                  ["Inactive", "1px line", "btop", null],
-                  ["Active", "1px accent + 3px halo", "nvim .", "active"],
-                  ["Urgent", "1px err, no halo", "make ✗ failed", "urgent"],
+                  ["Inactive", "2px line-2", "btop", null],
+                  ["Active", "2px accent", "nvim .", "active"],
+                  ["Urgent", "2px err", "make ✗ failed", "urgent"],
                 ] as const
               ).map(([name, sub, cmd, state]) => (
                 <Stack key={name} gap="u2" as="figure">
@@ -164,23 +173,22 @@ export function Parts() {
           <Part
             href="/system/shell/menu-panel"
             name="Menu"
-            desc="9u rows. Name in the UI face, description one tone quieter, shortcut at the far edge. The selected row takes the focus ring."
-            tokens={["raised", "line-2", "tint", "accent", "text-2"]}
+            desc="Omarchy's card on the 4px unit: 12u rows, a field that names the open menu. The cursor row takes the light fill and accent text, nothing more."
+            tokens={["raised", "line-2", "text", "text-3", "accent"]}
           >
             <MenuPanel
               label="Omarchy menu"
-              trail={[]}
               listId="parts-menu"
               sel={1}
               search={
-                <Text as="span" variant="small">
-                  app
+                <Text as="span" variant="small" tone="faint">
+                  Go…
                 </Text>
               }
               rows={[
-                { key: "learn", glyph: "¶", name: "Learn", desc: "Keybindings and the manuals", more: true },
-                { key: "appearance", glyph: "◐", name: "Appearance", desc: "Theme, background", hint: "Super Ctrl T", more: true },
-                { key: "trigger", glyph: "◎", name: "Trigger", desc: "Toggle, capture, remind", more: true },
+                { key: "learn", glyph: "¶", name: "Learn", more: true },
+                { key: "appearance", glyph: "◐", name: "Appearance", more: true },
+                { key: "trigger", glyph: "◎", name: "Trigger", more: true },
               ]}
             />
           </Part>
@@ -188,12 +196,12 @@ export function Parts() {
           <Part
             href="/system/shell/toast"
             name="Notification"
-            desc="Source and time as a label, title in the UI face, body one tone quieter. Critical swaps the border and dot to err."
-            tokens={["raised", "line-2", "info", "err"]}
+            desc="Omarchy's card, set in the shell's mono: title in medium, body one tone quieter. Critical takes an err border and nothing else."
+            tokens={["raised", "line-2", "text", "text-2", "err"]}
           >
             <div {...stylex.props(s.narrow)}>
               <Stack gap="u2">
-                <Toast who="Signal" time="2m" title="Kitchen group" body="Pizza is here. Come before it goes." />
+                <Toast who="Signal" title="Kitchen group" body="Pizza is here. Come before it goes." />
                 <Toast who="Battery" critical title="Battery at 9%" body="Plug in within 15 minutes to avoid suspending." />
               </Stack>
             </div>
@@ -202,8 +210,8 @@ export function Parts() {
           <Part
             href="/system/shell/osd"
             name="Overlay"
-            desc="Volume and brightness. One icon, a 1u track, the value in mono. Shows for 1.2s and never takes focus."
-            tokens={["raised", "sunken", "accent"]}
+            desc="Volume and brightness as Omarchy lays them out: glyph, a 36u track, the value. Shows for 1.2s and never takes focus."
+            tokens={["raised", "line-2", "accent"]}
           >
             <div {...stylex.props(s.narrow)}>
               <Stack gap="u2">
@@ -254,11 +262,11 @@ export function Parts() {
           <Part
             href="/system/shell/lock-panel"
             name="Lock screen"
-            desc="The one place display type is used at scale. Time in mono 800, date in the UI face, a single field that already has focus."
-            tokens={["wall", "text", "text-2", "sunken", "halo"]}
+            desc="Only the field, as in Omarchy: no clock, no name. A 2px line that turns accent once it has focus."
+            tokens={["surface", "line-2", "accent", "text-3"]}
           >
-            <LockPanel time="14:32" date="Sunday 1 November">
-              <LockSample />
+            <LockPanel>
+              <LockField defaultValue="omarchui" />
             </LockPanel>
           </Part>
         </Grid>

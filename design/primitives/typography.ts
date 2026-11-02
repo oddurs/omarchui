@@ -1,5 +1,4 @@
 import * as stylex from "@stylexjs/stylex";
-import { chrome } from "../tokens/chrome.stylex";
 import { color } from "../tokens/color.stylex";
 import { font, fontSize, leading, tracking, weight } from "../tokens/type.stylex";
 
@@ -39,24 +38,9 @@ export const typo = stylex.create({
   },
 });
 
-/** Labels inside desktop chrome follow the before/after tokens: caps when tuned, plain when stock. */
-export const chromeLabel = stylex.create({
-  base: {
-    fontFamily: font.mono,
-    fontSize: fontSize.label,
-    lineHeight: leading.label,
-    fontWeight: weight.medium,
-    letterSpacing: chrome.labelTrack,
-    textTransform: chrome.labelCase,
-    color: chrome.labelColor,
-  },
-});
-
 export const face = stylex.create({
   sans: { fontFamily: font.sans },
   mono: { fontFamily: font.mono },
-  /** The chrome face: sans when tuned, mono in the stock view. */
-  ui: { fontFamily: chrome.ui },
 });
 
 export const ink = stylex.create({
