@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { focused, initialState, reducer, windowsOn, type Action, type State } from "@/demo/state";
+import { focused, initialState, rectsFor, reducer, windowsOn, type Action, type State } from "@/demo/state";
 
 const now = new Date(2026, 10, 1, 14, 32);
 const play = (s: State, ...actions: Action[]) => actions.reduce(reducer, s);
@@ -154,5 +154,57 @@ describe("power states", () => {
     expect(play(off, { type: "unlock" }).phase).toBe("off");
     expect(play(off, { type: "lock" }).phase).toBe("off");
     expect(play(off, { type: "power-on" }).phase).toBe("boot");
+  });
+});
+
+describe("windows, as Omarchy's Hyprland handles them", () => {
+  const two = () => play(desktop(), { type: "open", app: "terminal", now }, { type: "open", app: "editor", now });
+
+  it("opens btop floating, centred at 875x600 (default/hypr/apps/system.lua:2-11)", () => {
+    const s = play(desktop(), { type: "open", app: "monitor", now });
+    expect(focused(s)?.float).toEqual({ w: 875, h: 600, dx: 0, dy: 0 });
+    expect(s.trees[1] ?? null).toBeNull();
+  });
+
+  it("Super+T floats the focused window and tiles it again", () => {
+    const floated = play(two(), { type: "float" });
+    expect(focused(floated)?.float).toEqual({ w: 875, h: 600, dx: 0, dy: 0 });
+    expect(rectsFor(floated, 1).size).toBe(1);
+    const back = play(floated, { type: "float" });
+    expect(focused(back)?.float).toBeUndefined();
+    expect(rectsFor(back, 1).size).toBe(2);
+  });
+
+  it("Super+O pops a window out at 1300x900, pinned to every workspace, and back", () => {
+    const popped = play(two(), { type: "pop" });
+    expect(focused(popped)).toMatchObject({ pinned: true, float: { w: 1300, h: 900 } });
+    const elsewhere = play(popped, { type: "workspace", n: 3 }, { type: "focus", id: focused(popped)!.id });
+    expect(elsewhere.ws).toBe(3);
+    const back = play(popped, { type: "pop" });
+    expect(focused(back)?.pinned).toBe(false);
+    expect(rectsFor(back, 1).size).toBe(2);
+  });
+
+  it("tells true fullscreen from full width (Super+F, Super+Alt+F)", () => {
+    const full = play(two(), { type: "fullscreen", kind: "full" });
+    expect(full.fullscreen[1]?.kind).toBe("full");
+    const max = play(full, { type: "fullscreen", kind: "max" });
+    expect(max.fullscreen[1]?.kind).toBe("max");
+    expect(play(max, { type: "fullscreen", kind: "max" }).fullscreen[1]).toBeNull();
+  });
+
+  it("keeps a closed window drawn, in its tile, until it has shrunk out", () => {
+    const s = play(two(), { type: "close" });
+    expect(s.windows).toHaveLength(1);
+    expect(s.closing).toHaveLength(1);
+    expect(s.closing[0]?.rect).toEqual({ x: 0.5, y: 0, w: 0.5, h: 1 });
+    expect(play(s, { type: "closed", id: s.closing[0]!.win.id }).closing).toHaveLength(0);
+  });
+
+  it("swaps two tiles when one is dragged onto the other", () => {
+    const s = two();
+    const [a, b] = s.windows.map((w) => w.id);
+    const swapped = play(s, { type: "swap-ids", a: a!, b: b! });
+    expect(rectsFor(swapped, 1).get(b!)).toEqual({ x: 0, y: 0, w: 0.5, h: 1 });
   });
 });

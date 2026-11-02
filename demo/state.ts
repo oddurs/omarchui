@@ -1,6 +1,6 @@
 import { APP_TITLES, VIEWS, type AppKind, type Toggle, type View } from "@/lib/commands";
 import { HOME, lookup, pretty, resolve } from "@/lib/fs";
-import { dwindle, neighbor, type Dir } from "@/lib/layout";
+import { insert, neighbor, rectsOf, remove, swapIds, toggleSplit, type Dir, type Node, type Rect } from "@/lib/layout";
 import { prompt, run, type Line } from "@/lib/shell";
 import { backgroundIndex, backgroundsOf } from "@/lib/backgrounds";
 import { openAt } from "./menu-state";
@@ -19,13 +19,19 @@ export type KeysData = { kind: "keys"; q: string };
 export type MonitorData = { kind: "monitor" };
 export type AppData = TermData | EditorData | GitData | KeysData | MonitorData;
 
-export type Win = { id: string; app: AppKind; ws: number; data: AppData };
+/** A floating window: its size, and its offset from the workspace's centre, in pixels. */
+export type Float = { w: number; h: number; dx: number; dy: number };
+export type Win = { id: string; app: AppKind; ws: number; data: AppData; float?: Float; pinned?: boolean };
+export type Fullscreen = { id: string; kind: "full" | "max" } | null;
 /** Low lasts 5s, normal 8s, critical until dismissed. shell/plugins/notifications/Service.qml:141-148. */
 export type Urgency = "low" | "normal" | "critical";
 export type Toast = { id: number; who: string; title: string; body: string; critical: boolean; urgency: Urgency; at: number };
 export type Overlay = { root: "launcher" | "omarchy"; path: string[]; q: string; sel: number } | null;
 /** Omarchy's image picker, open on themes or on the current theme's backgrounds. */
 export type Picker = { mode: "theme" | "background"; sel: number; q: string } | null;
+/** The bar panels the demo draws; one is open at a time. research/omarchy/spec/panels.json. */
+export type PanelId = "clock" | "weather" | "audio" | "network" | "bluetooth" | "monitor" | "power";
+export type Profile = "power-saver" | "balanced" | "performance";
 export type Osd = { kind: "volume" | "brightness"; value: number; muted: boolean; key: number } | null;
 export type Metrics = { cores: number[]; mem: number; net: number[] };
 
@@ -40,10 +46,19 @@ export type State = {
   ws: number;
   windows: Win[];
   focus: Record<number, string | null>;
-  fullscreen: Record<number, string | null>;
-  flip: Record<number, boolean>;
+  /** Super+F covers the bar ("full"); Super+Alt+F fills the work area under it ("max"). */
+  fullscreen: Record<number, Fullscreen>;
+  /** Each workspace's tiled windows as Hyprland's dwindle tree; floating windows sit outside it. */
+  trees: Record<number, Node | null>;
+  /** Windows shrinking out after a close, with the tile they had. Hyprland's windowsOut. */
+  closing: { win: Win; rect: Rect | null }[];
   overlay: Overlay;
   picker: Picker;
+  panel: PanelId | null;
+  /** The radios and power profile the panels switch. */
+  wifi: boolean;
+  bluetooth: boolean;
+  profile: Profile;
   toasts: Toast[];
   osd: Osd;
   volume: number;
@@ -77,10 +92,20 @@ export type Action =
   | { type: "swap"; dir: Dir }
   | { type: "workspace"; n: number }
   | { type: "send"; n: number }
-  | { type: "fullscreen" }
+  | { type: "fullscreen"; kind?: "full" | "max" }
+  | { type: "closed"; id: string }
+  | { type: "float" }
+  | { type: "pop" }
+  | { type: "move-float"; id: string; float: Partial<Float> }
+  | { type: "swap-ids"; a: string; b: string }
   | { type: "flip" }
   | { type: "overlay"; overlay: Overlay }
   | { type: "picker"; picker: Picker }
+  | { type: "panel"; id: PanelId | null }
+  | { type: "radio"; what: "wifi" | "bluetooth"; on: boolean }
+  | { type: "profile"; value: Profile }
+  | { type: "set-volume"; value: number }
+  | { type: "set-brightness"; value: number }
   | { type: "background"; index: number }
   | { type: "notify"; who: string; title: string; body: string; critical?: boolean }
   | { type: "dismiss"; id: number }
@@ -116,9 +141,14 @@ export function initialState(theme: ThemeSlug): State {
     windows: [],
     focus: {},
     fullscreen: {},
-    flip: {},
+    trees: {},
+    closing: [],
     overlay: null,
     picker: null,
+    panel: null,
+    wifi: true,
+    bluetooth: true,
+    profile: "balanced",
     toasts: [],
     osd: null,
     volume: 64,
@@ -169,12 +199,26 @@ export function windowTitle(w: Win): string {
   return APP_TITLES[w.app];
 }
 
-function rectsFor(s: State, ws: number) {
-  return dwindle(
-    windowsOn(s, ws).map((w) => w.id),
-    s.aspect,
-    s.flip[ws] ?? false,
-  );
+export function rectsFor(s: Pick<State, "trees">, ws: number) {
+  return rectsOf(s.trees[ws] ?? null);
+}
+
+// Windows Omarchy tags floating-window open centred at 875x600 (default/hypr/apps/system.lua:2-11);
+// btop runs as org.omarchy.btop. Super+O pops a window out at 1300x900, pinned (tiling.lua:11).
+const FLOATS: ReadonlySet<AppKind> = new Set(["monitor"]);
+const FLOAT_SIZE = { w: 875, h: 600 };
+const POP_SIZE = { w: 1300, h: 900 };
+
+function tile(s: State, win: Win, ws: number): State["trees"] {
+  return { ...s.trees, [ws]: insert(s.trees[ws] ?? null, s.focus[ws] ?? null, win.id, s.aspect) };
+}
+
+function untile(s: State, win: Win): State["trees"] {
+  return { ...s.trees, [win.ws]: remove(s.trees[win.ws] ?? null, win.id) };
+}
+
+function setWin(s: State, id: string, patch: Partial<Win>): Win[] {
+  return s.windows.map((w) => (w.id === id ? { ...w, ...patch } : w));
 }
 
 // Omarchy's own messages go out at low urgency (bin/omarchy-notification-send:12); others at normal.
@@ -202,8 +246,9 @@ function removeWindow(s: State, id: string): State {
   return {
     ...s,
     windows: s.windows.filter((w) => w.id !== id),
+    trees: untile(s, win),
     focus: { ...s.focus, [win.ws]: nextFocus },
-    fullscreen: s.fullscreen[win.ws] === id ? { ...s.fullscreen, [win.ws]: null } : s.fullscreen,
+    fullscreen: s.fullscreen[win.ws]?.id === id ? { ...s.fullscreen, [win.ws]: null } : s.fullscreen,
   };
 }
 
@@ -226,7 +271,7 @@ export function reducer(s: State, a: Action): State {
             },
           );
     case "lock":
-      return s.phase === "desktop" ? { ...s, phase: "lock", overlay: null, picker: null } : s;
+      return s.phase === "desktop" ? { ...s, phase: "lock", overlay: null, picker: null, panel: null } : s;
     // A restart boots a fresh session: windows go, the theme, view and backgrounds stay.
     case "restart":
       return { ...initialState(a.theme), view: s.view, split: s.split, aspect: s.aspect, bg: s.bg, boots: s.boots };
@@ -250,7 +295,19 @@ export function reducer(s: State, a: Action): State {
     case "background":
       return { ...s, picker: null, bg: { ...s.bg, [s.theme]: a.index } };
     case "picker":
-      return { ...s, picker: a.picker, overlay: a.picker ? null : s.overlay };
+      return { ...s, picker: a.picker, overlay: a.picker ? null : s.overlay, panel: a.picker ? null : s.panel };
+    // One panel per bar; asking for the open one again closes it. panel.single.
+    case "panel":
+      return { ...s, panel: a.id === s.panel ? null : a.id, overlay: a.id ? null : s.overlay };
+    case "radio":
+      return { ...s, [a.what]: a.on };
+    case "profile":
+      return { ...s, profile: a.value };
+    // Panel sliders change the level without the OSD, which shows for key presses.
+    case "set-volume":
+      return { ...s, volume: clamp(Math.round(a.value), 0, 100), muted: false };
+    case "set-brightness":
+      return { ...s, brightness: clamp(Math.round(a.value), 1, 100) };
     case "open": {
       const id = `w${s.seq}`;
       let data = newData(a.app, a.file);
@@ -258,9 +315,11 @@ export function reducer(s: State, a: Action): State {
         const res = run(a.run, { ...shellCtx(s, data.cwd), history: [], now: a.now });
         data = { ...data, lines: [...data.lines, ...echo(data, a.run), ...res.out], history: [a.run], code: res.code };
       }
+      const win: Win = { id, app: a.app, ws: s.ws, data, ...(FLOATS.has(a.app) ? { float: { ...FLOAT_SIZE, dx: 0, dy: 0 } } : {}) };
       return {
         ...s,
-        windows: [...s.windows, { id, app: a.app, ws: s.ws, data }],
+        windows: [...s.windows, win],
+        trees: win.float ? s.trees : tile(s, win, s.ws),
         focus: { ...s.focus, [s.ws]: id },
         fullscreen: { ...s.fullscreen, [s.ws]: null },
         overlay: null,
@@ -269,11 +328,47 @@ export function reducer(s: State, a: Action): State {
     }
     case "close": {
       const id = a.id ?? s.focus[s.ws];
-      return id ? removeWindow(s, id) : s;
+      const win = s.windows.find((w) => w.id === id);
+      if (!win) return s;
+      return { ...removeWindow(s, win.id), closing: [...s.closing, { win, rect: rectsFor(s, win.ws).get(win.id) ?? null }] };
     }
+    case "closed":
+      return { ...s, closing: s.closing.filter((c) => c.win.id !== a.id) };
+    // A pinned window shows on every workspace, so focusing it does not switch.
     case "focus": {
       const w = s.windows.find((x) => x.id === a.id);
-      return w ? { ...s, ws: w.ws, focus: { ...s.focus, [w.ws]: w.id } } : s;
+      if (!w) return s;
+      return w.pinned ? { ...s, focus: { ...s.focus, [s.ws]: w.id } } : { ...s, ws: w.ws, focus: { ...s.focus, [w.ws]: w.id } };
+    }
+    // Super+T: tiled to floating (centred, 875x600) and back into the tree. tiling.lua:7.
+    case "float": {
+      const win = s.windows.find((w) => w.id === s.focus[s.ws]);
+      if (!win) return s;
+      if (win.float) {
+        const back = { ...win, float: undefined, pinned: false };
+        return { ...s, windows: setWin(s, win.id, { float: undefined, pinned: false }), trees: tile(s, back, win.ws) };
+      }
+      return { ...s, windows: setWin(s, win.id, { float: { ...FLOAT_SIZE, dx: 0, dy: 0 } }), trees: untile(s, win) };
+    }
+    // Super+O: float at 1300x900, centred and pinned; again, back into its tile. bin/omarchy-hyprland-window-pop.
+    case "pop": {
+      const win = s.windows.find((w) => w.id === s.focus[s.ws]);
+      if (!win) return s;
+      if (win.pinned) {
+        const back = { ...win, float: undefined, pinned: false, ws: s.ws };
+        return { ...s, windows: setWin(s, win.id, { float: undefined, pinned: false, ws: s.ws }), trees: tile(s, back, s.ws) };
+      }
+      return { ...s, windows: setWin(s, win.id, { float: { ...POP_SIZE, dx: 0, dy: 0 }, pinned: true }), trees: win.float ? s.trees : untile(s, win) };
+    }
+    case "move-float": {
+      const win = s.windows.find((w) => w.id === a.id);
+      if (!win?.float) return s;
+      return { ...s, windows: setWin(s, win.id, { float: { ...win.float, ...a.float } }) };
+    }
+    case "swap-ids": {
+      const ws = s.windows.find((w) => w.id === a.a)?.ws;
+      if (ws === undefined || a.a === a.b) return s;
+      return { ...s, trees: { ...s.trees, [ws]: swapIds(s.trees[ws] ?? null, a.a, a.b) } };
     }
     case "focus-dir": {
       const from = s.focus[s.ws];
@@ -286,15 +381,7 @@ export function reducer(s: State, a: Action): State {
       if (!from) return s;
       const to = neighbor(rectsFor(s, s.ws), from, a.dir);
       if (!to) return s;
-      const i = s.windows.findIndex((w) => w.id === from);
-      const j = s.windows.findIndex((w) => w.id === to);
-      const windows = [...s.windows];
-      const wi = windows[i];
-      const wj = windows[j];
-      if (!wi || !wj) return s;
-      windows[i] = wj;
-      windows[j] = wi;
-      return { ...s, windows };
+      return { ...s, trees: { ...s.trees, [s.ws]: swapIds(s.trees[s.ws] ?? null, from, to) } };
     }
     case "workspace":
       return a.n >= 1 && a.n <= WORKSPACES ? { ...s, ws: a.n } : s;
@@ -304,19 +391,25 @@ export function reducer(s: State, a: Action): State {
       const moved = removeWindow(s, id);
       const win = s.windows.find((w) => w.id === id);
       if (!win) return s;
+      const sent = { ...win, ws: a.n };
       return {
         ...moved,
-        windows: [...moved.windows, { ...win, ws: a.n }],
+        windows: [...moved.windows, sent],
+        trees: win.float ? moved.trees : tile(moved, sent, a.n),
         focus: { ...moved.focus, [a.n]: id },
       };
     }
     case "fullscreen": {
       const id = s.focus[s.ws];
       if (!id) return s;
-      return { ...s, fullscreen: { ...s.fullscreen, [s.ws]: s.fullscreen[s.ws] === id ? null : id } };
+      const kind = a.kind ?? "full";
+      const cur = s.fullscreen[s.ws];
+      return { ...s, fullscreen: { ...s.fullscreen, [s.ws]: cur?.id === id && cur.kind === kind ? null : { id, kind } } };
     }
-    case "flip":
-      return { ...s, flip: { ...s.flip, [s.ws]: !s.flip[s.ws] } };
+    case "flip": {
+      const id = s.focus[s.ws];
+      return id ? { ...s, trees: { ...s.trees, [s.ws]: toggleSplit(s.trees[s.ws] ?? null, id) } } : s;
+    }
     case "overlay":
       return { ...s, overlay: a.overlay };
     case "notify":

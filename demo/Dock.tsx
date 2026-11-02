@@ -99,7 +99,7 @@ export function Dock({ view, onView, inspect, onInspect }: Props) {
         ]}
       />
       <span {...stylex.props(s.hint)}>
-        <Chord chord="Alt+Ctrl+B" />
+        <Chord chord="Alt+Ctrl+U" />
       </span>
       <span aria-hidden {...stylex.props(s.sep)} />
       <Button variant={inspect ? "primary" : "ghost"} size="small" onPress={onInspect} aria-pressed={inspect} aria-label="Reference">

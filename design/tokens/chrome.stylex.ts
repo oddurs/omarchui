@@ -146,6 +146,30 @@ export const chrome = stylex.defineVars({
   chevOpacity: "1",
   /** The scrim behind the menu. */
   scrim: "var(--scrim)",
+  /**
+   * Hyprland's window animations, the same in both views: open (pop in from 87%), close (to 87%),
+   * move and resize, and the border colour on focus. default/hypr/looknfeel.lua:79-84.
+   */
+  winOpen: { default: "328ms", [REDUCED]: "0ms" },
+  winFadeIn: { default: "138ms", [REDUCED]: "0ms" },
+  winClose: { default: "119ms", [REDUCED]: "0ms" },
+  winFadeOut: { default: "117ms", [REDUCED]: "0ms" },
+  winMove: { default: "303ms", [REDUCED]: "0ms" },
+  winBorder: { default: "431ms", [REDUCED]: "0ms" },
+  /**
+   * Bar panels: ink, the dim second line, the strong weight, the inner padding and block gap,
+   * and the fills Omarchy builds from the foreground: selected 18%, rule 12%, cursor edge 25%.
+   * The hover fill is selBg (8%). research/omarchy/spec/panels.json, controls.
+   */
+  panelInk: "var(--text)",
+  panelDim: "var(--text-3)",
+  panelBold: "500",
+  panelPad: "16px",
+  panelGap: "16px",
+  panelPick: "color-mix(in srgb, var(--text) 18%, transparent)",
+  panelLine: "color-mix(in srgb, var(--text) 12%, transparent)",
+  panelEdge: "color-mix(in srgb, var(--text) 25%, transparent)",
+  panelIn: { default: "180ms", [REDUCED]: "0ms" },
   /** Window fill and border colours. */
   winBg: "var(--surface)",
   winActive: "var(--accent)",
@@ -194,6 +218,16 @@ export const stock = stylex.createTheme(chrome, {
   lockHeight: "67px", // LockView.qml:25
   wsActiveNumber: "none", // Workspaces.qml:138-142,273
   wsActiveGlyph: "inline-grid",
+  // research/omarchy/spec/panels.json
+  panelInk: "var(--o-foreground)", // popups.text, shell.toml.tpl
+  panelDim: "var(--o-dim-foreground)", // Qt.darker(foreground, 1.4)
+  panelBold: "700",
+  panelPad: "14px", // popupPadding, Style.qml:262
+  panelGap: "14px", // panelGap, Style.qml:260
+  panelPick: "color-mix(in srgb, var(--o-foreground) 18%, transparent)", // Style.qml:84-89
+  panelLine: "color-mix(in srgb, var(--o-foreground) 12%, transparent)", // PanelSeparator
+  panelEdge: "color-mix(in srgb, var(--o-foreground) 25%, transparent)", // CursorSurface border
+  panelIn: { default: "180ms", [REDUCED]: "0ms" }, // KeyboardPanel open
   // shell/plugins/image-picker/ImagePicker.qml and [image-picker] in shell.toml.tpl:226-235
   pickerDim: "var(--o-background)", // ImagePicker.qml:54
   pickerInk: "var(--o-foreground)",

@@ -47,7 +47,7 @@ test("Super+Space opens the Omarchy menu; Super+Alt+Space lists apps", async ({ 
   await expect(page.locator("section[aria-label='btop']")).toHaveCount(1);
 });
 
-test("before/after: the dock and Alt+Ctrl+B cycle stock, split and tuned", async ({ page }) => {
+test("before/after: the dock and Alt+Ctrl+U cycle stock, split and tuned", async ({ page }) => {
   await unlock(page);
   const dock = page.getByRole("region", { name: "Demo controls" });
   await dock
@@ -60,10 +60,10 @@ test("before/after: the dock and Alt+Ctrl+B cycle stock, split and tuned", async
   await slider.focus();
   await page.keyboard.press("ArrowLeft");
   await expect(slider).toHaveAttribute("aria-valuenow", "48");
-  await page.keyboard.press("Alt+Control+b");
+  await page.keyboard.press("Alt+Control+u");
   await expect(slider).toHaveCount(0);
   await expect(page.locator("[data-mode=tuned]")).toHaveCount(1);
-  await page.keyboard.press("Alt+Control+b");
+  await page.keyboard.press("Alt+Control+u");
   await expect(page.locator("[data-mode=stock]")).toHaveCount(1);
 });
 
