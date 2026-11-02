@@ -40,6 +40,10 @@ const s = stylex.create({
   away: { transform: `translate(-50%, calc(100% + ${space.u4}))` },
   hint: { display: { default: "inline-flex", [bp.phone]: "none" }, paddingInline: space.u1 },
   sep: { width: stroke.hair, alignSelf: "stretch", backgroundColor: color["--line"] },
+  // On a phone the dock is one row: labels become icons and fullscreen (unsupported there) goes.
+  label: { display: { default: "inline", [bp.phone]: "none" } },
+  wide: { display: { default: "contents", [bp.phone]: "none" } },
+  nowrap: { flexWrap: { default: "wrap", [bp.phone]: "nowrap" } },
 });
 
 type Props = { view: View; onView: (v: View) => void; inspect: boolean; onInspect: () => void };
@@ -84,7 +88,7 @@ export function Dock({ view, onView, inspect, onInspect }: Props) {
   };
 
   return (
-    <div ref={dock} data-dock role="region" aria-label="Demo controls" onFocus={() => setShown(true)} {...stylex.props(s.dock, !shown && s.away)}>
+    <div ref={dock} data-dock role="region" aria-label="Demo controls" onFocus={() => setShown(true)} {...stylex.props(s.dock, s.nowrap, !shown && s.away)}>
       <Segmented<View>
         label="Before and after"
         value={view}
@@ -99,14 +103,16 @@ export function Dock({ view, onView, inspect, onInspect }: Props) {
         <Chord chord="Alt+Ctrl+B" />
       </span>
       <span aria-hidden {...stylex.props(s.sep)} />
-      <Button variant={inspect ? "primary" : "ghost"} size="small" onPress={onInspect} aria-pressed={inspect}>
-        <Icon name="search" /> Reference
+      <Button variant={inspect ? "primary" : "ghost"} size="small" onPress={onInspect} aria-pressed={inspect} aria-label="Reference">
+        <Icon name="search" /> <span {...stylex.props(s.label)}>Reference</span>
       </Button>
-      <Button variant="ghost" size="small" onPress={fullscreen}>
-        <Icon name="expand" /> Fullscreen
-      </Button>
-      <ButtonLink href="/" variant="ghost" size="small">
-        <Icon name="exit" /> Leave
+      <span {...stylex.props(s.wide)}>
+        <Button variant="ghost" size="small" onPress={fullscreen}>
+          <Icon name="expand" /> Fullscreen
+        </Button>
+      </span>
+      <ButtonLink href="/" variant="ghost" size="small" aria-label="Leave">
+        <Icon name="exit" /> <span {...stylex.props(s.label)}>Leave</span>
       </ButtonLink>
     </div>
   );

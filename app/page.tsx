@@ -68,13 +68,20 @@ export default function Home() {
             </TextLink>
             . Theme palettes belong to their authors. The stock view uses Omarchy 4.0&apos;s shipped values, read from its source.
           </Text>
-          <Inline gap="u4">
-            <Text as="span" variant="small">
-              <TextLink href="/system">System reference</TextLink>
-            </Text>
-            <Text as="span" variant="caption" face="mono" tone="faint">
-              1u = 4px · halo 3px · bar 8u · row 9u
-            </Text>
+          <Inline gap="u4" wrap as="ul" aria-label="Pages">
+            {(
+              [
+                ["/demo", "Demo"],
+                ["/system", "System"],
+                ["/omarchy", "How Omarchy is built"],
+              ] as const
+            ).map(([href, label]) => (
+              <li key={href}>
+                <Text as="span" variant="small">
+                  <TextLink href={href}>{label}</TextLink>
+                </Text>
+              </li>
+            ))}
           </Inline>
         </Inline>
       </footer>

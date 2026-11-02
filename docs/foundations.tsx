@@ -236,6 +236,14 @@ function ColorPage() {
   );
 }
 
+/** Token sizes as a reader thinks of them: 1.75rem is 28px; a clamp is a fluid range. */
+function asPx(v: string): string {
+  const fluid = /^clamp\(([\d.]+)rem,.*,\s*([\d.]+)rem\)$/.exec(v);
+  if (fluid?.[1] && fluid[2]) return `${Number(fluid[1]) * 16}–${Number(fluid[2]) * 16}px, fluid`;
+  const rem = /^([\d.]+)rem$/.exec(v);
+  return rem?.[1] ? `${Number(rem[1]) * 16}px` : v;
+}
+
 function TypePage() {
   const sizes = tokens.fontSize();
   const leading = new Map(tokens.leading().map((r) => [r.name, r.value]));
@@ -254,7 +262,7 @@ function TypePage() {
                   {r.name}
                 </Text>
                 <Text as="span" variant="caption" face="mono" tone="faint">
-                  {r.value} / {leading.get(r.name)}
+                  {asPx(r.value)} / {leading.get(r.name)}
                 </Text>
               </Stack>
               <Text variant={r.name as TypeVariant} truncate>

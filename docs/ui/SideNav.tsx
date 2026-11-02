@@ -44,40 +44,58 @@ const s = stylex.create({
     ":hover": { color: color["--text"] },
     ":focus-visible": { boxShadow: focus.inset },
   },
+  wideOnly: { display: { default: "none", [bp.lg]: "block" } },
+  phoneOnly: { display: { default: "block", [bp.lg]: "none" } },
+  summary: {
+    paddingBlock: space.u2,
+    paddingInline: space.u3,
+    cursor: "pointer",
+    color: color["--text"],
+    borderWidth: stroke.hair,
+    borderStyle: "solid",
+    borderColor: color["--line-2"],
+    outline: "none",
+    ":focus-visible": { boxShadow: focus.ring },
+  },
+  panel: { paddingTop: space.u4 },
   on: { color: color["--text"], borderLeftColor: color["--accent"], backgroundColor: { default: color["--tint"], [bp.lg]: "transparent" } },
 });
 
 /** The reference's table of contents; the current page carries the accent rule. */
 export function SideNav({ groups }: { groups: NavGroup[] }) {
-  return <NavLinks groups={groups} path={usePathname()} />;
+  return <NavLinks groups={groups} path={usePathname()} summary="System contents" />;
 }
 
 /** The same list without the current page marked: the static shell before the path is known. */
-export function NavLinks({ groups, path }: { groups: NavGroup[]; path: string | null }) {
+export function NavLinks({ groups, path, summary = "Contents" }: { groups: NavGroup[]; path: string | null; summary?: string }) {
+  const list = (
+    <Stack gap="u6">
+      {groups.map((g) => (
+        <Stack key={g.title} gap="u2">
+          <Text as="h2" variant="label" tone="faint">
+            {g.title}
+          </Text>
+          <ul {...stylex.props(s.list)}>
+            {g.links.map((l) => (
+              <li key={l.href}>
+                <Link href={l.href as Route} aria-current={path === l.href ? "page" : undefined} {...stylex.props(typo.small, s.link, path === l.href && s.on)}>
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Stack>
+      ))}
+    </Stack>
+  );
   return (
-    <nav aria-label="System reference" {...stylex.props(s.nav)}>
-      <Stack gap="u6">
-        {groups.map((g) => (
-          <Stack key={g.title} gap="u2">
-            <Text as="h2" variant="label" tone="faint">
-              {g.title}
-            </Text>
-            <ul {...stylex.props(s.list)}>
-              {g.links.map((l) => (
-                <li key={l.href}>
-                  <Link
-                    href={l.href as Route}
-                    aria-current={path === l.href ? "page" : undefined}
-                    {...stylex.props(typo.small, s.link, path === l.href && s.on)}
-                  >
-                    {l.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </Stack>
-        ))}
-      </Stack>
+    <nav aria-label={summary} {...stylex.props(s.nav)}>
+      <div {...stylex.props(s.wideOnly)}>{list}</div>
+      {/* On a phone the list would push the page a screen down; it folds away instead. */}
+      <details {...stylex.props(s.phoneOnly)}>
+        <summary {...stylex.props(typo.small, s.summary)}>{summary}</summary>
+        <div {...stylex.props(s.panel)}>{list}</div>
+      </details>
     </nav>
   );
 }

@@ -37,7 +37,7 @@ export default function SystemLayout({ children }: { children: ReactNode }) {
       <Header sections={false} />
       <div {...stylex.props(s.page)}>
         {/* The active link needs the pathname, which dynamic pages only know at request time. */}
-        <Suspense fallback={<NavLinks groups={GROUPS} path={null} />}>
+        <Suspense fallback={<NavLinks groups={GROUPS} path={null} summary="System contents" />}>
           <SideNav groups={GROUPS} />
         </Suspense>
         <main id="main" tabIndex={-1} {...stylex.props(s.main)}>

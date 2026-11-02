@@ -169,7 +169,11 @@ export default function OmarchyPage() {
     <>
       <Header sections={false} />
       <div {...stylex.props(s.page)}>
-        <NavLinks groups={[{ title: "On this page", links: SECTIONS.map(([id, label]) => ({ href: `/omarchy#${id}`, label })) }]} path={null} />
+        <NavLinks
+          groups={[{ title: "On this page", links: SECTIONS.map(([id, label]) => ({ href: `/omarchy#${id}`, label })) }]}
+          path={null}
+          summary="On this page"
+        />
         <main id="main" tabIndex={-1} {...stylex.props(s.main)}>
           <Stack gap="u16">
             <Stack gap="u5">
