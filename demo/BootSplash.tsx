@@ -6,9 +6,10 @@ import { useEffect, useRef, useState } from "react";
 import { layer } from "@/design/tokens/layer.stylex";
 import { machine } from "@/design/tokens/machine.stylex";
 import { OMARCHY_COMMIT } from "@/lib/themes.generated";
+import { LimineMenu } from "./Limine";
 
 // Omarchy's boot, stage by stage, from its source at the pinned commit:
-//   bootloader  Limine, quiet, for its 1s timeout on the backdrop.     default/limine/limine.conf:2-3,11-12
+//   bootloader  Limine, quiet: nothing drawn for its 1s timeout; a key reveals its menu.  limine.conf:2-3
 //   logo        Plymouth's logo alone, centred on the screen.          default/plymouth/omarchy.script:6-8,220-221
 //   password    the disk passphrase: lock, entry, one bullet a key.    omarchy.script:112-128,133-189,223-232
 //   progress    the bar, easing toward 70% until real progress leads.  omarchy.script:10-12,37-54,137-147,195-212
@@ -28,16 +29,24 @@ const MAX_BULLETS = 21;
 /** How long each stage before the password holds, in ms. Limine's timeout is 1s. */
 const LOADER_MS = 1000;
 const LOGO_MS = 700;
+const HANDOFF_MS = 400;
 // Fake progress eases (1 - (1 - t)^2) toward 70% over 15s. omarchy.script:10-12, 46-51.
 const FAKE_LIMIT = 0.7;
 const FAKE_MS = 15_000;
 // Never wait on a slow image for long; Omarchy's own startup cover gives up after 10s.
 const READY_CAP_MS = 4000;
 
-export type BootStage = "bootloader" | "logo" | "password" | "progress";
+// A key pressed while the server-rendered placeholder holds the bootloader stage still counts:
+// the live splash mounts straight into Limine's menu.
+let revealPending = false;
+
+export type BootStage = "bootloader" | "limine" | "handoff" | "logo" | "password" | "progress";
 
 const s = stylex.create({
   root: { position: "fixed", inset: 0, zIndex: layer.boot, overflow: "hidden", backgroundColor: machine.boot },
+  // Quiet Limine paints nothing, so the firmware's image (black here) stays until Plymouth draws.
+  // limine.json quiet.screen-kept, hand.quiet.
+  dark: { backgroundColor: machine.black },
   stage: { position: "absolute", left: "50%", top: "50%", width: `${LOGO.w}px`, height: `${LOGO.h}px` },
   img: { position: "absolute", display: "block", userSelect: "none", pointerEvents: "none" },
   input: {
@@ -82,7 +91,7 @@ type Props = {
 };
 
 export function BootSplash({ wallpaper, interactive, onDone, hold }: Props) {
-  const [stage, setStage] = useState<BootStage>(hold ?? "bootloader");
+  const [stage, setStage] = useState<BootStage>(() => hold ?? (revealPending ? "limine" : "bootloader"));
   const [pw, setPw] = useState("");
   const [progress, setProgress] = useState(0);
   const [k, setK] = useState(fit);
@@ -97,17 +106,44 @@ export function BootSplash({ wallpaper, interactive, onDone, hold }: Props) {
     ready.current = img.decode().catch(() => undefined);
   }, [wallpaper]);
 
-  // Bootloader, then the logo alone, then the passphrase prompt.
+  useEffect(() => {
+    if (!hold) {
+      revealPending = false;
+      return;
+    }
+    const onKey = () => {
+      revealPending = true;
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [hold]);
+
+  // Bootloader (quiet: a key reveals Limine's menu), then the logo alone, then the passphrase.
   useEffect(() => {
     if (hold) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const a = window.setTimeout(() => setStage("logo"), reduced ? 0 : LOADER_MS);
-    const b = window.setTimeout(() => setStage("password"), reduced ? 0 : LOADER_MS + LOGO_MS);
-    return () => {
-      window.clearTimeout(a);
-      window.clearTimeout(b);
+    const next: Partial<Record<BootStage, [BootStage, number]>> = {
+      bootloader: ["logo", LOADER_MS],
+      // Booting from the revealed menu clears to black before the kernel starts. limine.json hand.revealed.
+      handoff: ["logo", HANDOFF_MS],
+      logo: ["password", LOGO_MS],
     };
-  }, [hold]);
+    const step = next[stage];
+    if (!step) return;
+    const t = window.setTimeout(() => setStage(step[0]), reduced ? 0 : step[1]);
+    // Only the keyboard reveals the menu; the mouse is not set up in quiet mode. quiet.reveal, quiet.no-mouse.
+    const onKey = (e: KeyboardEvent) => {
+      if (stage !== "bootloader" || !interactive) return;
+      e.preventDefault();
+      window.clearTimeout(t);
+      setStage("limine");
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [hold, stage, interactive]);
 
   useEffect(() => {
     if (stage === "password" && interactive) field.current?.focus({ preventScroll: true });
@@ -148,8 +184,15 @@ export function BootSplash({ wallpaper, interactive, onDone, hold }: Props) {
 
   const filled = Math.max(1, Math.round(BAR.w * progress));
   return (
-    <div role="dialog" aria-label="Boot" data-stage={stage} {...stylex.props(s.root)}>
-      {stage !== "bootloader" && (
+    <div
+      role="dialog"
+      aria-label="Boot"
+      data-stage={stage}
+      data-live={interactive || undefined}
+      {...stylex.props(s.root, (stage === "bootloader" || stage === "handoff") && s.dark)}
+    >
+      {stage === "limine" && <LimineMenu now={new Date()} onBoot={() => setStage("handoff")} />}
+      {(stage === "logo" || stage === "password" || stage === "progress") && (
         <div {...stylex.props(s.stage, at.stage(k))}>
           <Image
             src={`${ASSETS}/logo.png`}

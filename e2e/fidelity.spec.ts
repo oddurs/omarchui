@@ -387,10 +387,10 @@ test.describe("the stock view matches Omarchy's source", () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await page.goto("/");
     const boot = page.getByRole("dialog", { name: "Boot" });
-    // Limine, quiet: its 1s timeout on the backdrop, nothing drawn. default/limine/limine.conf:2-3,11-12.
+    // Limine, quiet: nothing drawn for its 1s timeout, so the firmware's black stays. limine.json quiet.
     await expect(boot).toHaveAttribute("data-stage", "bootloader");
     await expect(boot.locator("img")).toHaveCount(0);
-    expect(await css(boot, "background-color"), "backdrop 1a1b26 (limine.conf:12, omarchy.script:3-4)").toBe("rgb(26, 27, 38)");
+    expect(await css(boot, "background-color"), "quiet.screen-kept: the firmware's image").toBe("rgb(0, 0, 0)");
 
     // Plymouth: the logo centred, the entry 40px under it, the lock 15px to its left at 80% of its
     // height, bullets from 20px in, 12px apart. default/plymouth/omarchy.script:122-134, 216-232.
@@ -435,5 +435,33 @@ test.describe("the stock view matches Omarchy's source", () => {
     await login.getByLabel("Password").fill("anything");
     await login.getByLabel("Password").press("Enter");
     await expect(login).toHaveCount(0);
+  });
+
+  test("Limine's menu", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    const boot = page.getByRole("dialog", { name: "Boot" });
+    await expect(boot).toHaveAttribute("data-stage", "bootloader");
+    await expect(boot).toHaveAttribute("data-live", "true");
+    // A key during the quiet second reveals the menu, with no countdown. limine.json quiet.reveal.
+    await page.keyboard.press("ArrowDown");
+    const menu = page.getByRole("dialog", { name: "Limine boot menu" });
+    await expect(menu).toBeVisible();
+    expect(await css(menu, "background-color"), "grid.background 1a1b26").toBe("rgb(26, 27, 38)");
+    await expect(menu).toContainText("Omarchy Bootloader");
+    await expect(menu).toContainText("ARROWS Select    ENTER Boot    E Edit");
+    await expect(menu).toContainText("S Firmware Setup    B Blank Entry");
+    // default_entry 2: the kernel is selected, its comment in cyan near the bottom.
+    const entries = menu.getByRole("option");
+    await expect(entries).toHaveCount(3);
+    await expect(entries.nth(1)).toHaveAttribute("aria-selected", "true");
+    await expect(menu).toContainText("Kernel version:");
+    // 9x16 cells: the branding sits on row 1, the help on rows 3 and 5. At 1440x900: 160x56, offset (0, 2).
+    const brand = await box(menu.getByText("O", { exact: true }).first().locator(".."));
+    expect(brand.y, "grid.cell 16px rows; branding on row 1").toBe(2 + 16);
+    // Enter boots it: black while the kernel starts, then Plymouth.
+    await page.keyboard.press("Enter");
+    await expect(boot).toHaveAttribute("data-stage", "handoff");
+    await expect(boot).toHaveAttribute("data-stage", "logo");
   });
 });
