@@ -3,6 +3,9 @@ import { expect, test } from "@playwright/test";
 import facts from "../research/omarchy/facts.json";
 
 test("the Omarchy map renders, cites the pinned commit and passes axe", async ({ page }) => {
+  // The map renders Omarchy's whole menu tree and binding list, several thousand nodes. axe alone
+  // takes about 5s here and several times that beside the rest of the suite, past the 30s default.
+  test.slow();
   await page.goto("/omarchy");
   await expect(page.getByRole("heading", { level: 1, name: "How Omarchy is built" })).toBeVisible();
   // gaps_in is cited to a line: the link must reach that line at the pinned commit.

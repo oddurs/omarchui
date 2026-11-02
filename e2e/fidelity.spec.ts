@@ -390,7 +390,8 @@ test.describe("the stock view matches Omarchy's source", () => {
     // Limine, quiet: nothing drawn for its 1s timeout, so the firmware's black stays. limine.json quiet.
     await expect(boot).toHaveAttribute("data-stage", "bootloader");
     await expect(boot.locator("img")).toHaveCount(0);
-    expect(await css(boot, "background-color"), "quiet.screen-kept: the firmware's image").toBe("rgb(0, 0, 0)");
+    // The hold lasts one second, so the colour is polled while it shows rather than read once.
+    await expect(boot, "quiet.screen-kept: the firmware's image").toHaveCSS("background-color", "rgb(0, 0, 0)");
 
     // Plymouth: the logo centred, the entry 40px under it, the lock 15px to its left at 80% of its
     // height, bullets from 20px in, 12px apart. default/plymouth/omarchy.script:122-134, 216-232.
