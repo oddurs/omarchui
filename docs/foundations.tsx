@@ -434,7 +434,6 @@ function Sample() {
       <Toast who="Calendar" title="Design review moved to 15:00" body="Same room." />
       <MenuPanel
         label="Sample menu"
-        trail={["Appearance"]}
         sel={0}
         listId="chrome-sample"
         search={
@@ -443,8 +442,8 @@ function Sample() {
           </Text>
         }
         rows={[
-          { key: "theme", glyph: "◐", name: "Theme", desc: "Previews as you move", hint: "Super Alt T", more: true },
-          { key: "bg", glyph: "▨", name: "Next background", desc: "Cycle the wallpaper" },
+          { key: "theme", glyph: "◐", name: "Theme", more: true },
+          { key: "bg", glyph: "▨", name: "Next background" },
         ]}
       />
     </Stack>

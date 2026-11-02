@@ -54,14 +54,11 @@ const box = async (l: Locator) => {
   return b;
 };
 /** A computed style once the element's transitions and animations have finished. */
-const css = (l: Locator, prop: string, pseudo?: string) =>
-  l.evaluate(
-    async (e, [p, ps]) => {
-      await Promise.all(e.getAnimations().map((a) => a.finished.catch(() => undefined)));
-      return getComputedStyle(e, ps).getPropertyValue(p);
-    },
-    [prop, pseudo ?? null] as const,
-  );
+const css = (l: Locator, prop: string) =>
+  l.evaluate(async (e, p) => {
+    await Promise.all(e.getAnimations().map((a) => a.finished.catch(() => undefined)));
+    return getComputedStyle(e).getPropertyValue(p);
+  }, prop);
 
 /** Computed colours come back as rgb(), rgba() or color(srgb ...) depending on how they were written. */
 function channels(c: string): number[] {
@@ -198,8 +195,7 @@ test.describe("the stock view matches Omarchy's source", () => {
     expect(tb.width, tw.why).toBe(tw.n);
     expect(tb.height, th.why).toBe(th.n);
     // Muted, Omarchy still shows the stored level, followed by %. OsdModel.js:45.
-    await expect(osd.getByText("—"), "no dash for a muted value in Omarchy").toBeHidden();
-    expect(await css(osd.locator("span").last().locator(".."), "content", "::after"), "value reads N% (OsdModel.js:45)").toBe('"%"');
+    await expect(osd, "muted still reads the level as N% (OsdModel.js:45)").toContainText(/\d+%/);
   });
 
   test("lock", async ({ page }) => {

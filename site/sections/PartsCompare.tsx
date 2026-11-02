@@ -49,7 +49,3 @@ export function SetupSample() {
     </Stack>
   );
 }
-
-export function LockSample() {
-  return <TextField label="Password" type="password" defaultValue="omarchui" size="large" />;
-}

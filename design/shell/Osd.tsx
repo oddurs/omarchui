@@ -9,7 +9,6 @@ const s = stylex.create({
     gridTemplateColumns: chrome.osdCols,
     alignItems: "center",
     gap: chrome.osdGap,
-    width: chrome.osdWidth,
     maxWidth: "300px",
     padding: chrome.osdPad,
     backgroundColor: chrome.osdBg,
@@ -22,16 +21,14 @@ const s = stylex.create({
   track: { position: "relative", height: chrome.osdTrack, backgroundColor: chrome.osdTrackBg },
   fill: { position: "absolute", top: 0, bottom: 0, left: 0, backgroundColor: chrome.osdFill },
   muted: { backgroundColor: chrome.osdMutedFill },
-  value: { fontSize: chrome.osdValue, fontWeight: chrome.osdValueWeight, textAlign: "right", "::after": { content: chrome.osdUnit } },
-  num: { display: chrome.osdMuteNum },
-  dash: { display: chrome.osdMuteDash },
+  value: { fontSize: chrome.osdValue, fontWeight: chrome.osdValueWeight, textAlign: "right" },
 });
 
 const dyn = stylex.create({ width: (pct: number) => ({ width: `${pct}%` }) });
 
 export type OsdProps = { icon: IconName; value: number; muted?: boolean; label: string };
 
-/** The volume and brightness overlay: one icon, a 1u track, the value in mono. Shows for 1.2s and never takes focus. */
+/** The volume and brightness overlay, laid out as Omarchy's: glyph, track, value. Shows for 1.2s and never takes focus. */
 export function Osd({ icon, value, muted, label }: OsdProps) {
   return (
     <div role="status" data-ref="osd" aria-label={`${label} ${muted ? "muted" : value}`} {...stylex.props(s.osd)}>
@@ -41,16 +38,7 @@ export function Osd({ icon, value, muted, label }: OsdProps) {
       <span {...stylex.props(s.track)}>
         <span {...stylex.props(s.fill, muted && s.muted, dyn.width(value))} />
       </span>
-      <span {...stylex.props(typo.caption, face.mono, numeric.tabular, s.value)}>
-        {muted ? (
-          <>
-            <span {...stylex.props(s.num)}>{value}</span>
-            <span {...stylex.props(s.dash)}>—</span>
-          </>
-        ) : (
-          value
-        )}
-      </span>
+      <span {...stylex.props(typo.caption, face.mono, numeric.tabular, s.value)}>{value}%</span>
     </div>
   );
 }

@@ -7,42 +7,43 @@ import { Tile } from "../Tile";
 const RULES = [
   [
     "Unit",
-    "Style.space steps of 2, 3, 4, 6, 8, 10, 12, 14 and 18px; terminals pad 14.",
-    "One 4px unit. Gaps, padding, bar height and row height are all multiples of it.",
-  ],
-  [
-    "Focus",
-    "A 2px accent border on the active window. Menus mark the selected row with accent text, an 8% fill and a 25% border.",
-    "A 1px accent border plus a soft halo. The same ring marks a focused window, field, menu row or theme card.",
+    "Style.space steps of 2, 3, 4, 6, 8, 10, 12, 14 and 18px. The bar is 26, menu rows 50, card padding 18.",
+    "One 4px unit. Each size moves to the nearest step and never more than 2px: bar 28, rows 48, padding 16. The layout stays Omarchy's.",
   ],
   [
     "Type",
-    "JetBrains Mono for everything, at eight sizes from 10 to 28px. Menu rows at 16, terminals at 9.",
-    "Mono for what a machine wrote, a sans for what a person reads. Eight sizes, no others.",
+    "JetBrains Mono at eight sizes, except notifications, which switch to Liberation Sans. Regular, medium and bold.",
+    "One face for the whole shell, notifications included. Two weights: regular and medium.",
   ],
   [
     "Color",
-    "colors.toml names hues; shell.toml mixes them per surface, such as foreground at 25% for a selected border.",
-    "Eighteen colors named by job, and every ink checked to 4.5:1 on every ground.",
+    "colors.toml names hues; shell.toml mixes them per surface. Nothing checks contrast: Catppuccin Latte's selected menu row is 3.86:1.",
+    "Eighteen colors named by job, each ink held to 4.5:1 on every ground of every theme.",
   ],
+  [
+    "Accent",
+    "Marks the active window and the menu cursor, and also frames every notification and overlay.",
+    "Means current, and only that: the active window, the current workspace, the cursor row. Frames use the theme's lines.",
+  ],
+  [
+    "State",
+    "The bar has no hover state. The menu cursor is an 8% fill with accent text.",
+    "One light fill means under the pointer or the cursor, in the bar and the menu alike.",
+  ],
+  ["Depth", "Square and flat. Every surface is the theme background.", "Still square and flat. Panels sit one tone above the desktop; nothing casts a shadow."],
   [
     "Bar",
-    "26px. Workspaces 1 to 5; the active one swaps its number for a layout glyph, with no other marker.",
-    "32px in three zones. Numbers stay numbers and the active one is underlined.",
-  ],
-  ["Menus", "A 300px card with 50px rows and 16px labels. Some rows add a detail line.", "36px rows with name, description and shortcut on every one."],
-  [
-    "Depth",
-    "Square and flat; corners follow Hyprland rounding, 0 by default.",
-    "Still square. Layers step up in tone: wall, sunken, surface, raised. Nothing casts a shadow.",
+    "The current workspace swaps its number for a layout glyph.",
+    "The current workspace keeps its number, in accent. The one visible opinion in the bar.",
   ],
 ] as const;
 
 export function Rules() {
   return (
     <Tile ws={2} labelledBy="h-rules" aside="Today → tuned">
-      <Intro id="h-rules" title="Seven adjustments, no new features">
-        Each row names how Omarchy 4 draws something today, read from its source, and the change. None of them adds a capability. They make the parts agree.
+      <Intro id="h-rules" title="Seven principles, no new features">
+        Each row names how Omarchy 4 draws something today, read from its source, and the principle that tunes it. The layout, the density and the parts stay
+        Omarchy&apos;s. The changes are underneath, so the parts agree.
       </Intro>
       <Rows role="table" aria-label="Today and tuned">
         <Row layout="compare" density="tight" desktopOnly role="row">

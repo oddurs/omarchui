@@ -19,17 +19,19 @@ export const SPECIMEN: { name: TypeVariant; face: string; metric: string; sample
 
 export function Type() {
   return (
-    <Tile ws={4} span={7} labelledBy="h-type" aside="2 faces · 8 sizes">
-      <Intro id="h-type" title="Two faces, eight sizes">
-        Keep the monospace face for what the machine says. Give human text a sans so menus, notifications and dialogs read as sentences. The desktop uses the
-        six middle sizes; display and lede are for pages.
+    <Tile ws={4} span={7} labelledBy="h-type" aside="1 face in the shell · 8 sizes">
+      <Intro id="h-type" title="One face in the shell, two on the page">
+        Omarchy sets its shell in JetBrains Mono, and the tune keeps it: one face, regular and medium, notifications included. These pages are documents, not a
+        desktop, so they add a sans for prose.
       </Intro>
       <Box tone="sunken" border="line-2" pad="u4">
         <Stack gap="u2">
           <Text variant="label" tone="faint">
             The rule
           </Text>
-          <Text>If you would copy it into a terminal, set it in mono. If you would read it aloud, set it in sans.</Text>
+          <Text>
+            In the shell, everything is mono. On a page, if you would copy it into a terminal, set it in mono; if you would read it aloud, set it in sans.
+          </Text>
         </Stack>
       </Box>
       <Rows>
@@ -53,7 +55,7 @@ export function Type() {
         ))}
       </Rows>
       <Text variant="caption" tone="faint">
-        JetBrains Mono is Omarchy&apos;s default monospace too. Instrument Sans is the proposed sans.
+        JetBrains Mono is Omarchy&apos;s default monospace. Instrument Sans is for these pages only.
       </Text>
     </Tile>
   );

@@ -4,7 +4,7 @@ import * as stylex from "@stylexjs/stylex";
 import { useEffect, useRef, useState } from "react";
 import { Chord } from "@/design/components/Kbd";
 import { color } from "@/design/tokens/color.stylex";
-import { chromeLabel, face, typo } from "@/design/primitives/typography";
+import { face, ink, typo } from "@/design/primitives/typography";
 import { stroke } from "@/design/tokens/size.stylex";
 import { space } from "@/design/tokens/space.stylex";
 import { Segmented } from "@/design/components/Segmented";
@@ -75,7 +75,7 @@ export function Keys({ win, live, interactive, dispatch }: AppProps<"keys">) {
           readOnly={!interactive}
           tabIndex={interactive ? 0 : -1}
           onChange={(e) => dispatch({ type: "keys-q", id: win.id, q: e.target.value })}
-          {...stylex.props(typo.small, face.ui, s.search)}
+          {...stylex.props(typo.small, face.mono, s.search)}
         />
         <Segmented
           label="Which bindings"
@@ -90,7 +90,7 @@ export function Keys({ win, live, interactive, dispatch }: AppProps<"keys">) {
       <div {...stylex.props(s.list)}>
         {tab === "tuned" ? (
           <>
-            <p {...stylex.props(typo.caption, face.ui, s.note)}>
+            <p {...stylex.props(typo.caption, face.mono, s.note)}>
               Alt stands in for Super in the browser. Alt+Ctrl stands in for Super+Alt. • marks a binding Omarchy uses today.
             </p>
             {GROUPS.map((g) => {
@@ -98,11 +98,11 @@ export function Keys({ win, live, interactive, dispatch }: AppProps<"keys">) {
               if (!rows.length) return null;
               return (
                 <div key={g.group} {...stylex.props(s.group)}>
-                  <div {...stylex.props(chromeLabel.base, s.label)}>
+                  <div {...stylex.props(typo.label, ink.faint, s.label)}>
                     {g.mods} · {g.verb}
                   </div>
                   {rows.map((r) => (
-                    <div key={r.chord} {...stylex.props(typo.caption, face.ui, s.row)}>
+                    <div key={r.chord} {...stylex.props(typo.caption, face.mono, s.row)}>
                       <span>
                         {r.label}
                         {r.today && <span {...stylex.props(s.today)}> •</span>}
@@ -116,7 +116,7 @@ export function Keys({ win, live, interactive, dispatch }: AppProps<"keys">) {
           </>
         ) : (
           <>
-            <p {...stylex.props(typo.caption, face.ui, s.note)}>
+            <p {...stylex.props(typo.caption, face.mono, s.note)}>
               Read from Omarchy {REF_VERSION}&apos;s source. ✓ marks a binding that also works in this demo.
             </p>
             {REF_GROUPS.map((g) => {
@@ -124,11 +124,11 @@ export function Keys({ win, live, interactive, dispatch }: AppProps<"keys">) {
               if (!rows.length) return null;
               return (
                 <div key={g} {...stylex.props(s.group)}>
-                  <div {...stylex.props(chromeLabel.base, s.label)}>
+                  <div {...stylex.props(typo.label, ink.faint, s.label)}>
                     {g} · {rows.length}
                   </div>
                   {rows.map((b, i) => (
-                    <div key={`${b.chord}-${i}`} title={b.src} {...stylex.props(typo.caption, face.ui, s.row)}>
+                    <div key={`${b.chord}-${i}`} title={b.src} {...stylex.props(typo.caption, face.mono, s.row)}>
                       <span>
                         {b.desc}
                         {WORKS.has(b.chord) && <span {...stylex.props(s.today)}> ✓</span>}

@@ -3,22 +3,22 @@
 import * as stylex from "@stylexjs/stylex";
 import { FieldError, Input, Label, Text, TextField as AriaTextField, type TextFieldProps as AriaTextFieldProps } from "react-aria-components";
 import { face, ink, typo } from "../primitives/typography";
-import { chrome } from "../tokens/chrome.stylex";
 import { color } from "../tokens/color.stylex";
 import { motion } from "../tokens/motion.stylex";
-import { size } from "../tokens/size.stylex";
+import { focus } from "../tokens/effect.stylex";
+import { size, stroke } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
 
 const s = stylex.create({
   root: { display: "flex", flexDirection: "column", gap: space.u2, minWidth: 0 },
-  label: { color: chrome.labelColor, letterSpacing: chrome.labelTrack, textTransform: chrome.labelCase },
+  label: { color: color["--text-3"] },
   input: {
     width: "100%",
     height: size.field,
     paddingInline: space.u3,
     color: color["--text"],
     backgroundColor: color["--sunken"],
-    borderWidth: chrome.border,
+    borderWidth: stroke.hair,
     borderStyle: "solid",
     borderColor: color["--line-2"],
     outline: "none",
@@ -26,9 +26,9 @@ const s = stylex.create({
     transitionDuration: motion.tick,
     "::placeholder": { color: color["--text-3"] },
     ":hover": { borderColor: color["--text-3"] },
-    ":focus": { borderColor: color["--accent"], boxShadow: chrome.halo },
+    ":focus": { borderColor: color["--accent"], boxShadow: focus.halo },
   },
-  large: { height: chrome.fieldLg, textAlign: "center" },
+  large: { height: size.fieldLg, textAlign: "center" },
   invalid: { borderColor: color["--err"], ":hover": { borderColor: color["--err"] }, ":focus": { borderColor: color["--err"] } },
   disabled: { opacity: 0.45, cursor: "not-allowed" },
   error: { display: "flex", alignItems: "center", gap: space.u1 },

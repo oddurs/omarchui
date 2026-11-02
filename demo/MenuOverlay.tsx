@@ -27,7 +27,7 @@ type Props = {
   overlay: NonNullable<Overlay>;
   state: MenuContext;
   interactive: boolean;
-  /** Stock follows Omarchy where the tuned menu differs: placeholder, empty text, going back. */
+  /** Stock follows Omarchy when going back; tuned returns the cursor to where you were. */
   mode?: "stock" | "tuned";
   listId: string;
   dispatch: Dispatch<Action>;
@@ -77,23 +77,21 @@ export function MenuOverlay({ overlay, state, interactive, mode = "tuned", listI
   };
 
   const here = trail.at(-1);
-  const placeholder = overlay.root === "launcher" ? "Launch an app" : mode === "stock" ? `${here ?? "Go"}…` : "Search the menu";
+  // The field names the open menu, as Omarchy's does: "Go…" at the root. Menu.qml:1417-1428.
+  const placeholder = `${here ?? "Go"}…`;
 
   return (
     <MenuPanel
       label={trail.at(-1) ?? "Omarchy menu"}
-      trail={trail}
       listId={listId}
       sel={sel}
       onPick={pick}
       onHover={(i) => set({ sel: i })}
-      empty={mode === "stock" ? `No matches for “${overlay.q.trim()}”` : undefined}
+      empty={`No matches for “${overlay.q.trim()}”`}
       rows={items.map((it) => ({
         key: it.path ? [...it.path, it.id].join("/") : it.id,
         glyph: it.glyph,
         name: it.name,
-        desc: it.desc,
-        hint: it.hint,
         more: Boolean(it.children),
         detail: it.detail || undefined,
         divider: it.divider,
@@ -153,7 +151,7 @@ export function MenuOverlay({ overlay, state, interactive, mode = "tuned", listI
                 break;
             }
           }}
-          {...stylex.props(typo.small, face.ui, s.input)}
+          {...stylex.props(typo.small, face.mono, s.input)}
         />
       }
     />

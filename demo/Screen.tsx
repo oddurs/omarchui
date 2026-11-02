@@ -96,7 +96,8 @@ const s = stylex.create({
     zIndex: layer.toast,
     width: `min(${chrome.toastWidth}, calc(100% - 24px))`,
     display: "flex",
-    flexDirection: chrome.toastFlow,
+    // Newest on top, as Omarchy stacks them. Layout.js:49-60.
+    flexDirection: "column-reverse",
     gap: chrome.toastStack,
   },
   osd: {
@@ -116,8 +117,8 @@ const s = stylex.create({
     zIndex: layer.overlay,
     display: "flex",
     justifyContent: "center",
-    alignItems: chrome.menuAlign,
-    paddingTop: chrome.menuTop,
+    // Centred on the screen when it opens. Menu.qml:1278-1312.
+    alignItems: "center",
     paddingInline: "16px",
     backgroundColor: chrome.scrim,
   },
@@ -231,21 +232,28 @@ export function Screen({ state, dispatch, exec, mode, interactive, id }: Props) 
   const busy = new Set(state.windows.map((w) => w.ws));
   const shown = Math.max(BAR_WORKSPACES, state.ws, ...busy);
   const layers = Array.from({ length: WORKSPACES }, (_, i) => i + 1).filter((n) => n === state.ws || busy.has(n));
-  const avg = Math.round(state.metrics.cores.reduce((a, b) => a + b, 0) / state.metrics.cores.length);
 
-  // Stock draws Omarchy's right-hand widgets in shell.json's order; tuned draws its own set.
-  const stockModules: BarModule[] = REF_BAR.right.flatMap((id): BarModule[] => {
+  // Both views draw Omarchy's widgets in shell.json's sections and order (REF_BAR); only tokens differ.
+  const right: BarModule[] = REF_BAR.right.flatMap((id): BarModule[] => {
     switch (id) {
+      case "omarchy.agents":
+        return [{ id, icon: "agents", label: "Agents" }];
       case "omarchy.bluetooth":
         return [{ id, icon: "bluetooth", label: "Bluetooth" }];
       case "omarchy.network":
         return [{ id, icon: "wifi", label: "Network" }];
       case "omarchy.audio":
-        return [{ id, icon: state.muted ? "mute" : "volume", label: "Audio", onPress: interactive ? () => dispatch({ type: "mute" }) : undefined }];
+        return [
+          {
+            id,
+            icon: state.muted ? "mute" : "volume",
+            label: state.muted ? "Audio, muted" : `Audio ${state.volume}%`,
+            onPress: interactive ? () => dispatch({ type: "mute" }) : undefined,
+            onWheel: interactive ? (e) => dispatch({ type: "volume", delta: e.deltaY < 0 ? 5 : -5 }) : undefined,
+          },
+        ];
       case "omarchy.monitor":
-        return [{ id, icon: "monitor", label: "Display" }];
-      case "omarchy.agents":
-        return [{ id, icon: "agents", label: "Agents" }];
+        return [{ id, icon: "monitor", label: "Display", onPress: interactive ? () => exec({ type: "open", app: "monitor" }) : undefined }];
       // The battery icon is never tinted, research/omarchy/spec/bar.json omarchy.power.
       case "omarchy.power":
         return [{ id, icon: "battery", label: "Power", value: "82" }];
@@ -254,52 +262,18 @@ export function Screen({ state, dispatch, exec, mode, interactive, id }: Props) 
     }
   });
   // centerBegin: an indicator per active state, in Indicators.qml's order (NightLight, Dnd, StayAwake).
-  const stockBefore: BarModule[] = [
-    ...(state.night ? [{ id: "night", icon: "moon", label: "Night light on", status: true } as const] : []),
-    ...(state.dnd ? [{ id: "dnd", icon: "bellOff", label: "Notifications silenced", status: true } as const] : []),
-    ...(!state.idle ? [{ id: "awake", icon: "coffee", label: "Staying awake", status: true } as const] : []),
+  const toggle = (what: "night" | "dnd" | "idle") => (interactive ? () => exec({ type: "toggle", what }) : undefined);
+  const before: BarModule[] = [
+    ...(state.night ? [{ id: "night", icon: "moon", label: "Night light on", status: true, onPress: toggle("night") } as const] : []),
+    ...(state.dnd ? [{ id: "dnd", icon: "bellOff", label: "Notifications silenced", status: true, onPress: toggle("dnd") } as const] : []),
+    ...(!state.idle ? [{ id: "awake", icon: "coffee", label: "Staying awake", status: true, onPress: toggle("idle") } as const] : []),
   ];
-  // centerEnd: the world clock and the weather, each in a 21px status slot.
-  const stockAfter: BarModule[] = REF_BAR.centerEnd.flatMap((id): BarModule[] => {
+  // centerEnd: the world clock and the weather.
+  const after: BarModule[] = REF_BAR.centerEnd.flatMap((id): BarModule[] => {
     if (id === "omarchy.elsewhen") return [{ id, icon: "globe", label: "World clock", status: true }];
     if (id === "omarchy.weather") return [{ id, icon: "cloud", label: "Weather", status: true }];
     return [];
   });
-
-  const tunedModules: BarModule[] = [
-    { id: "cpu", icon: "cpu", label: "CPU", value: `${avg}%`, onPress: interactive ? () => exec({ type: "open", app: "monitor" }) : undefined },
-    ...(state.dnd
-      ? [
-          {
-            id: "dnd",
-            icon: "bellOff",
-            label: "Do not disturb on",
-            onPress: interactive ? () => exec({ type: "toggle", what: "dnd" }) : undefined,
-          } satisfies BarModule,
-        ]
-      : []),
-    ...(state.night
-      ? [
-          {
-            id: "night",
-            icon: "moon",
-            label: "Night light on",
-            onPress: interactive ? () => exec({ type: "toggle", what: "night" }) : undefined,
-          } satisfies BarModule,
-        ]
-      : []),
-    { id: "bt", icon: "bluetooth", label: "Bluetooth" },
-    { id: "wifi", icon: "wifi", label: "Wifi", value: "home" },
-    {
-      id: "vol",
-      icon: state.muted ? "mute" : "volume",
-      label: state.muted ? "Volume muted" : "Volume",
-      value: state.muted ? "—" : String(state.volume),
-      onPress: interactive ? () => dispatch({ type: "mute" }) : undefined,
-      onWheel: interactive ? (e) => dispatch({ type: "volume", delta: e.deltaY < 0 ? 5 : -5 }) : undefined,
-    },
-    { id: "bat", icon: "battery", label: "Battery", value: "82", tone: "ok" },
-  ];
 
   const renderWindow = (w: Win, rects: ReturnType<typeof dwindle>, full: string | null) => {
     const r = full === w.id ? { x: 0, y: 0, w: 1, h: 1 } : rects.get(w.id);
@@ -325,8 +299,8 @@ export function Screen({ state, dispatch, exec, mode, interactive, id }: Props) 
       <Bar
         workspaces={Array.from({ length: shown }, (_, i) => ({ n: i + 1, busy: busy.has(i + 1), active: i + 1 === state.ws }))}
         clock={{ day: clock.day, time: clock.time }}
-        modules={mode === "stock" ? stockModules : tunedModules}
-        beside={mode === "stock" ? { before: stockBefore, after: stockAfter } : undefined}
+        modules={right}
+        beside={{ before, after }}
         onWorkspace={interactive ? (n) => exec({ type: "workspace", n }) : undefined}
         onMark={interactive ? () => exec({ type: "menu" }) : undefined}
       />
@@ -342,7 +316,7 @@ export function Screen({ state, dispatch, exec, mode, interactive, id }: Props) 
           return (
             <div key={n} aria-hidden={n !== state.ws || undefined} inert={n !== state.ws || undefined} {...stylex.props(s.ws, pos.shift(n - state.ws))}>
               {wins.length === 0 && (
-                <div {...stylex.props(typo.small, face.ui, s.empty)}>
+                <div {...stylex.props(typo.small, face.mono, s.empty)}>
                   <span {...stylex.props(typo.display, s.emptyNum)}>{n}</span>
                   <span>Empty workspace. Alt+Return opens a terminal, Alt+Space the Omarchy menu.</span>
                 </div>
@@ -392,7 +366,7 @@ export function Screen({ state, dispatch, exec, mode, interactive, id }: Props) 
       {state.flash > 0 && <div key={state.flash} aria-hidden {...stylex.props(s.flash)} />}
       {state.phase === "lock" && (
         <div {...stylex.props(s.lock)}>
-          <LockScreen interactive={interactive} mode={mode} onUnlock={() => dispatch({ type: "unlock" })} />
+          <LockScreen interactive={interactive} onUnlock={() => dispatch({ type: "unlock" })} />
         </div>
       )}
     </div>

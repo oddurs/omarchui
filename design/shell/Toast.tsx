@@ -1,13 +1,10 @@
 import * as stylex from "@stylexjs/stylex";
-import { chromeLabel, typo } from "../primitives/typography";
+import { typo } from "../primitives/typography";
 import { chrome } from "../tokens/chrome.stylex";
-import { color } from "../tokens/color.stylex";
 import { focus } from "../tokens/effect.stylex";
 import { motion } from "../tokens/motion.stylex";
-import { space } from "../tokens/space.stylex";
-import { weight } from "../tokens/type.stylex";
 
-const drop = stylex.keyframes({ from: { transform: `translateY(${chrome.toastDrop})`, opacity: chrome.toastFade }, to: { transform: "none", opacity: 1 } });
+const drop = stylex.keyframes({ from: { transform: `translateY(${chrome.toastDrop})`, opacity: 0 }, to: { transform: "none", opacity: 1 } });
 
 const s = stylex.create({
   toast: {
@@ -28,14 +25,8 @@ const s = stylex.create({
   bare: { paddingBlock: chrome.toastPadBare },
   critical: { borderColor: chrome.critBorder },
   button: { cursor: "pointer", outline: "none", ":focus-visible": { boxShadow: focus.ring } },
-  head: { display: chrome.toastHead, justifyContent: "space-between", gap: space.u3 },
-  who: { display: "inline-flex", alignItems: "center", gap: space.u2 },
-  dot: { display: chrome.dot, width: "6px", height: "6px", backgroundColor: color["--info"] },
-  dotCritical: { backgroundColor: color["--err"] },
-  whoCritical: { color: color["--err"] },
   title: { fontFamily: chrome.toastFace, fontSize: chrome.toastTitle, fontWeight: chrome.toastTitleWeight },
   body: { fontFamily: chrome.toastFace, fontSize: chrome.toastBody, color: chrome.toastBodyInk },
-  time: { display: chrome.desc, fontWeight: weight.regular },
 });
 
 export type ToastProps = {
@@ -43,7 +34,6 @@ export type ToastProps = {
   who: string;
   title: string;
   body?: string;
-  time?: string;
   /** Battery, failures: draws in err and is announced assertively. */
   critical?: boolean;
   /** Makes the whole toast a button that dismisses it. */
@@ -52,17 +42,13 @@ export type ToastProps = {
   refKey?: string;
 };
 
-/** A notification card: source and time as a label, title in the UI face, body one tone quieter. */
-export function Toast({ who, title, body, time = "now", critical, onDismiss, refKey }: ToastProps) {
+/**
+ * A notification card, as Omarchy draws it (shell/plugins/notifications/Toast.qml): title, then
+ * the body one tone quieter. The sender names it for assistive tech only.
+ */
+export function Toast({ who, title, body, critical, onDismiss, refKey }: ToastProps) {
   const content = (
     <>
-      <span {...stylex.props(chromeLabel.base, s.head)}>
-        <span {...stylex.props(s.who, critical && s.whoCritical)}>
-          <span aria-hidden {...stylex.props(s.dot, critical && s.dotCritical)} />
-          {who}
-        </span>
-        <span {...stylex.props(s.time)}>{time}</span>
-      </span>
       <span {...stylex.props(typo.small, s.title)}>{title}</span>
       {body ? <span {...stylex.props(typo.caption, s.body)}>{body}</span> : null}
     </>
@@ -82,7 +68,13 @@ export function Toast({ who, title, body, time = "now", critical, onDismiss, ref
     );
   }
   return (
-    <div role={critical ? "alert" : "status"} data-ref="toast" data-ref-key={refKey} {...stylex.props(s.toast, !body && s.bare, critical && s.critical)}>
+    <div
+      role={critical ? "alert" : "status"}
+      aria-label={`${who}: ${title}`}
+      data-ref="toast"
+      data-ref-key={refKey}
+      {...stylex.props(s.toast, !body && s.bare, critical && s.critical)}
+    >
       {content}
     </div>
   );

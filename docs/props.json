@@ -309,7 +309,7 @@
       },
       {
         "name": "face",
-        "type": "'mono' | 'sans' | 'ui'",
+        "type": "'mono' | 'sans'",
         "required": false,
         "doc": ""
       },
@@ -973,17 +973,11 @@
         "name": "search",
         "type": "ReactNode",
         "required": true,
-        "doc": "The search input, or static text in a preview."
+        "doc": "The filter input, or static text in a preview."
       },
       {
         "name": "sel",
         "type": "number",
-        "required": true,
-        "doc": ""
-      },
-      {
-        "name": "trail",
-        "type": "string[]",
         "required": true,
         "doc": ""
       },
@@ -1053,12 +1047,6 @@
         "type": "string",
         "required": false,
         "doc": "Identifies this toast to the demo's reference inspector."
-      },
-      {
-        "name": "time",
-        "type": "string",
-        "required": false,
-        "doc": ""
       }
     ],
     "inherits": []
@@ -1102,19 +1090,7 @@
         "name": "children",
         "type": "ReactNode",
         "required": true,
-        "doc": "The password field; it should already have focus."
-      },
-      {
-        "name": "date",
-        "type": "string",
-        "required": true,
-        "doc": ""
-      },
-      {
-        "name": "time",
-        "type": "string",
-        "required": true,
-        "doc": ""
+        "doc": "The password field (LockField); it should already have focus."
       },
       {
         "name": "hint",

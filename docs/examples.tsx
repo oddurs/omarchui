@@ -24,7 +24,7 @@ import { Text } from "@/design/primitives/Text";
 import type { TypeVariant } from "@/design/primitives/typography";
 import { Bar } from "@/design/shell/Bar";
 import { Icon, Mark, type IconName } from "@/design/shell/Icon";
-import { LockPanel } from "@/design/shell/LockPanel";
+import { LockField, LockPanel } from "@/design/shell/LockPanel";
 import { MenuPanel } from "@/design/shell/MenuPanel";
 import { Osd } from "@/design/shell/Osd";
 import { Toast } from "@/design/shell/Toast";
@@ -523,14 +523,13 @@ export const EXAMPLES: Record<string, Example> = {
     Live: () => {
       const [sel, setSel] = useState(1);
       const rows = [
-        { key: "learn", glyph: "¶", name: "Learn", desc: "Keybindings and the manual", more: true },
-        { key: "appearance", glyph: "◐", name: "Appearance", desc: "Theme, background, before and after", more: true },
-        { key: "update", glyph: "↻", name: "Update", desc: "Omarchy and packages" },
+        { key: "learn", glyph: "¶", name: "Learn", more: true },
+        { key: "appearance", glyph: "◐", name: "Appearance", more: true },
+        { key: "update", glyph: "↻", name: "Update" },
       ];
       return (
         <MenuPanel
           label="Omarchy menu"
-          trail={[]}
           listId="doc-menu"
           sel={sel}
           onHover={setSel}
@@ -579,8 +578,8 @@ export const EXAMPLES: Record<string, Example> = {
   },
   "lock-panel": {
     Live: () => (
-      <LockPanel time="14:32" date="Sunday 1 November" hint="Any password works in the demo.">
-        <TextField label="Password" type="password" size="large" />
+      <LockPanel hint="Any password works in the demo.">
+        <LockField />
       </LockPanel>
     ),
   },

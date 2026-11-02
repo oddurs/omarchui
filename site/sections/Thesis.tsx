@@ -19,8 +19,8 @@ export function Thesis() {
         <Stack gap="u5">
           <Text variant="lede" tone="muted" measure>
             Omarchy gets the hard parts right: every action is a keystroke away, windows tile themselves, one theme recolors the whole machine. Version 4 pulled
-            the desktop into one shell with one palette file. This study takes the next step: one unit instead of nine spacing steps, a second face for human
-            text, one focus ring, and colors named by job.
+            the desktop into one shell with one palette file. This study keeps its layout and its density and tunes the foundations underneath: one spacing
+            unit, one face with two weights, colors named by job that hold contrast on every theme, and one meaning for accent.
           </Text>
           <Inline gap="u2" wrap as="ul" aria-label="What stays">
             {KEEPS.map((k) => (
