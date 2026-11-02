@@ -124,7 +124,7 @@ const BEFORE_AFTER: MenuItem = {
   glyph: "◧",
   name: "Before and after",
   desc: "Omarchui only: stock, split or tuned",
-  hint: "Super Alt B",
+  hint: "Super Alt U",
   children: [
     { id: "stock", glyph: "◧", name: "Stock", desc: "Omarchy 4 as shipped", command: { type: "view", view: "stock" } },
     { id: "split", glyph: "◫", name: "Split", desc: "Drag the divider to compare", command: { type: "view", view: "split" } },

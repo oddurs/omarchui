@@ -54,6 +54,9 @@ export function Desktop() {
       case "fullscreen":
         dispatch({ type: "fullscreen", kind: c.kind });
         break;
+      case "panel":
+        dispatch({ type: "panel", id: c.id });
+        return;
       case "close":
       case "float":
       case "pop":

@@ -9,7 +9,7 @@ type Item = { id: string; value: string | number; source?: string };
 type Spec = { items?: Item[]; [part: string]: unknown };
 
 const load = (file: string) => JSON.parse(readFileSync(path.join(process.cwd(), "research/omarchy/spec", `${file}.json`), "utf8")) as Spec;
-const SPECS = { bar: load("bar"), menu: load("menu"), services: load("services"), windows: load("windows") };
+const SPECS = { bar: load("bar"), menu: load("menu"), services: load("services"), windows: load("windows"), panels: load("panels") };
 
 /** A numeric value from a spec file, with its citation for the failure message. */
 function spec(file: keyof typeof SPECS, id: string, part?: string): { n: number; why: string } {
@@ -106,7 +106,7 @@ test.describe("the stock view matches Omarchy's source", () => {
     await expect(ws, "buttons 1-5 always show (Workspaces.qml:17)").toHaveCount(5);
 
     // The right group ends 8px from the edge, each widget in a 27px slot with no gap.
-    const right = screen.getByRole("img", { name: /^Power/ });
+    const right = screen.locator("[data-panel=power]");
     const p = await box(right);
     expect(b.width - (p.x + p.width), spec("bar", "bar.edgePadding.right").why).toBe(spec("bar", "bar.edgePadding.right").n);
     expect(p.width, slot.why).toBe(slot.n);
@@ -182,7 +182,9 @@ test.describe("the stock view matches Omarchy's source", () => {
 
   test("volume OSD", async ({ page }) => {
     const screen = await stock(page);
-    await screen.getByRole("button", { name: /^Audio/ }).click();
+    // The audio widget's wheel steps the volume, which shows the OSD.
+    await screen.locator("[data-panel=audio]").hover();
+    await page.mouse.wheel(0, -100);
     const osd = screen.locator("[data-ref=osd]");
     await expect(osd).toBeVisible();
     const b = await box(osd);
@@ -197,8 +199,7 @@ test.describe("the stock view matches Omarchy's source", () => {
     const tb = await box(track);
     expect(tb.width, tw.why).toBe(tw.n);
     expect(tb.height, th.why).toBe(th.n);
-    // Muted, Omarchy still shows the stored level, followed by %. OsdModel.js:45.
-    await expect(osd, "muted still reads the level as N% (OsdModel.js:45)").toContainText(/\d+%/);
+    await expect(osd, "the level reads N% (OsdModel.js:45)").toContainText(/\d+%/);
   });
 
   test("lock", async ({ page }) => {
@@ -343,5 +344,42 @@ test.describe("the stock view matches Omarchy's source", () => {
     await page.keyboard.press("Alt+Enter");
     const pop = wins.last().locator("xpath=ancestor::div[2]");
     expect(await pop.evaluate((e) => getComputedStyle(e).animationDuration), spec("windows", "anim.windowsIn", "animations").why).toBe("0.328s");
+  });
+
+  test("bar panels", async ({ page }) => {
+    const screen = await stock(page);
+    const bar = await box(screen.locator("[data-ref=bar]"));
+    const W = 1440;
+
+    // Audio, on the right: 380 wide, 5px under the bar, pinned 5px from the screen's right edge.
+    await screen.locator("[data-panel=audio]").click();
+    const audio = screen.getByRole("dialog", { name: "Audio" });
+    await expect(audio).toBeVisible();
+    await css(audio, "opacity");
+    const a = await box(audio);
+    expect(a.width, "panel.sizes: audio 380").toBe(380);
+    expect(a.y - (bar.y + bar.height), spec("panels", "panel.card.y", "container").why).toBe(5);
+    expect(W - (a.x + a.width), spec("panels", "panel.card.x", "container").why).toBe(5);
+    expect(await css(audio, "border-top-width"), spec("panels", "panel.card.border.width", "container").why).toBe("2px");
+    expect(await css(audio, "padding-top"), spec("panels", "panel.card.padding", "container").why).toBe("14px");
+    // The widget wears the open pill while its panel shows.
+    await expect(screen.locator("[data-panel=audio]")).toHaveAttribute("aria-expanded", "true");
+    // "Steady groove" at 64%, set in capitals by CSS. audio.hero.status.ladder.
+    await expect(audio).toContainText("Steady groove");
+
+    // Opening another closes the first; the clock's calendar is 560 wide, centred on the clock.
+    await screen.locator("[data-panel=clock]").click();
+    await expect(audio).toHaveCount(0);
+    const cal = screen.getByRole("dialog", { name: "Calendar" });
+    await css(cal, "opacity");
+    const c = await box(cal);
+    const clock = await box(screen.locator("[data-panel=clock]"));
+    expect(c.width, "panel.sizes: clock 560").toBe(560);
+    expect(Math.abs(c.x + c.width / 2 - (clock.x + clock.width / 2)), spec("panels", "panel.card.x", "container").why).toBeLessThanOrEqual(1);
+    await expect(cal.locator("[aria-current=date]"), "today is the only marked day").toHaveCount(1);
+
+    // Esc closes. panel.dismiss.escape.
+    await page.keyboard.press("Escape");
+    await expect(cal).toHaveCount(0);
   });
 });

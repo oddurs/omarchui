@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { chrome } from "../tokens/chrome.stylex";
+import { shelltype } from "../tokens/shelltype.stylex";
 import { color } from "../tokens/color.stylex";
 import { size } from "../tokens/size.stylex";
 import { space } from "../tokens/space.stylex";
@@ -25,6 +26,15 @@ const PATHS = {
   monitor: "M3 4h18v12H3zM8 20h8M12 16v4",
   agents: "M5 8h14v11H5zM12 4v4M9 13h.01M15 13h.01M2 12v3M22 12v3",
   coffee: "M4 8h13v6a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM17 10h2a2 2 0 0 1 0 4h-2M8 3v2M12 3v2",
+  calendar: "M3 5h18v16H3zM3 10h18M8 2v5M16 2v5",
+  mic: "M9 3h6v10H9zM5 11a7 7 0 0 0 14 0M12 18v3",
+  lock: "M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4",
+  laptop: "M4 5h16v11H4zM2 19h20",
+  pin: "M12 21s-7-6.5-7-12a7 7 0 0 1 14 0c0 5.5-7 12-7 12zM12 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",
+  close: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM9 9l6 6M15 9l-6 6",
+  leaf: "M5 19C5 9 11 5 20 4c-1 9-5 15-15 15zM5 19l7-7",
+  gauge: "M4 17a8 8 0 1 1 16 0M12 17l4-6",
+  bolt: "M13 2L4 14h7l-1 8 9-12h-7z",
 } as const;
 
 export type IconName = keyof typeof PATHS;
@@ -42,6 +52,9 @@ const s = stylex.create({
   large: { width: size.iconLg, height: size.iconLg },
   bar: { width: chrome.barIcon, height: chrome.barIcon },
   osd: { width: chrome.osdIcon, height: chrome.osdIcon },
+  hero: { width: shelltype.display, height: shelltype.display },
+  clock: { width: shelltype.clockGlyph, height: shelltype.clockGlyph },
+  weather: { width: shelltype.weatherGlyph, height: shelltype.weatherGlyph },
 });
 
 /** A 24-unit stroke icon at 14px, or 16px where it stands alone. Decorative: always aria-hidden. */
@@ -53,11 +66,13 @@ export type IconProps = {
   bar?: boolean;
   /** Sized by the OSD's icon token: Omarchy's 28px glyph in the stock view. */
   osd?: boolean;
+  /** Panel sizes: a hero glyph (24px), the clock's (48px), the weather's (64px). */
+  panel?: "hero" | "clock" | "weather";
 };
 
-export function Icon({ name, large, bar, osd }: IconProps) {
+export function Icon({ name, large, bar, osd, panel }: IconProps) {
   return (
-    <svg viewBox="0 0 24 24" aria-hidden focusable="false" {...stylex.props(s.icon, large && s.large, bar && s.bar, osd && s.osd)}>
+    <svg viewBox="0 0 24 24" aria-hidden focusable="false" {...stylex.props(s.icon, large && s.large, bar && s.bar, osd && s.osd, panel && s[panel])}>
       <path d={PATHS[name]} />
     </svg>
   );
