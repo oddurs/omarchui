@@ -32,8 +32,8 @@ export function Thesis() {
         </Stack>
         <Stack gap="u3">
           <Inline gap="u2" wrap>
-            <ButtonLink href="/demo" variant="primary" size="large">
-              Launch the demo
+            <ButtonLink href="/" variant="primary" size="large">
+              Boot the desktop
             </ButtonLink>
             <ButtonLink href="/system" size="large">
               Read the system

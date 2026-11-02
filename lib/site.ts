@@ -2,4 +2,4 @@
 export const SITE_URL = new URL(process.env.SITE_URL ?? "http://localhost:3000");
 export const SITE_NAME = "Omarchui";
 export const SITE_DESCRIPTION =
-  "A re-tuning of Omarchy's interface: one unit, one focus ring, two typefaces and eighteen colour roles, with a working demo desktop and before/after.";
+  "A re-tuning of Omarchy's interface foundations: one spacing unit, one face, colour that holds contrast on every theme. Boot it in the browser, then read the study.";

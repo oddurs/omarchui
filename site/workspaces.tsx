@@ -57,7 +57,7 @@ export function Workspaces({ children }: { children: ReactNode }) {
       if (t.closest("input, textarea, [contenteditable], [role=menu], [role=slider], [role=listbox]")) return;
       if (/^[1-8]$/.test(e.key)) jump(Number(e.key));
       else if (e.key === "t" || e.key === "T") choose(nextSlug(readChosen() ?? systemSlug(), e.key === "t" ? 1 : -1));
-      else if (e.key === "d") router.push("/demo");
+      else if (e.key === "d") router.push("/");
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);

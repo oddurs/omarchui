@@ -62,7 +62,8 @@ const ACTIONS: Record<string, Command> = {
   about: { type: "open", app: "terminal", run: "fastfetch" },
   "system.lock": { type: "lock" },
   "system.reboot": { type: "restart" },
-  "system.logout": { type: "shutdown" },
+  // Omarchy logs back in automatically, so logging out is a fresh session.
+  "system.logout": { type: "restart" },
   "system.shutdown": { type: "shutdown" },
 };
 

@@ -35,15 +35,18 @@ const o = (k: string) => {
 async function stock(page: Page, locked = false) {
   await page.addInitScript((slug) => window.localStorage.setItem("omarchui-theme", slug), THEME);
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto("/demo");
+  await page.goto("/");
+  const pw = page.getByRole("dialog", { name: "Boot" }).getByLabel("Password");
+  await pw.fill("anything");
+  await pw.press("Enter");
+  await expect(page.getByRole("dialog", { name: "Boot" })).toHaveCount(0, { timeout: 15_000 });
   await page.getByRole("region", { name: "Demo controls" }).getByRole("radio", { name: "Stock" }).click();
   const screen = page.locator("[data-mode=stock]");
   await expect(screen).toHaveCount(1);
-  if (!locked) {
-    const pw = page.getByLabel("Password").first();
-    await pw.fill("anything");
-    await pw.press("Enter");
-    await expect(page.getByRole("dialog", { name: "Lock screen" })).toHaveCount(0);
+  if (locked) {
+    // Super+Ctrl+L locks; Alt stands in for Super in the browser.
+    await page.keyboard.press("Alt+Control+l");
+    await expect(page.getByRole("dialog", { name: "Lock screen" })).toBeVisible();
   }
   return screen;
 }
